@@ -1,0 +1,137 @@
+name: Test and deploy Boardroom
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: boardroom-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: boardroom_test
+          POSTGRES_USER: boardroom
+          POSTGRES_PASSWORD: ci-only-password
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U boardroom -d boardroom_test"
+          --health-interval 5s --health-timeout 5s --health-retries 15
+    env:
+      DATABASE_URL: postgresql://boardroom:ci-only-password@127.0.0.1:5432/boardroom_test
+      SESSION_SECRET: ci-only-session-secret-at-least-32-characters
+      SMTP_HOST: ''
+      REQUIRE_EMAIL_VERIFICATION: 'false'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - run: docker build --tag boardroom-ci:${{ github.sha }} .
+      - run: docker build --tag boardroom-server-helper:ci deploy/helper
+      - run: docker run --rm boardroom-server-helper:ci --version
+      - run: docker run --rm --entrypoint docker boardroom-server-helper:ci compose version
+
+  publish:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.AUTO_DEPLOY == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.release.outputs.image }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Image name
+        id: name
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: echo "image=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        id: build
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.name.outputs.image }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+      - name: Immutable release
+        id: release
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: echo "image=$IMAGE@$DIGEST" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - name: Deploy tested commit over SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_IMAGE: ${{ needs.publish.outputs.image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$DEPLOY_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          [[ "$DEPLOY_PORT" =~ ^[0-9]{1,5}$ ]] && (( DEPLOY_PORT >= 1 && DEPLOY_PORT <= 65535 ))
+          [[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$RELEASE_IMAGE" =~ ^ghcr.io/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$ ]]
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/boardroom"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          trap 'rm -f "$HOME/.ssh/boardroom"' EXIT
+          ssh -i "$HOME/.ssh/boardroom" -p "$DEPLOY_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" bash -s -- "$RELEASE_SHA" "$RELEASE_IMAGE" <<'REMOTE'
+          set -euo pipefail
+          cd /opt/boardroom
+          exec 9>.pipeline.lock
+          flock -n 9
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "$1" ]; then
+            echo 'A newer main commit exists; skipping stale deployment.'
+            exit 0
+          fi
+          git diff --quiet
+          git diff --cached --quiet
+          git checkout --detach "$1"
+          sh scripts/server-helper.sh deploy --env-file .env.production --project boardroom-production --image "$2"
+          REMOTE

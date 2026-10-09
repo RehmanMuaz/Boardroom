@@ -1,0 +1,4 @@
+# Codex project instructions
+Read README.md and docs/ARCHITECTURE.md before changes. Working name: Boardroom. Product: small-team self-hosted visual workspace with Milanote-like UI and interactions. Preserve original branding.
+
+Proceed milestone by milestone from docs/ROADMAP.md. Clearly distinguish live behavior from planned features. Do not represent browser-local storage as team sync. Use strict TypeScript; isolate canvas transforms, domain operations and persistence as code grows. Validate untrusted input at the API boundary. Enforce workspace authorization for every endpoint and WebSocket operation. Add meaningful tests for permission boundaries, conflicts and persistence. Run npm test and npm run build before handing off changes. Never commit .env, credentials, uploaded files, database volumes or node_modules. Do not publish unless asked.

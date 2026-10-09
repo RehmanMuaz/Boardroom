@@ -1,0 +1,44 @@
+name: boardroom-production
+services:
+ postgres:
+  extends:
+   file: compose.yaml
+   service: postgres
+  labels:
+   traefik.enable: "false"
+ api:
+  extends:
+   file: compose.yaml
+   service: api
+  environment:
+   TRUST_PROXY: ${TRUST_PROXY:?Set the stable trusted Traefik IP with /32}
+  networks: [default, reverse_proxy]
+  labels:
+   traefik.enable: "true"
+   traefik.docker.network: ${TRAEFIK_NETWORK:?Set TRAEFIK_NETWORK}
+   traefik.http.routers.boardroom.rule: Host(`${SITE_ADDRESS:?Set SITE_ADDRESS}`)
+   traefik.http.routers.boardroom.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
+   traefik.http.routers.boardroom.tls: "true"
+   traefik.http.routers.boardroom.tls.certresolver: ${TRAEFIK_CERT_RESOLVER:?Set TRAEFIK_CERT_RESOLVER}
+   traefik.http.routers.boardroom.service: boardroom
+   traefik.http.services.boardroom.loadbalancer.server.port: "3001"
+   traefik.http.routers.boardroom-http.rule: Host(`${SITE_ADDRESS}`)
+   traefik.http.routers.boardroom-http.entrypoints: ${TRAEFIK_HTTP_ENTRYPOINT:-web}
+   traefik.http.routers.boardroom-http.middlewares: boardroom-https
+   traefik.http.routers.boardroom-http.service: boardroom
+   traefik.http.middlewares.boardroom-https.redirectscheme.scheme: https
+   traefik.http.middlewares.boardroom-https.redirectscheme.permanent: "true"
+ ops:
+  extends:
+   file: compose.yaml
+   service: ops
+  labels:
+   traefik.enable: "false"
+volumes:
+ database:
+ assets:
+networks:
+ default:
+ reverse_proxy:
+  external: true
+  name: ${TRAEFIK_NETWORK}

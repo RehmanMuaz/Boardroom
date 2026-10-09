@@ -1,0 +1,51 @@
+﻿# Implementation milestones
+
+1. **Canvas foundation - implemented and browser tested.** Existing notes/checklists/links, drag, zoom, nested boards, undo/redo and JSON backups remain. Chromium covers editing, drag at 50%/100%/150% zoom, undo/redo, nested navigation, backup round-trip and reload. Validation rejects duplicate IDs and broken/cyclic board references. Garbled toolbar symbols are corrected.
+2. **Durable team MVP - implemented locally.** Node/TypeScript API, PostgreSQL persistence, database-backed sessions, scrypt passwords, CSRF checks, basic login throttling, owner/editor/viewer permissions, member controls and hashed one-use expiring invitations. Local/team repository interface preserves the editor. Saves and workspace-scoped board/card CRUD have transactional expected workspace revisions. Real PostgreSQL tests cover every workspace endpoint's permission boundary, durable data across API instances, competing/stale writes, invalid documents, expired/reused/wrong-email invites, role changes and revoked access. Browser tests confirm shared boards after reload, viewer restrictions and stale-write protection. Live storage uses validated JSONB documents; normalized card storage and finer revisions are deferred.
+3. **Real-time board editing - implemented locally for one API process.** Session/Origin/CSRF-authorized WebSocket subscriptions, transactional field operations, durable operation IDs, field conflict checks, ephemeral member/board presence, snapshot reload on reconnect and safe replay of unacknowledged operations. Unrelated field changes merge; same-field or structural conflicts pause editing and retain the local document for export. Owner role changes/removal and logout immediately revoke subscriptions. Client tests cover late acknowledgements and unchanged replay IDs; real socket/PostgreSQL tests cover authorization, malformed payloads, conflicts, operation-ID abuse, replay, expiry and revocation. Browser tests cover live edits/dragging, presence, offline edits against unrelated online changes, dropped acknowledgements, explicit same-field conflicts and revoked UI controls. Pending edits survive network disconnects in the open tab, not tab close/reload. Rich-text CRDTs, cursor rendering and multi-process fan-out remain deferred.
+4. **Content and canvas features - implemented locally.** Private image/video/file uploads with signature/size checks, authenticated range streaming and workspace-scoped references; structured rich notes, columns, connectors, multi-select, group movement, resize, clipboard, panning, expandable canvas and keyboard shortcuts. Real PostgreSQL tests cover upload/read/delete permissions, malformed files, limits, foreign asset IDs and referenced-file deletion. Chromium covers media playback and reload, grouping, formatting, resizing, clipboard and canvas expansion, plus automated accessibility checks. Exact visual parity still needs reference workflows/screenshots; manual accessibility and cross-browser checks remain.
+5. **Production-readiness implementation - locally validated; public acceptance remains.** Multi-stage production image, private database/media volumes, TLS proxy with narrowly trusted forwarded headers, secure cookies, startup configuration checks, PostgreSQL auth limits, scheduled session/token cleanup, health routes and sanitized JSON logs. SMTP verification/recovery/invitations are configurable; hashed one-use account links expire and password reset revokes sessions/live sockets. Full database/media backups pause the API; version/checksum/size validation and transactional fresh-target restoration refuse existing data. Backend and browser tests cover new account/permission/race flows; a local Docker drill verifies fresh containers, HTTPS/live sockets, private media restoration, corrupted archive rejection, session invalidation and overwrite refusal. Fresh VPS installation, public certificates, actual SMTP provider delivery, backup scheduling/off-host retention and external monitoring alerts remain operator acceptance. Do not deploy without an explicit request.
+
+## Milestone 2 acceptance
+
+- Two accounts read the same durable board after reload, using real PostgreSQL.
+- Viewer writes fail; unrelated workspace IDs fail on every implemented workspace route.
+- Invitations expire in 48 hours, match account email and cannot be reused.
+- Concurrent requests cannot both commit against one expected revision; stale requests return 409.
+- Browser-local mode is clearly labeled and remains separate from team data.
+
+## Milestone 3 acceptance
+
+- Two browsers see persisted note edits and card movement without reload.
+- Unrelated field edits merge; competing edits to the same field cannot silently overwrite.
+- Offline edits retry after a fresh snapshot with their original IDs. Lost acknowledgements cannot duplicate a write.
+- Removed/downgraded members and signed-out sessions immediately lose their active socket subscription through the local API.
+- Presence is actual workspace membership/session presence, never simulated collaborators.
+
+## Remaining limits and next task
+
+GitHub CI/CD configuration is prepared locally: disposable PostgreSQL tests, browser/build checks, a container build, opt-in immutable GHCR releases, SSH deployment with verified host keys, serialized updates, full pre-update database/media backup and readiness gating. Repository/server wiring and an actual Actions/deployment run remain pending. The workflow is disabled for publishing/deployment until AUTO_DEPLOY=true; no public deployment has occurred.
+
+IDEA-005 is implemented locally: named workspace switching, compact account/team controls, board-heading title editing, full nested breadcrumbs, Actions for import/export/shortcuts and responsive navigation with explicit local/team status. Canvas behavior and permission enforcement remain; the floating annotation toolbar is still planned in IDEA-002.
+
+IDEA-001 refinement: image/video subtitles are opt-in for new uploads through an accessible icon; visibility persists and syncs, hidden text is retained, and legacy captions stay visible.
+
+IDEA-001 is implemented locally: borderless image/video presentation, accessible icon downloads in a gradient hover/focus overlay, direct media-surface dragging and contextual resize controls and proportional pointer/keyboard resizing using source dimensions. Captions, private streaming, live updates and undo/redo remain. Other backlog ideas are planned; exact visual parity and manual cross-browser acceptance remain outstanding.
+
+Milestone 5 implementation is available locally. Next work is operator acceptance or a separately requested product milestone; no deployment is authorized. Preserve the editor, live-operation boundaries, permission checks and browser tests. Keep everything local until deployment is explicitly requested.
+
+Milestone 4 acceptance implemented: shared private images/video/files persist after reload; video plays inline with authorized byte ranges; viewers can read but cannot upload; unrelated/revoked users cannot read; foreign workspace asset IDs cannot be attached through HTTP or live operations. Rich formatting, columns, connectors, group movement, clipboard, resizing and canvas expansion persist through the existing operation model. Automated Chromium accessibility checks pass for tested canvas/media states. Reference screenshot parity and manual screen-reader/cross-browser acceptance remain outstanding.
+
+Live fan-out requires one API process. Same-field rich/plain text edits conflict explicitly; no rich-text CRDT merge. Pending edits stay in the open tab only. Rendered shared cursors, cross-process presence/fan-out, operation-ledger retention, durable offline queues and public sharing remain planned. Configurable SMTP email delivery is implemented; durable mail queues/retries and actual provider acceptance remain. Assets use private local filesystem storage; S3, quotas, orphan cleanup, resumable uploads and video transcoding remain future work. JSON exports contain media references only; full backup/restore must include PostgreSQL and asset files. Nested board tiles are not clipboard-duplicated. Full database/media restore is verified locally. Production VPS installation and external service acceptance remain incomplete.
+
+## Milestone 5 acceptance and remaining work
+
+- Implemented: local fresh container installation, HTTPS proxy, secure sessions and WebSocket upgrades, private media volume persistence, full archive/restore, checksum/size checks and refusal to overwrite existing data.
+- Implemented: shared auth counters surviving API restart; strict proxy trust; expiring purpose-bound one-use account links; optional/enforced verification; recovery invalidates all sessions and active local sockets; configured invitation delivery with manual fallback.
+- Implemented: readiness/liveness responses, private request IDs/JSON logs, security headers/CSP, startup migrations, graceful shutdown and expired-record maintenance. Local UI, backend, SMTP-fixture and container acceptance tests are retained.
+- Remaining operator acceptance: a fresh VPS installation after explicit authorization, DNS/public TLS, SMTP deliverability, scheduled encrypted off-host backups/retention, capacity alerts/log retention and a restore drill on that environment.
+- Remaining engineering: shared multi-process live fan-out, durable email outbox/retries, asset quotas/orphan retention, operation-ledger retention, durable offline queues and broader migration rollback tooling. Third-party object storage is still planned and was not added.
+
+Traefik deployment configuration prepared locally for note.vertexfilms.ca using reverse-proxy/websecure/vertexfilms. Deployment and backup helpers select it with DEPLOY_PROXY=traefik. Static proxy IP has been confirmed; GitHub/server wiring and public acceptance remain pending; nothing deployed.
+
+Operator confirmed Traefik static IP 172.19.0.7; the Traefik environment template now trusts only 172.19.0.7/32. Server Git, Docker Compose and flock are available. Deployment and backup helpers now run in a temporary Node/Docker CLI container; host Node/npm are unnecessary. GitHub/server wiring and public acceptance remain pending.

@@ -1,0 +1,88 @@
+name: boardroom-production
+services:
+ postgres:
+  image: postgres:17-alpine
+  restart: unless-stopped
+  environment:
+   POSTGRES_DB: boardroom
+   POSTGRES_USER: boardroom
+   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+  volumes:
+   - database:/var/lib/postgresql/data
+  healthcheck:
+   test: ["CMD-SHELL", "pg_isready -U boardroom -d boardroom"]
+   interval: 5s
+   retries: 15
+ api:
+  build:
+   context: ..
+  image: ${BOARDROOM_IMAGE:-boardroom-local:milestone5}
+  restart: unless-stopped
+  depends_on:
+   postgres:
+    condition: service_healthy
+  environment:
+   NODE_ENV: production
+   APP_ORIGIN: ${APP_ORIGIN:?Set APP_ORIGIN}
+   DATABASE_URL: ${CONTAINER_DATABASE_URL:?Set CONTAINER_DATABASE_URL with host postgres}
+   SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET}
+   COOKIE_SECURE: "true"
+   TRUST_PROXY: 172.30.80.254/32
+   REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-true}
+   SMTP_HOST: ${SMTP_HOST:-}
+   SMTP_PORT: ${SMTP_PORT:-587}
+   SMTP_SECURE: ${SMTP_SECURE:-false}
+   SMTP_USER: ${SMTP_USER:-}
+   SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+   SMTP_FROM: ${SMTP_FROM:-}
+  volumes:
+   - assets:/app/data/assets
+  read_only: true
+  tmpfs:
+   - /tmp
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+ proxy:
+  image: caddy:2-alpine
+  restart: unless-stopped
+  depends_on:
+   api:
+    condition: service_healthy
+  ports:
+   - "${BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-8080}:80"
+   - "${BIND_ADDRESS:-127.0.0.1}:${HTTPS_PORT:-8443}:443"
+  environment:
+   SITE_ADDRESS: ${SITE_ADDRESS:?Set SITE_ADDRESS}
+  networks:
+   default:
+    ipv4_address: 172.30.80.254
+  volumes:
+   - ./Caddyfile:/etc/caddy/Caddyfile:ro
+   - certificates:/data
+   - proxy_config:/config
+ ops:
+  image: postgres:17-alpine
+  profiles: [ops]
+  depends_on:
+   postgres:
+    condition: service_healthy
+  environment:
+   PGHOST: postgres
+   PGDATABASE: boardroom
+   PGUSER: boardroom
+   PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+  volumes:
+   - assets:/assets
+   - ../backups:/backups
+   - ../scripts/ops:/ops:ro
+  entrypoint: [sh, /ops/archive.sh]
+volumes:
+ database:
+ assets:
+ certificates:
+ proxy_config:
+networks:
+ default:
+  ipam:
+   config:
+    - subnet: 172.30.80.0/24

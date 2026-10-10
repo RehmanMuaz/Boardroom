@@ -1,0 +1,1 @@
+{"extends":"./tsconfig.json","include":["src","server","tests","flowIntegration.ts","flow-server.ts","vite.config.ts","playwright.config.ts"]}

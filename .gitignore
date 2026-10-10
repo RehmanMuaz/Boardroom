@@ -12,6 +12,8 @@ data/
 .test-assets/
 
 build/
+flow-build/
+flow-dist/
 backups/
 .deploy-test/
 .release.env

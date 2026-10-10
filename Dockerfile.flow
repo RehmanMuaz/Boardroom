@@ -1,0 +1,20 @@
+FROM node:22-bookworm-slim AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npx tsc --noEmit -p tsconfig.flow.json && npx vite build && node build-flow-server.mjs
+
+FROM node:22-bookworm-slim AS runtime
+ENV NODE_ENV=production API_HOST=0.0.0.0 API_PORT=3001 ASSET_DIR=/app/data/assets
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY --from=build /app/build/server ./server
+COPY --from=build /app/build/db ./db
+COPY --from=build /app/dist ./dist
+RUN mkdir -p /app/data/assets && chown -R node:node /app/data
+USER node
+EXPOSE 3001
+HEALTHCHECK --interval=20s --timeout=5s --start-period=30s CMD node -e "fetch('http://127.0.0.1:3001/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["node","server/index.js"]

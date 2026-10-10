@@ -3,7 +3,8 @@ import {validAnnotation,type Annotation} from './annotations';
 export type Kind = 'note' | 'checklist' | 'link' | 'board' | 'image' | 'video' | 'file' | 'column';
 export type RichRun={text:string;bold?:boolean;italic?:boolean;underline?:boolean;href?:string};
 export type RichDocument={blocks:{type:'paragraph'|'heading'|'bullet'|'quote';runs:RichRun[]}[]};
-export type Card = {id:string; kind:Kind; x:number; y:number; text:string; color:string; target?:string; width?:number; height?:number; assetId?:string; columnId?:string; captionVisible?:boolean; richText?:RichDocument};
+export type NoteLabel={id:string;text:string;color:string};
+export type Card = {id:string; kind:Kind; x:number; y:number; text:string; color:string; title?:string; labels?:NoteLabel[]; layer?:number; target?:string; width?:number; height?:number; assetId?:string; columnId?:string; captionVisible?:boolean; richText?:RichDocument};
 export type Connector={id:string;from:string;to:string;color:string};
 export type Board = {id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[];background?:string;pattern?:BoardPattern};
 export type Workspace = {version:1; boards:Board[]};
@@ -33,6 +34,9 @@ export function validWorkspace(value:unknown): value is Workspace {
    if(c.captionVisible!==undefined&&(typeof c.captionVisible!=='boolean'||!['image','video'].includes(c.kind)))return false;
    if(c.richText!==undefined&&(c.kind!=='note'||!validRichDocument(c.richText)||richPlainText(c.richText)!==c.text))return false;
    if(c.columnId!==undefined&&(!id(c.columnId)||c.kind==='column'))return false;
+   if(c.title!==undefined&&(c.kind!=='checklist'||typeof c.title!=='string'||c.title.length>500))return false;
+   if(c.layer!==undefined&&(!Number.isInteger(c.layer)||c.layer<0||c.layer>20000))return false;
+   if(c.labels!==undefined&&(c.kind!=='note'||!Array.isArray(c.labels)||c.labels.length>20||new Set(c.labels.map(l=>l?.id)).size!==c.labels.length||c.labels.some(l=>!l||!id(l.id)||typeof l.text!=='string'||!l.text.trim()||l.text.length>80||typeof l.color!=='string'||!/^#[a-fA-F0-9]{6}$/.test(l.color))))return false;
    cards.add(c.id);
   }
   for(const c of b.cards)if(c.columnId&&!b.cards.some(column=>column.id===c.columnId&&column.kind==='column'))return false;

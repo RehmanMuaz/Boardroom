@@ -6,6 +6,101 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
+IDEA-025 is implemented locally and remains first for user review. IDEA-018 through IDEA-024 are implemented and locally validated on feature/backlog-editor-improvements, awaiting user review. No deployment was performed.
+
+### IDEA-025: Content-only objects and a contextual left sidebar
+
+- Type: Improvement / UI
+- Priority: Now
+- Status: Done locally; awaiting user review
+- What I want: A cleaner Milanote-inspired canvas. Remove top drag buttons from every item and allow dragging from the item surface. Keep content, images and labels on objects; place their formatting and usage tools together in the left sidebar.
+- Expected behavior: Selecting an object temporarily replaces the creation rail with its relevant controls. A back arrow restores the main rail. Double-click content to edit it; text selection and native media controls remain usable while editing/viewing.
+- Constraints: Preserve keyboard access, group dragging, column membership/reordering, resizing, undo/redo, persistence, live collaboration and viewer permissions. Keep all testing local; do not deploy.
+- Done when: No object has a top drag button or inline formatting/action toolbar, surface dragging works, selected-object controls appear together on the left, and the back arrow restores creation tools.
+- Result: Removed top drag handles and inline object toolbars. Drag directly from object content; double-click or use Edit content to edit text, with native checkboxes/playback preserved. A contextual left sidebar replaces creation tools and groups formatting, labels, checklist actions, media downloads/subtitles, dimensions, colors, duplication, column placement, layers and deletion. Back to tools restores the single-icon-wide creation rail. Annotation creation tools remain at the bottom center of the canvas; selected-object formatting stays on the left. Local build, core tests, browser interaction/live/viewer checks and accessibility/mobile checks validate the change; no deployment.
+
+### IDEA-018: Editable checklist titles and inline editing
+
+- Type: Improvement / UI
+- Priority: Now
+- Status: Done locally; awaiting user review
+- What I want: Checklist cards should have a user-editable title like other notes instead of a fixed Todo heading. Edit list items directly in the list; remove the plain-text editing area at the bottom.
+- Expected behavior or example: Rename a checklist to Shot list or Deliverables, then click a list item to edit its text directly while keeping its checkbox usable.
+- Constraints or things to preserve: Existing list text and completion states, keyboard access, undo/redo, live saving and permissions. Coordinate with IDEA-010; this UI change should not require assignments or reminders.
+- Done when: Checklist titles can be renamed and persist, list text is editable inline, and no separate plain-text editor appears beneath the list.
+- Result: Checklist cards use editable titles (Untitled list for new cards) and inline task text/checkboxes, with Enter to insert, multiline paste, add/remove controls and no raw-text footer editor. Legacy text and completion states remain compatible. Titles save and sync independently from list text; viewer restrictions and reload are covered.
+
+
+### IDEA-019: URL icon for links
+
+- Type: Improvement / UI
+- Priority: Now
+- Status: Done locally; awaiting user review
+- What I want: Replace the current link icon with a recognizable URL/web icon wherever it represents a link card or its creation tool.
+- Constraints or things to preserve: Clear tooltips and accessible names; existing URL entry and opening behavior. Related link-preview work remains IDEA-011.
+- Done when: Link creation and link cards consistently use the URL icon and remain easy to identify.
+- Result: Link creation and link cards use a shared globe/URL icon with the existing accessible Link control and URL editing/opening behavior preserved.
+
+
+### IDEA-020: Separate connector line tool with visible arrows
+
+- Type: Feature / Improvement / UI
+- Priority: Now
+- Status: Done locally; awaiting user review
+- What I want: A dedicated line tool, separate from shape annotations, connects two notes/items. The line aims along the axis between the items' centers and follows movement/resizing, but its start and arrow tip stop just outside their outer edges. Connectors render behind all cards, columns and annotations.
+- Expected behavior or example: Connect two notes, move or resize either note, and the line keeps its center-based direction while updating both outer-edge attachment points. Other objects can cover the connector because it stays behind them.
+- Constraints or things to preserve: Reuse existing item connectors where appropriate. Keep free-drawn annotation shapes distinct from attached connectors. Preserve zoom/pan alignment, undo/redo, persistence and permissions. Item layer ordering in IDEA-021 always leaves connectors behind every object. Overlapping endpoint items have no exposed segment, so their arrow is hidden until they separate.
+- Done when: The dedicated tool creates arrows aligned between two item centers with their start/end just outside the item edges. Moving/resizing updates those edge attachments, and arrows remain behind all objects.
+- Result: The separate Line tool in the creation rail connects the first and second selected items. Straight arrows follow the center-to-center axis and clip to a two-unit clearance outside each item rectangle. The arrow marker places its exact tip at the destination endpoint without protruding into the card. Connectors render behind every object; overlapping/touching endpoint rectangles suppress the arrow until there is an exposed segment. The existing Connect cards action remains available; drawing shapes stay separate.
+
+
+### IDEA-021: Move objects in front of or behind others
+
+- Type: Feature / Improvement
+- Priority: Now
+- Status: Done locally; awaiting user review
+- What I want: Controls to bring an object forward, send it backward, bring it to the front or send it to the back.
+- Constraints or things to preserve: Layer order persists, syncs and supports undo/redo. Define ordering for cards, columns and annotations consistently with IDEA-015. Connectors from IDEA-020 remain behind all objects regardless of their layer order.
+- Done when: Users can change overlapping objects' front/back order predictably, and that order survives reload and appears consistently for teammates.
+- Result: A compact row of four accessible icon buttons with tooltips offers Bring forward, Send backward, Bring to front and Send to back for selected cards or annotations. Shared, bounded layers preserve relative group order and keep columns behind their children; connectors remain behind all objects. Undo/redo, reload, operation validation and viewer restrictions are covered.
+
+
+### IDEA-022: Drag-and-drop column layout, fitting and reordering
+
+- Type: Improvement / UI
+- Priority: Now
+- Status: Done locally; awaiting user review
+- What I want: Drag items into columns and automatically scale them to fit the column width. Allow resizing items within the column and dragging them up or down to reorder them.
+- Expected behavior or example: Drop a large image into a column; it scales proportionally to fit. Resize it within the available width, then drag it between two notes to change its position.
+- Constraints or things to preserve: Keep media proportions and readable content, respect column bounds and preserve contained-item order. Dragging into/out of a column updates membership and the counts in IDEA-024. Preserve selection, editing, zoom/pan, undo/redo, persistence and team permissions. Related canvas organization work is IDEA-015.
+- Done when: Columns accept dragged items, fit them automatically, permit resizing within their bounds and support vertical drag reordering with saved membership and order.
+- Result: Pointer dragging accepts cards into/out of columns and between vertical insertion positions, with a highlighted drop target. Reflow aligns members, fits widths, preserves ordinary media proportions and grows the column. Member resizing stays within column width; column resizing, caption changes and deletion reflow affected members. Column movement carries its members. Gesture undo restores membership, order and geometry together. Existing maximum dimensions apply; extreme media proportions retain contain rendering within minimum frame sizes.
+
+
+### IDEA-023: Small colorful labels on notes
+
+- Type: Feature / UI
+- Priority: Now
+- Status: Done locally; awaiting user review
+- What I want: Notes support small colorful labels along the bottom, styled like compact GitHub Shields badges or Milanote labels.
+- Expected behavior or example: Add labels such as Client review and Approved with distinct colors; edit or remove them directly from the note.
+- Constraints or things to preserve: Keep labels compact and legible, with text as well as color. Label text/colors persist, sync, export/import and support undo/redo and permissions.
+- Done when: Users can add, edit, color and remove multiple bottom-of-note labels, and labels survive reload and shared updates.
+- Result: Notes show compact bottom labels with editable text and color. Add/edit/remove controls, readable badge contrast, label-aware board search, duplication, JSON backups, undo/redo, durable operations and read-only viewer rendering are implemented. Labels are bounded to 20 per note and 80 characters each.
+
+
+### IDEA-024: Column content counts beneath the title
+
+- Type: Feature / UI
+- Priority: Now
+- Status: Done locally; awaiting user review
+- What I want: Each column shows a summary of its contained items beneath its title, for example 3 cards, 1 file, 1 board. Images and videos count as cards.
+- Expected behavior or example: Notes, checklists, links, images and videos contribute to the card count; file items and board tiles have separate counts. Use singular/plural wording and omit zero-count categories; an empty column shows 0 cards.
+- Constraints or things to preserve: Derive counts from current direct column membership rather than a separately editable value. Update when items are added, removed, moved between columns or changed by teammates, including undo/redo. Count a nested board tile as one board rather than counting its contents.
+- Done when: Every column displays accurate counts beneath its title, including images/videos as cards, and the summary updates with local and shared membership changes.
+- Result: Columns derive a live summary from direct membership beneath the title. Notes/checklists/links/images/videos count as cards; files and board tiles have separate counts. Zero categories are omitted, empty columns show 0 cards, and membership changes plus undo/redo update local and shared summaries.
+
+
 ### IDEA-001: Image/Video UI
 
 - Type: Improvement / UI
@@ -209,7 +304,7 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Suggested delivery slices
 
-This sequence is a proposal; the requests above remain ideas rather than implemented features.
+IDEA-018 through IDEA-024 have completed local implementation and validation; review them before selecting further work. The older proposed sequence below follows these improvements. Pending requests remain ideas rather than implemented features.
 
 1. Clean up the header/navigation and media presentation (IDEA-005 and IDEA-001), and settle the placement of the separate annotation toolbar.
 2. Establish shared interface color tokens and account-persistent themes (IDEA-004).
@@ -229,7 +324,7 @@ Canvas polish (IDEA-015) can accompany the relevant editor slices. Collaboration
 ## Optional request template
 
 ```markdown
-### IDEA-018: Short title
+### IDEA-026: Short title
 
 - Type: Feature / Improvement / Bug / UI
 - Priority: Now / Soon / Later / Unsure

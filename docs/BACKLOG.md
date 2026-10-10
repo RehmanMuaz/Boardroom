@@ -51,12 +51,13 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 - Type: Feature / UI
 - Priority: Soon
-- Status: Idea
+- Status: Done
 - What I want: A toggleable dark theme that persists for the signed-in account.
 - Expected behavior or example: Users can choose Light, Dark or System. The choice survives logout/login and follows the account across devices. Browser-local mode can remember its choice on that device.
 - Reference links or screenshot paths:
 - Constraints or things to preserve: Theme preference is personal, not a shared board setting. Preserve intentionally chosen card/background colors and uploaded media. Maintain readable contrast and clear tool/selection states.
 - Done when: The interface consistently applies the chosen theme, the account preference is stored on the backend, and logout/login restores it.
+- Result: Light/Dark/System controls are available on the entry screen and in the editor Account menu. Account choices persist in PostgreSQL and reload on login, page reload and window focus; browser-local mode keeps a separate device preference. System responds to operating-system changes. Shared card colors and uploaded media retain their appearance. Permission/CSRF/session-revocation tests and Chromium account/device/mobile/accessibility checks pass. Implemented on the feature branch; not yet promoted to production.
 
 ### IDEA-005: Cleaner top bar and workspace/board navigation
 

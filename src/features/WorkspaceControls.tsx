@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react';
 import {api,LocalRepository,TeamRepository,type WorkspaceRepository} from '../repository';
 import {type Workspace} from '../model';
+import {ThemeControl} from '../theme';
 
 type Team={id:string;name:string;role:string};
 export function WorkspaceControls({repository,canLeave,open,exit,onError}:{repository:WorkspaceRepository;canLeave:()=>boolean;open:(repository:WorkspaceRepository,state:Workspace)=>void;exit:()=>void;onError:(message:string)=>void}){
@@ -15,6 +16,6 @@ export function WorkspaceControls({repository,canLeave,open,exit,onError}:{repos
    <button disabled={busy||!team} onClick={()=>void switchTo(new LocalRepository())}>Browser-local canvas<small>Only on this device</small></button>
    <button onClick={()=>{if(canLeave())exit();}}>All workspaces</button>
   </div></details>
-  <details className="account-menu header-popover"><summary aria-label="Account">Account</summary><div className="popover-content">{email?<><p>{email}</p><button disabled={busy} onClick={()=>{if(!canLeave())return;setBusy(true);void api('/logout','POST').then(exit).catch(e=>onError(e.message)).finally(()=>setBusy(false));}}>Sign out</button></>:<button onClick={()=>{if(canLeave())exit();}}>Sign in</button>}</div></details>
+  <details className="account-menu header-popover"><summary aria-label="Account">Account</summary><div className="popover-content"><ThemeControl/>{email?<><p>{email}</p><button disabled={busy} onClick={()=>{if(!canLeave())return;setBusy(true);void api('/logout','POST').then(exit).catch(e=>onError(e.message)).finally(()=>setBusy(false));}}>Sign out</button></>:<button onClick={()=>{if(canLeave())exit();}}>Sign in</button>}</div></details>
  </>;
 }

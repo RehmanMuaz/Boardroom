@@ -10,8 +10,8 @@ let csrf='';
 export async function api<T>(path:string,method='GET',body?:unknown):Promise<T>{
  const response=await fetch('/api'+path,{method,credentials:'same-origin',headers:{'Content-Type':'application/json',...(method==='GET'?{}:{'x-csrf-token':csrf})},...(body===undefined?{}:{body:JSON.stringify(body)})});
  if(!response.ok){const result=await response.json().catch(()=>({error:'Request failed'}));throw new Error(result.error??'Request failed');}
- if(response.status===204)return undefined as T;
- const result=await response.json();if(result.csrf)csrf=result.csrf;return result as T;
+ if(response.status===204){if(path==='/logout')window.dispatchEvent(new CustomEvent('boardroom:session',{detail:{userId:null}}));return undefined as T;}
+ const result=await response.json();if(result.csrf)csrf=result.csrf;if(path==='/session')window.dispatchEvent(new CustomEvent('boardroom:session',{detail:result}));return result as T;
 }
 export class TeamRepository extends LiveRepository implements WorkspaceReader {
  constructor(id:string,public displayName='Team workspace'){super(id,()=>csrf);}

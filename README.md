@@ -72,6 +72,8 @@ Add feature requests, ideas, bugs and improvements to [the backlog](docs/BACKLOG
 
 ## Content and canvas controls
 
+IDEA-004 is implemented on the development feature branch, awaiting production promotion. Choose Light, Dark or System under Appearance on the sign-in/workspace screen or in the editor Account menu. Signed-in account choices persist on the backend; browser-local canvas choices stay separate on that device. System follows OS changes. Interface colors change while shared card colors, note formatting and uploaded media retain their appearance.
+
 The header shows Boardroom and the selected workspace. Use its workspace dropdown to switch teams, open the browser-local canvas or return to all workspaces. Account contains sign-in/sign-out; owners retain Manage team. Board titles are editable in the canvas heading, with nested breadcrumbs above. Actions contains JSON import/export and keyboard shortcuts. Save/conflict status remains visible; switching is blocked while uploads or unsaved operations remain.
 
 New image/video uploads start without a subtitle. Use the subtitle icon in the bottom-right hover overlay on editable media to show or hide its caption field. Visibility is shared and saved; hiding preserves the caption text. Existing media captions remain visible.

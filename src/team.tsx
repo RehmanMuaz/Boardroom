@@ -1,6 +1,7 @@
 import {useState,useEffect,type FormEvent} from 'react';
 import {api,LocalRepository,TeamRepository,type WorkspaceRepository} from './repository';
 import {type Workspace} from './model';
+import {ThemeControl} from './theme';
 type Team={id:string;name:string;role:string};
 type SessionInfo={userId:string|null;emailVerified:boolean;requireVerification:boolean;recoveryAvailable:boolean};
 export function TeamEntry({open}:{open:(repository:WorkspaceRepository,state:Workspace)=>void}){
@@ -23,7 +24,7 @@ export function TeamEntry({open}:{open:(repository:WorkspaceRepository,state:Wor
  <form onSubmit={e=>{e.preventDefault();void perform(async()=>{await api('/workspaces','POST',{name});setName('');await refresh();});}}><label>New workspace<input required maxLength={120} value={name} onChange={e=>setName(e.target.value)}/></label><button disabled={busy}>Create workspace</button></form>
  <form onSubmit={e=>{e.preventDefault();void perform(async()=>{await api('/invitations/accept','POST',{token});setToken('');await refresh();});}}><label>Invitation token<input required value={token} onChange={e=>setToken(e.target.value)}/></label><button disabled={busy}>Accept invitation</button></form>
  {signOut}</>}
- <hr/><button onClick={()=>void perform(async()=>{const repo=new LocalRepository();open(repo,await repo.load());})}>Open browser-local canvas</button><p>Local data stays in this browser. Team boards use the API and PostgreSQL. Team edits update live while connected.</p></div>;
+ <ThemeControl/><hr/><button onClick={()=>void perform(async()=>{const repo=new LocalRepository();open(repo,await repo.load());})}>Open browser-local canvas</button><p>Local data stays in this browser. Team boards use the API and PostgreSQL. Team edits update live while connected.</p></div>;
 }
 export function Members({repository}:{repository:TeamRepository}){
  const [email,setEmail]=useState(''),[role,setRole]=useState('editor'),[message,setMessage]=useState(''),[members,setMembers]=useState<{id:string;email:string;role:string}[]>([]);

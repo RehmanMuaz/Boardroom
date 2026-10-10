@@ -5,6 +5,7 @@
 React + strict TypeScript + Vite preserve the existing canvas. An Express 5 Node/TypeScript API uses PostgreSQL for team data and sessions. Development services bind to loopback; the production API is private behind the configured TLS proxy. The API also hosts the live WebSocket gateway; private local filesystem assets are implemented; S3-compatible storage and hosting are planned.
 
 - src/main.tsx: application bootstrap.
+- src/theme.tsx and src/themes.css: personal Light/Dark/System appearance, semantic interface color tokens, separate device/account preferences and system-theme change handling. Session responses hydrate the account preference; account changes use the authenticated, CSRF-protected PATCH /api/account/preferences endpoint. Preferences rehydrate on login, reload and window focus; they are not workspace live operations.
 - src/features/Editor.tsx: preserved editor and interactions.
 - src/features/WorkspaceControls.tsx: authorized workspace discovery/switching and account actions; the editor guards navigation while edits/uploads are pending. Root remounts the editor when workspace identity changes so canvas state/history cannot leak between teams.
 - src/features/canvas/domain.ts: group movement, columns, deletion, duplication and canvas extents.
@@ -29,7 +30,7 @@ React + strict TypeScript + Vite preserve the existing canvas. An Express 5 Node
 - server/operations.ts: validated, transactionally persisted, idempotent field operations.
 - server/realtime.ts: session-authenticated sockets, authorized broadcasts, ephemeral presence and revocation.
 - server/migrate.ts: migration tracking and advisory-lock application.
-- db/migrations/002_team_mvp.sql through 006_session_version.sql: live schema and operation ledger; 001 is an unused historical scaffold.
+- db/migrations/002_team_mvp.sql through 007_account_theme.sql: implemented schema, operation ledger and constrained personal account theme; 001 is an unused historical scaffold. Migration 007 is feature-branch work awaiting release.
 - tests/backend.test.ts: real PostgreSQL HTTP permission/persistence/concurrency checks.
 - tests/browser/: Chromium canvas and two-account workflow checks.
 

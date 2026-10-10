@@ -25,14 +25,15 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 - Type: Feature
 - Priority: Soon
-- Status: Implemented locally; shapes remain planned
+- Status: Done locally; awaiting release
 - What I want: Users can annotate above the other canvas elements with drawing, standalone text and eventually shapes. Annotation tools belong in a separate floating toolbar, similar to the zoom bar, rather than the top bar or creation rail.
 - Why it matters: Easier visual communication and organization without adding clutter to the main navigation.
 - Expected behavior or example: A toolbar floats near the bottom center, clear of the zoom and selection controls. Select, Pen, Highlighter, Shapes and Text are the intended tools. The active tool is obvious; color/thickness or text formatting controls appear when relevant. Tooltips explain icons.
 - Reference links or screenshot paths:
 - Constraints or things to preserve: Clear Draw/Select modes; annotations must not interfere with dragging cards, editing notes, panning or playing videos. Annotation positions stay aligned through zoom/pan. Team annotations persist and sync, viewers cannot edit, and undo/redo works. Show tools as their behavior is implemented.
-- Delivery stages: Pen/highlighter and styled standalone text are implemented together. Shapes remain planned. Typography is detailed in IDEA-003; header/navigation cleanup is IDEA-005.
+- Delivery stages: Pen/highlighter, styled standalone text, and basic shapes are implemented. Typography is detailed in IDEA-003; header/navigation cleanup is IDEA-005.
 - Result: Separate floating toolbar with Select, Pen, Highlighter and Text. Strokes support color/thickness, movement and deletion. Text focuses immediately on placement and supports fonts, size, weight, italic, underline, alignment, automatic/explicit color, optional background and borders, movement and resizing. Undo/redo, reload, authorized live sharing and viewer restrictions are covered by tests. Implemented on the feature branch; not promoted to production.
+- Shapes: The Shape tool offers Arrow, Line, Rectangle and Circle (ellipse when drawn with unequal dimensions). Drag to draw; select to move/resize, change color/thickness/type, or add fill to rectangles/circles. Arrow direction follows the drag. Shared persistence, validation, permission checks, undo and conflicts use the existing annotation operations. Rotation, individual endpoint handles, annotation group/clipboard support and manual touch/stylus acceptance remain future work.
 - Done when: The separate floating toolbar supports the delivered tools; annotations survive reload, remain aligned at different zoom levels and appear for authorized teammates.
 
 ### IDEA-003: Board appearance and annotation text styling

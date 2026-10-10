@@ -53,6 +53,10 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
   await expect(viewer.locator('.viewport')).toHaveCSS('background-color','rgb(25, 48, 42)');await expect(viewer.locator('.viewport')).toHaveCSS('background-image',/linear-gradient/);
   await viewer.getByText('Board appearance',{exact:true}).click();await expect(viewer.getByLabel('Board background color')).toBeDisabled();await expect(viewer.getByLabel('Board canvas pattern')).toBeDisabled();await viewer.getByText('Board appearance',{exact:true}).click();
   await expect(viewer.getByRole('button',{name:'Text annotation tool'})).toBeDisabled();
+  await expect(viewer.getByRole('button',{name:'Shape annotation tool'})).toBeDisabled();
+  await owner.getByRole('button',{name:'Shape annotation tool'}).click();const shapeCanvas=await owner.locator('.viewport').boundingBox();if(!shapeCanvas)throw Error('Missing canvas');
+  await owner.mouse.move(shapeCanvas.x+800,shapeCanvas.y+100);await owner.mouse.down();await owner.mouse.move(shapeCanvas.x+900,shapeCanvas.y+150,{steps:5});await owner.mouse.up();
+  await expect(viewer.getByRole('button',{name:'arrow annotation',exact:true})).toHaveCount(1);
   await owner.getByRole('button',{name:'Text annotation tool'}).click();
   const canvasBounds=await owner.locator('.viewport').boundingBox();if(!canvasBounds)throw Error('Missing canvas');
   await owner.mouse.click(canvasBounds.x+400,canvasBounds.y+300);

@@ -1,9 +1,9 @@
 import {type Workspace,type Board,type Card,validWorkspace} from './model';
 import {type Annotation} from './annotations';
 
-export type Field='$board'|'$card'|'$annotation'|'$boardOrder'|'$cardOrder'|'$annotationOrder'|'title'|'parent'|'kind'|'x'|'y'|'text'|'color'|'target'|'width'|'height'|'assetId'|'columnId'|'captionVisible'|'richText'|'connectors'|'points'|'thickness'|'style'|'background'|'pattern';
+export type Field='$board'|'$card'|'$annotation'|'$boardOrder'|'$cardOrder'|'$annotationOrder'|'title'|'parent'|'kind'|'x'|'y'|'text'|'color'|'target'|'width'|'height'|'assetId'|'columnId'|'captionVisible'|'richText'|'connectors'|'points'|'thickness'|'style'|'shape'|'fill'|'background'|'pattern';
 export type Change={boardId:string;cardId?:string;annotationId?:string;field:Field;before:unknown;after:unknown};
-const annotationFields=['kind','x','y','width','height','color','text','points','thickness','style'] as const;
+const annotationFields=['kind','x','y','width','height','color','text','points','thickness','style','shape','fill'] as const;
 export type Operation={id:string;baseRevision:number;changes:Change[]};
 export class OperationConflict extends Error {
  constructor(public change:Change){super(`Conflict on ${change.annotationId??change.cardId??change.boardId}.${change.field}. Export your edits before reloading.`);}
@@ -81,7 +81,7 @@ export function applyChanges(original:Workspace,changes:Change[],check=true):Wor
     if(change.after===null)board.cards=board.cards.filter(c=>c.id!==change.cardId);
     else {const next=change.after as Card;if(next?.id!==change.cardId)throw Error('Card ID mismatch');if(card)board.cards[board.cards.indexOf(card)]=structuredClone(next);else board.cards.push(structuredClone(next));}
    }else{
-    if(['points','thickness','style'].includes(change.field))throw Error('Annotation ID required');
+    if(['points','thickness','style','shape','fill'].includes(change.field))throw Error('Annotation ID required');
     const boardField=change.field==='title'||change.field==='parent'||change.field==='connectors'||change.field==='background'||change.field==='pattern';
     if(boardField===Boolean(change.cardId))throw Error('Invalid field for entity');
     const entity=boardField?board:board.cards.find(c=>c.id===change.cardId);

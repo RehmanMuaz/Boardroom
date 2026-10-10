@@ -6,7 +6,7 @@ React + strict TypeScript + Vite preserve the existing canvas. An Express 5 Node
 
 - src/main.tsx: application bootstrap.
 - src/theme.tsx and src/themes.css: personal Light/Dark/System appearance, semantic interface color tokens, separate device/account preferences and system-theme change handling. Session responses hydrate the account preference; account changes use the authenticated, CSRF-protected PATCH /api/account/preferences endpoint. Preferences rehydrate on login, reload and window focus; they are not workspace live operations.
-- src/features/Editor.tsx: editor, surface dragging/edit mode and contextual left rail. Content components portal their selected-object tools into the rail; card pointer handlers ignore those tools outside the card DOM. Creation/drawing tools and object properties share the same fixed-width rail without shifting the canvas during selection.
+- src/features/Editor.tsx: editor, surface dragging/edit mode and contextual left rail. Content components portal their selected-object tools into the rail; card pointer handlers ignore those tools outside the card DOM. The creation rail is one icon wide; selected-object properties temporarily overlay it without shifting canvas coordinates. Annotation creation tools remain in the bottom-center dock.
 - src/features/WorkspaceControls.tsx: authorized workspace discovery/switching and account actions; the editor guards navigation while edits/uploads are pending. Root remounts the editor when workspace identity changes so canvas state/history cannot leak between teams.
 - src/features/canvas/domain.ts: group movement, columns, deletion, duplication and canvas extents.
 - src/features/content/: safe structured notes, media rendering and allowlisted video embeds.

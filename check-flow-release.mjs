@@ -14,8 +14,9 @@ try{
  await admin.query('CREATE DATABASE "'+name+'"');created=true;
  url.pathname='/'+name;
  const files=(await readdir('tests')).filter(f=>/\.test\.(ts|mjs)$/.test(f)).map(f=>'tests/'+f);
+ const args=process.argv.includes('--browser')?['node_modules/@playwright/test/cli.js','test','--config','flow-browser.config.ts']:['--import','tsx','--test',...files];
  const code=await new Promise((resolve,reject)=>{
-  const child=spawn(process.execPath,['--import','tsx','--test',...files],{env:{...process.env,DATABASE_URL:url.href,TEST_DATABASE_URL:url.href},stdio:'inherit',windowsHide:true});
+  const child=spawn(process.execPath,args,{env:{...process.env,DATABASE_URL:url.href,TEST_DATABASE_URL:url.href},stdio:'inherit',windowsHide:true});
   child.once('error',reject);child.once('exit',resolve);
  });
  process.exitCode=code??1;

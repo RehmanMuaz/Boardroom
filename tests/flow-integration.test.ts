@@ -8,7 +8,7 @@ import {createApp} from '../server/app';
 import {migrate} from '../server/migrate';
 import {hashToken} from '../server/security';
 import {seed} from '../src/model';
-import {flowSettings,migrateFlow,withFlow} from '../flowIntegration';
+import {flowSettings,withFlow} from '../server/flow-integration';
 
 test('Flow settings are opt-in and credentials are validated',()=>{
  assert.equal(flowSettings({},'https://example.invalid'),undefined);
@@ -48,7 +48,7 @@ test('Flow imports require account approval, preserve workspaces and deduplicate
  const app=withFlow(base,pool,{tokenHash:hashToken(token),email,origin});
  const owner=request.agent(app),stranger=request.agent(app);let ownerId='',strangerId='';
  try{
-  await migrate(pool);await migrateFlow(pool);
+  await migrate(pool);
   async function register(agent:typeof owner,address:string){const session=await agent.get('/api/session');return(await agent.post('/api/auth/register').set('Origin',origin).set('x-csrf-token',session.body.csrf).send({email:address,password:'correct-horse-test-password'}).expect(201)).body;}
   const account=await register(owner,email);ownerId=account.userId;
   strangerId=(await register(stranger,`other-${suffix}@example.com`)).userId;

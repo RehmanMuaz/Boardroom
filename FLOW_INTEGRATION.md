@@ -1,67 +1,92 @@
-# Account-bound Flow board creation
+# Flow board creation in your Boardroom account
 
-Local implementation, not deployed or provisioned. The extension's default target
-is `muazrehman@vertexfilms.ca`, which must already be a Boardroom account. No
-password is shared with Flow and no new account is created.
+Implementation is tested locally and integrated with the standard Boardroom build,
+versioned migrations and deployment workflow. It is not deployed yet.
 
-Flow's final guided question is **Export JSON** or **Create in my Boardroom account**.
-For direct delivery it sends the prepared document to `/api/flow/previews` using a
-private integration credential. Boardroom persists the exact content for ten minutes
-and returns `/flow-review/<id>`. Open that link while signed in to the target account,
-review the content, and click **Create workspace in my account**. A new workspace
-and owner membership are created atomically. Existing workspaces are preserved;
-repeated requests/clicks cannot create duplicates for the same request ID.
+Flow asks Export JSON or Create in my Boardroom account last. Direct delivery
+stages the exact board for ten minutes and returns a review link. Open it signed
+in as muazrehman@vertexfilms.ca, inspect the content, then click Create workspace
+in my account. This creates a new workspace with your owner membership; no
+existing workspace is replaced. The integration credential cannot approve creation.
+Repeated request IDs and concurrent approval clicks cannot create duplicates.
 
-The integration credential can only stage portable documents for the configured
-account. It cannot approve them, choose another owner, edit existing workspaces,
-invite users, access uploads, or use the browser API. Native approval checks the
-current account, session version, verification policy, Origin and CSRF. Private
-asset references are rejected. Pending previews expire and are cleaned up when
-another preview is staged; at most twenty unapproved previews are retained per
-account. After approval only deduplication metadata remains in the import table.
+## Components
 
-## Configuration and release
+- server/flow-integration.ts: scoped staging API, authenticated native review and
+  transactional approval, session-version/verification/Origin/CSRF enforcement.
+- db/migrations/008_flow_imports.sql: account-bound expiring previews, idempotency
+  metadata and a pending-expiry index, installed by the normal migration runner.
+- server/index.ts: optional integration wrapper; normal realtime, sessions, assets,
+  readiness and shutdown are preserved.
+- deploy/compose.yaml: optional integration email and token hash; normal immutable
+  image publication and deployment use the existing main-only release workflow.
+- flow-browser.config.ts and flow-browser.spec.ts: real-browser creation acceptance,
+  also included in CI after the existing browser checks.
 
-Generate a random 32-byte hex token privately; store the raw token only in Flow's
-private environment as `BOARDROOM_FLOW_TOKEN`. Store its SHA256 hex hash in
-Boardroom as `FLOW_IMPORT_TOKEN_SHA256`. Set Flow's `BOARDROOM_URL` to the exact
-HTTPS origin `https://note.vertexfilms.ca`. Boardroom's `FLOW_IMPORT_EMAIL` defaults
-to the supplied email; changing the email changes which account can approve.
-Do not paste either credential into chat or commit private environment files.
-Rotate by replacing both values. Unsetting the hash disables the extension.
+Private media IDs are rejected for portable imports. At most twenty pending
+previews are retained; expired pending previews are cleaned on subsequent staging.
+After approval, content is removed from the preview table and lives in the workspace;
+deduplication metadata remains. Service errors and request logging omit credentials
+and board content. The HTML review escapes authored text. Same-origin referrer policy
+preserves Chromium form Origin headers without exposing the preview to other origins.
 
-`flow-server.ts` wraps the existing server without editing its protected source
-folder. It retains existing sessions, realtime hooks, maintenance, assets and
-readiness checks. `migrateFlow` creates only the separate `flow_imports` table.
-The normal server/build/deployment remain unchanged. Use `Dockerfile.flow` for the
-opt-in server image and `compose.flow.yaml` after the existing Compose file to pass
-the two Boardroom settings. Build/publish and deploy a reviewed immutable image
-through the existing release process; this document does not authorize deployment.
-Add the Flow intake, compiler, delivery and MCP scripts to its separately reviewed
-MCP image and launch `boardroom_mcp.py` instead of `flow_mcp.py`.
+## Private configuration
 
-Local commands:
+Generate a random 32-byte hex credential privately. Store its raw value only in
+Flow as BOARDROOM_FLOW_TOKEN, and its SHA256 hex digest in Boardroom as
+FLOW_IMPORT_TOKEN_SHA256. Set BOARDROOM_URL=https://note.vertexfilms.ca in Flow.
+Set FLOW_IMPORT_EMAIL=muazrehman@vertexfilms.ca in Boardroom (also the default).
+The account must already exist and satisfy the installation's verification policy.
+Do not share credentials in chat or commit private environment files.
+Removing the token hash disables staging. Credential rotation requires updating
+both installations. No Boardroom password is shared with Flow.
 
-```powershell
-npx.cmd tsc --noEmit -p tsconfig.flow.json
-npm.cmd test
-npm.cmd run build
-node --env-file=.env --import tsx flow-server.ts
-```
+Flow ships its additive thirteen-tool entrypoint through
+branding-and-scripts/scripts/Dockerfile.boardroom and compose.boardroom.yaml.
+Its original ten-tool and legacy seven-tool entrypoints remain available for rollback.
 
-For a local bundle, `node build-flow-server.mjs` replaces `build/server/index.js`
-with the extension entrypoint. Use `FLOW_BUILD_OUTPUT` for a separate validation
-directory. The extension is kept at the root because this session cannot write
-inside `server` or `scripts`. Move it into those directories in a later cleanup
-once normal write access is available.
+## Acceptance evidence, 2026-10-10
 
-Acceptance: Flow's eight integration tests, fourteen existing tests, JWT and plan
-checks pass. Boardroom's TypeScript check, extension bundle and frontend build
-passed using Vite's runner config loader and a separate writable output directory.
-Settings and pre-database credential rejection checks pass. Full Boardroom tests
-currently require PostgreSQL, unavailable at
-127.0.0.1:5432; Docker is not running. Standard Vite build also encounters a denied
-node_modules/.vite-temp write. Account/CSRF/expiry/concurrent approval tests are
-provided in tests/flow-integration.test.ts; real database and browser acceptance
-must pass before release. No live credential, account verification, workspace
-creation, image publication or deployment has been performed.
+- Real PostgreSQL in an isolated disposable database: 36 Boardroom tests passed,
+  no failures; one Linux-only helper test skipped on Windows.
+- Native Chromium review/create check passed. It caught an Origin:null issue caused
+  by no-referrer; the same-origin policy fixes it without weakening CSRF checks.
+- Standard npm run build passed in a clean checkout, including strict TypeScript,
+  Vite client and production server bundle.
+- Flow: eight integration checks, fourteen legacy/offline tests, signed JWT and
+  planning consistency checks passed.
+- Test databases were created separately from the user's existing Boardroom database.
+  The browser server required explicit shutdown after the test on Windows.
+- Docker image build, GitHub CI/PR promotion, VPS account/configuration verification,
+  production backup, deployment and hosted connector smoke tests remain pending
+  because this task process cannot access Docker's pipe, GitHub or VPS SSH.
+
+## Local isolated checks
+
+node --env-file-if-exists=.env check-flow-release.mjs
+node --env-file-if-exists=.env check-flow-release.mjs --browser
+npm test
+npm run build
+
+The acceptance runner creates a uniquely named local test database and removes it
+on completion. It refuses non-loopback database hosts. For a separate Docker test
+service, use compose.flow-test.yaml and project boardroom-flow-tests; it binds
+only 127.0.0.1:55432. Do not run destructive testing against existing user data.
+
+## Release order and rollback
+
+1. Push the feature branch, pass CI, merge to develop through a feature PR, then
+   promote through a reviewed release PR to main. Main publishes/deploys via the
+   existing immutable GHCR workflow and pre-update database/media backup.
+2. Verify the target account on the server and configure the matching private
+   credential in both installations. Do not change the account or bypass verification.
+3. Deploy Boardroom with the normal helper. Migration 008 is additive. Verify
+   public readiness and unauthenticated staging/review rejection.
+4. Deploy the additive Flow MCP image, recreating only MCP. Preserve OAuth,
+   private environment and reverse proxy. Refresh ChatGPT tool discovery afterward.
+5. Smoke-test guided intake and JSON preparation without creating production records.
+   The first real account import remains a user-reviewed creation.
+
+Rollback to the preceding immutable Boardroom image and previous MCP image/config.
+The additive preview table may remain; do not drop it or restore the whole database
+automatically. Restore data only through a separately reviewed schema-aware plan.

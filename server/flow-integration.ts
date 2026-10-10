@@ -2,10 +2,10 @@ import express,{type Express,type Request,type Response,type NextFunction} from 
 import {type Pool} from 'pg';
 import {randomUUID,randomBytes,timingSafeEqual} from 'node:crypto';
 import {z} from 'zod';
-import {hashToken} from './server/security';
-import {validWorkspace,type Workspace} from './src/model';
-import {HttpError} from './server/workspace-store';
-import {requestLog,errorCode,type Logger} from './server/observability';
+import {hashToken} from './security';
+import {validWorkspace,type Workspace} from '../src/model';
+import {HttpError} from './workspace-store';
+import {requestLog,errorCode,type Logger} from './observability';
 
 export type FlowSettings={tokenHash:string;email:string;origin:string;requireVerification?:boolean};
 export function flowSettings(env:NodeJS.ProcessEnv,origin:string,requireVerification=false):FlowSettings|undefined{
@@ -14,16 +14,14 @@ export function flowSettings(env:NodeJS.ProcessEnv,origin:string,requireVerifica
  const email=z.string().email().parse(env.FLOW_IMPORT_EMAIL??'muazrehman@vertexfilms.ca').toLowerCase();
  return {tokenHash:env.FLOW_IMPORT_TOKEN_SHA256,email,origin,requireVerification};
 }
-export async function migrateFlow(pool:Pool){await pool.query(`CREATE TABLE IF NOT EXISTS flow_imports (
- id uuid PRIMARY KEY, user_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
- request_id uuid NOT NULL, payload_hash text NOT NULL, name text NOT NULL, snapshot jsonb NOT NULL,
- expires_at timestamptz NOT NULL, workspace_id uuid REFERENCES team_workspaces(id), UNIQUE(user_id,request_id))`);}
 const escape=(value:string)=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function withFlow(base:Express,pool:Pool,settings?:FlowSettings):Express{
  if(!settings)return base;
  const app=express();app.disable('x-powered-by');app.locals=base.locals;app.set('trust proxy',base.get('trust proxy'));
  if(base.locals.logger){app.use(['/api/flow','/flow-review'],requestLog(base.locals.logger as Logger));}
- app.use((_req,res,next)=>{res.set({'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"});next();});
+ // Native HTML form submissions need a same-origin Origin header for CSRF checks.
+ // no-referrer makes Chromium send Origin: null for these form posts.
+ app.use((_req,res,next)=>{res.set({'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'same-origin','Content-Security-Policy':"default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"});next();});
  app.post('/api/flow/previews',async(req,res,next)=>{
   try{
    const token=req.get('authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];

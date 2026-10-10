@@ -1,9 +1,10 @@
+import {validAnnotation,type Annotation} from './annotations';
 export type Kind = 'note' | 'checklist' | 'link' | 'board' | 'image' | 'video' | 'file' | 'column';
 export type RichRun={text:string;bold?:boolean;italic?:boolean;underline?:boolean;href?:string};
 export type RichDocument={blocks:{type:'paragraph'|'heading'|'bullet'|'quote';runs:RichRun[]}[]};
 export type Card = {id:string; kind:Kind; x:number; y:number; text:string; color:string; target?:string; width?:number; height?:number; assetId?:string; columnId?:string; captionVisible?:boolean; richText?:RichDocument};
 export type Connector={id:string;from:string;to:string;color:string};
-export type Board = {id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[]};
+export type Board = {id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[]};
 export type Workspace = {version:1; boards:Board[]};
 export const seed:Workspace = {version:1,boards:[{id:'home',title:'Creative studio',cards:[
 {id:'welcome',kind:'note',x:70,y:70,text:'A space for your next big idea\n\nCollect references, map out the story, and bring your team into the process.',color:'#fff'},
@@ -16,11 +17,12 @@ export function validWorkspace(value:unknown): value is Workspace {
  if(!value || typeof value!=='object')return false;
  const w=value as Workspace;
  if(w.version!==1||!Array.isArray(w.boards)||!w.boards.length||w.boards.length>1000)return false;
- const boards=new Set<string>(),cards=new Set<string>();
+ const boards=new Set<string>(),cards=new Set<string>(),annotations=new Set<string>();let points=0;
  const id=(v:unknown):v is string=>typeof v==='string'&&v.length>0&&v.length<=128;
  for(const b of w.boards){
   if(!b||!id(b.id)||boards.has(b.id)||typeof b.title!=='string'||b.title.length>500||!Array.isArray(b.cards)||b.cards.length>10000)return false;
   boards.add(b.id);
+  if(b.annotations!==undefined){if(!Array.isArray(b.annotations)||b.annotations.length>2000)return false;for(const a of b.annotations){if(!validAnnotation(a)||annotations.has(a.id))return false;annotations.add(a.id);if(a.kind!=='text'&&(points+=a.points.length)>100000)return false;}}
   for(const c of b.cards){
    if(!c||!id(c.id)||cards.has(c.id)||!['note','checklist','link','board','image','video','file','column'].includes(c.kind)||!Number.isFinite(c.x)||!Number.isFinite(c.y)||c.x<0||c.y<0||c.x>100000||c.y>100000||typeof c.text!=='string'||c.text.length>100000||typeof c.color!=='string'||!/^#[a-fA-F0-9]{3}([a-fA-F0-9]{3})?$/.test(c.color))return false;
    if(c.width!==undefined&&(!Number.isFinite(c.width)||c.width<160||c.width>4000)||c.height!==undefined&&(!Number.isFinite(c.height)||c.height<100||c.height>10000))return false;
@@ -34,6 +36,7 @@ export function validWorkspace(value:unknown): value is Workspace {
   for(const c of b.cards)if(c.columnId&&!b.cards.some(column=>column.id===c.columnId&&column.kind==='column'))return false;
   if(b.connectors!==undefined){if(!Array.isArray(b.connectors)||b.connectors.length>10000)return false;const ids=new Set<string>();for(const line of b.connectors){if(!line||!id(line.id)||ids.has(line.id)||line.from===line.to||!b.cards.some(c=>c.id===line.from)||!b.cards.some(c=>c.id===line.to)||typeof line.color!=='string'||!/^#[a-fA-F0-9]{3}([a-fA-F0-9]{3})?$/.test(line.color))return false;ids.add(line.id);}}
  }
+ for(const annotation of annotations)if(cards.has(annotation))return false;
  for(const b of w.boards){
   if(b.parent!==undefined&&(!id(b.parent)||!boards.has(b.parent)))return false;
   for(const c of b.cards)if(c.kind==='board'&&(!c.target||!boards.has(c.target)||w.boards.find(v=>v.id===c.target)?.parent!==b.id))return false;

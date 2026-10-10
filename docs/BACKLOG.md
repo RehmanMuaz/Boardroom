@@ -25,26 +25,27 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 - Type: Feature
 - Priority: Soon
-- Status: Idea
+- Status: Implemented locally; shapes remain planned
 - What I want: Users can annotate above the other canvas elements with drawing, standalone text and eventually shapes. Annotation tools belong in a separate floating toolbar, similar to the zoom bar, rather than the top bar or creation rail.
 - Why it matters: Easier visual communication and organization without adding clutter to the main navigation.
 - Expected behavior or example: A toolbar floats near the bottom center, clear of the zoom and selection controls. Select, Pen, Highlighter, Shapes and Text are the intended tools. The active tool is obvious; color/thickness or text formatting controls appear when relevant. Tooltips explain icons.
 - Reference links or screenshot paths:
 - Constraints or things to preserve: Clear Draw/Select modes; annotations must not interfere with dragging cards, editing notes, panning or playing videos. Annotation positions stay aligned through zoom/pan. Team annotations persist and sync, viewers cannot edit, and undo/redo works. Show tools as their behavior is implemented.
-- Delivery stages: Start with freehand pen/highlighter, color, thickness, selecting/deleting strokes and undo/redo. Add styled standalone text and then shapes. Typography is detailed in IDEA-003; header/navigation cleanup is IDEA-005.
+- Delivery stages: Pen/highlighter and styled standalone text are implemented together. Shapes remain planned. Typography is detailed in IDEA-003; header/navigation cleanup is IDEA-005.
+- Result: Separate floating toolbar with Select, Pen, Highlighter and Text. Strokes support color/thickness, movement and deletion. Text focuses immediately on placement and supports fonts, size, weight, italic, underline, alignment, automatic/explicit color, optional background and borders, movement and resizing. Undo/redo, reload, authorized live sharing and viewer restrictions are covered by tests. Implemented on the feature branch; not promoted to production.
 - Done when: The separate floating toolbar supports the delivered tools; annotations survive reload, remain aligned at different zoom levels and appear for authorized teammates.
 
 ### IDEA-003: Board appearance and annotation text styling
 
 - Type: Feature
 - Priority: Soon
-- Status: Idea
+- Status: Partially implemented locally
 - What I want: Users can change the board background color and optionally its texture. Standalone text annotations support different fonts, sizes, weights and colors, with alignment controls.
 - Clarification: Notes already have basic text formatting. This request is specifically for styling annotation text; it does not require rebuilding note formatting.
 - Expected behavior or example: Borderless text annotations can be moved, edited and resized. Selecting a text annotation exposes its typography controls through the annotation toolbar. Board appearance has its own controls.
 - Reference links or screenshot paths:
 - Constraints or things to preserve: Reuse the existing formatting foundation where useful. Shared board appearance and annotation styles persist with the board; an individual's app theme is separate. Changes respect permissions, live saving and undo/redo.
-- Delivery stages: Add board background colors and a small set of font/size/color presets first. Optional grid/paper textures and broader styling can follow. Annotation typography depends on the text tool in IDEA-002.
+- Delivery stages: Annotation typography, optional text backgrounds and borders are implemented with IDEA-002. Shared board backgrounds, textures and typography presets remain planned.
 - Done when: Background changes and styled annotation text persist, appear consistently for teammates and do not alter the existing note formatting behavior.
 
 ### IDEA-004: Dark theme

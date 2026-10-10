@@ -49,6 +49,14 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
   await owner.getByLabel('Note content').first().fill('Shared durable browser edit');await expect(owner.locator('.save')).toContainText('Saved to team database');
   await expect(viewer.getByLabel('Note content').first()).toHaveValue('Shared durable browser edit');
   await expect(owner.locator('.presence')).toContainText('2 online');
+  await expect(viewer.getByRole('button',{name:'Text annotation tool'})).toBeDisabled();
+  await owner.getByRole('button',{name:'Text annotation tool'}).click();
+  const canvasBounds=await owner.locator('.viewport').boundingBox();if(!canvasBounds)throw Error('Missing canvas');
+  await owner.mouse.click(canvasBounds.x+400,canvasBounds.y+300);
+  await owner.getByLabel('Annotation text',{exact:true}).fill('Shared annotation');await owner.getByLabel('Annotation text',{exact:true}).press('Escape');
+  await expect(viewer.locator('.text-annotation')).toContainText('Shared annotation');
+  await viewer.locator('.text-annotation').dblclick();await expect(viewer.getByLabel('Annotation text',{exact:true})).toHaveCount(0);
+  await expect(viewer.getByRole('button',{name:'Delete annotation'})).toHaveCount(0);
   const moving=owner.locator('.card.note').first();const handle=await moving.locator('.handle').boundingBox();if(!handle)throw Error('No handle');
   await owner.mouse.move(handle.x+handle.width/2,handle.y+10);await owner.mouse.down();await owner.mouse.move(handle.x+handle.width/2+60,handle.y+40,{steps:5});await owner.mouse.up();
   await expect(viewer.locator('.card.note').first()).toHaveCSS('left','130px');await expect(viewer.locator('.card.note').first()).toHaveCSS('top','100px');

@@ -6,10 +6,10 @@ import {resolve,join,relative} from 'node:path';
 import sharp from 'sharp';
 import AxeBuilder from '@axe-core/playwright';
 
-async function register(page:Page,email:string){await page.goto('/');await page.getByRole('button',{name:'Create account',exact:true}).click();await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password (12+ characters)').fill('milestone-four-test-password');await page.getByRole('button',{name:'Continue'}).click();await expect(page.getByRole('heading',{name:'Your workspaces'})).toBeVisible();}
+async function register(page:Page,email:string){await page.goto('/');await page.getByRole('button',{name:'Create account',exact:true}).click();await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password (12+ characters)').fill('milestone-four-test-password');await page.getByRole('button',{name:'Continue',exact:true}).click();await expect(page.getByRole('heading',{name:'Your workspaces'})).toBeVisible();}
 test('multi-selection, resize, connectors, columns, clipboard, rich notes and canvas expansion',async({page,context})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await context.grantPermissions(['clipboard-read','clipboard-write']);
- await page.goto('/');await page.getByRole('button',{name:'Open browser-local canvas'}).click();
+ await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).click();
  const first=page.locator('.card.note').first(),second=page.locator('.card.note').nth(1);
  await first.locator('.handle').click();await second.click({modifiers:['Shift'],position:{x:10,y:60}});await expect(page.locator('.card.selected')).toHaveCount(2);
  await page.getByRole('button',{name:'Connect cards'}).click();await expect(page.locator('.connection')).toHaveCount(1);
@@ -20,7 +20,7 @@ test('multi-selection, resize, connectors, columns, clipboard, rich notes and ca
  const colHandle=await column.locator('.handle').boundingBox();if(!colHandle)throw Error('Missing column handle');await page.mouse.move(colHandle.x+100,colHandle.y+10);await page.mouse.down();await page.mouse.move(colHandle.x+140,colHandle.y+10);await page.mouse.up();await expect(first).toHaveCSS('left',`${left+40}px`);
  await first.locator('.handle').click();const resize=first.getByRole('slider',{name:'Resize note card'});const width=await first.evaluate(el=>parseFloat((el as HTMLElement).style.width));await resize.focus();await page.keyboard.press('ArrowRight');await expect(first).toHaveCSS('width',`${width+10}px`);
  await first.getByRole('button',{name:'Format note'}).click();const rich=first.getByRole('textbox',{name:'Rich note content'});await rich.fill('Formatted idea');await rich.focus();await page.keyboard.press('Control+a');await first.getByRole('button',{name:'bold',exact:true}).click();await expect(rich.locator('b,strong')).toHaveText('Formatted idea');
- await expect(page.locator('.save')).toContainText('Saved locally');await page.reload();await page.getByRole('button',{name:'Open browser-local canvas'}).click();await expect(page.locator('.rich-note strong')).toHaveText('Formatted idea');await expect(page.locator('.connection')).toHaveCount(2);await expect(page.getByLabel('Column title')).toHaveValue('Production');
+ await expect(page.locator('.save')).toContainText('Saved locally');await page.reload();await page.getByRole('button',{name:'Continue as guest'}).click();await expect(page.locator('.rich-note strong')).toHaveText('Formatted idea');await expect(page.locator('.connection')).toHaveCount(2);await expect(page.getByLabel('Column title')).toHaveValue('Production');
  // Nudge a card beyond the former finite canvas, then pan using space-drag.
  await page.locator('.card.note').nth(1).locator('.handle').click();await page.locator('.viewport').focus();
  for(let i=0;i<205;i++)await page.keyboard.press('Shift+ArrowRight');expect(await page.locator('.plane').evaluate(el=>parseFloat((el as HTMLElement).style.width))).toBeGreaterThan(2400);

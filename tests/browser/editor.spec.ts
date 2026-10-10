@@ -4,7 +4,7 @@ import {Pool} from 'pg';
 
 test('local canvas edits, zoom-aware dragging, nested navigation and backup round-trip',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto('/');await page.getByRole('button',{name:'Open browser-local canvas'}).click();
+ await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).click();
  const note=page.getByLabel('Note content').first();await note.fill('Browser-tested idea');
  await expect(page.locator('.save')).toContainText('Saved locally');
  const card=page.locator('.card.note').first();
@@ -23,11 +23,11 @@ test('local canvas edits, zoom-aware dragging, nested navigation and backup roun
  await expect(page.locator('.save')).toContainText('Saved locally');
  await page.getByLabel('Board actions',{exact:true}).click();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export',exact:true}).click();const backup=await download;const path=await backup.path();if(!path)throw Error('No backup file');
  await note.fill('Temporary change');await page.getByLabel('Board actions',{exact:true}).click();await page.locator('.import input[type=file]').setInputFiles(path);await expect(note).toHaveValue('Browser-tested idea');
- await expect(page.locator('.save')).toContainText('Saved locally');await page.reload();await page.getByRole('button',{name:'Open browser-local canvas'}).click();await expect(note).toHaveValue('Browser-tested idea');
+ await expect(page.locator('.save')).toContainText('Saved locally');await page.reload();await page.getByRole('button',{name:'Continue as guest'}).click();await expect(note).toHaveValue('Browser-tested idea');
  expect(errors).toEqual([]);
 });
 
-async function register(page:Page,email:string){await page.goto('/');await page.getByRole('button',{name:'Create account',exact:true}).click();await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password (12+ characters)').fill('browser-test-password');await page.getByRole('button',{name:'Continue'}).click();await expect(page.getByRole('heading',{name:'Your workspaces'})).toBeVisible();}
+async function register(page:Page,email:string){await page.goto('/');await page.getByRole('button',{name:'Create account',exact:true}).click();await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password (12+ characters)').fill('browser-test-password');await page.getByRole('button',{name:'Continue',exact:true}).click();await expect(page.getByRole('heading',{name:'Your workspaces'})).toBeVisible();}
 
 test('live sharing, viewer permissions, reconnect retries, conflicts and revocation',async({browser})=>{
  const ownerContext=await browser.newContext(),viewerContext=await browser.newContext();const owner=await ownerContext.newPage(),viewer=await viewerContext.newPage();
@@ -49,6 +49,17 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
   await owner.getByLabel('Note content').first().fill('Shared durable browser edit');await expect(owner.locator('.save')).toContainText('Saved to team database');
   await expect(viewer.getByLabel('Note content').first()).toHaveValue('Shared durable browser edit');
   await expect(owner.locator('.presence')).toContainText('2 online');
+  await owner.getByText('Board appearance',{exact:true}).click();await owner.getByLabel('Board background color').fill('#19302a');await owner.getByLabel('Board canvas pattern').selectOption('grid');await owner.getByText('Board appearance',{exact:true}).click();
+  await expect(viewer.locator('.viewport')).toHaveCSS('background-color','rgb(25, 48, 42)');await expect(viewer.locator('.viewport')).toHaveCSS('background-image',/linear-gradient/);
+  await viewer.getByText('Board appearance',{exact:true}).click();await expect(viewer.getByLabel('Board background color')).toBeDisabled();await expect(viewer.getByLabel('Board canvas pattern')).toBeDisabled();await viewer.getByText('Board appearance',{exact:true}).click();
+  await expect(viewer.getByRole('button',{name:'Text annotation tool'})).toBeDisabled();
+  await owner.getByRole('button',{name:'Text annotation tool'}).click();
+  const canvasBounds=await owner.locator('.viewport').boundingBox();if(!canvasBounds)throw Error('Missing canvas');
+  await owner.mouse.click(canvasBounds.x+400,canvasBounds.y+300);
+  await owner.getByLabel('Annotation text',{exact:true}).fill('Shared annotation');await owner.getByLabel('Annotation text',{exact:true}).press('Escape');
+  await expect(viewer.locator('.text-annotation')).toContainText('Shared annotation');
+  await viewer.locator('.text-annotation').dblclick();await expect(viewer.getByLabel('Annotation text',{exact:true})).toHaveCount(0);
+  await expect(viewer.getByRole('button',{name:'Delete annotation'})).toHaveCount(0);
   const moving=owner.locator('.card.note').first();const handle=await moving.locator('.handle').boundingBox();if(!handle)throw Error('No handle');
   await owner.mouse.move(handle.x+handle.width/2,handle.y+10);await owner.mouse.down();await owner.mouse.move(handle.x+handle.width/2+60,handle.y+40,{steps:5});await owner.mouse.up();
   await expect(viewer.locator('.card.note').first()).toHaveCSS('left','130px');await expect(viewer.locator('.card.note').first()).toHaveCSS('top','100px');
@@ -78,7 +89,7 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
 });
 
 test('board breadcrumbs, title editing and compact navigation remain usable',async({page})=>{
- await page.goto('/');await page.getByRole('button',{name:'Open browser-local canvas'}).click();
+ await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).click();
  await expect(page.getByLabel('Switch workspace',{exact:true})).toContainText('Browser-local canvas');await expect(page.locator('.workspace-mode')).toContainText('No team sync');
  await page.locator('.board-tile').dblclick();await page.getByLabel('Board title').fill('Renamed project');
  await page.getByRole('button',{name:'Board',exact:true}).click();await page.locator('.board-tile').dblclick();

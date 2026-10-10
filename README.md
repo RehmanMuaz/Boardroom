@@ -17,7 +17,7 @@ Requires Node.js 22.12+ and a running Docker daemon. On PowerShell, use npm.cmd 
 
 Create an account, then create a workspace. Registration grants no access to existing workspaces. Owners use **Manage team** to invite an email as editor/viewer, change roles or remove members. Share the returned one-use token privately. The recipient signs into the matching email account and pastes the token into **Invitation token**. Tokens expire after 48 hours. SMTP delivery is available when configured; the owner sees sent/failed/manual status. Owners cannot be demoted or removed through these controls.
 
-Choose **Open browser-local canvas** for the original local workspace. Local data is separate from team data. To transfer local data, export it, open a team workspace as owner/editor and import the backup. Import replaces the team's canvas with permission and revision checks.
+Choose **Continue as guest** at the top of the entry screen for the original local workspace. Local data is separate from team data. To transfer local data, export it, open a team workspace as owner/editor and import the backup. Import replaces the team's canvas with permission and revision checks.
 
 ## Implemented
 
@@ -72,6 +72,8 @@ Add feature requests, ideas, bugs and improvements to [the backlog](docs/BACKLOG
 
 ## Content and canvas controls
 
+IDEA-004 is implemented on the development feature branch, awaiting production promotion. Choose Light, Dark or System under Appearance on the sign-in/workspace screen or in the editor Account menu. Signed-in account choices persist on the backend; browser-local canvas choices stay separate on that device. System follows OS changes. Interface colors change while shared card colors, note formatting and uploaded media retain their appearance.
+
 The header shows Boardroom and the selected workspace. Use its workspace dropdown to switch teams, open the browser-local canvas or return to all workspaces. Account contains sign-in/sign-out; owners retain Manage team. Board titles are editable in the canvas heading, with nested breadcrumbs above. Actions contains JSON import/export and keyboard shortcuts. Save/conflict status remains visible; switching is blocked while uploads or unsaved operations remain.
 
 New image/video uploads start without a subtitle. Use the subtitle icon in the bottom-right hover overlay on editable media to show or hide its caption field. Visibility is shared and saved; hiding preserves the caption text. Existing media captions remain visible.
@@ -85,3 +87,10 @@ Shift-click or drag a marquee to select cards. Select two cards to connect them;
 Private uploads live under ASSET_DIR (default data/assets), with metadata in PostgreSQL. Back up both the database and this directory. JSON export contains asset references, **not file bytes**; it is not a complete media backup or a cross-workspace media transfer. Removing a card retains its upload for undo. The API can delete unreferenced uploads; automatic cleanup, quotas and an S3 adapter remain future work. Never commit uploads or database volumes. Reference screenshots and manual screen-reader/cross-browser acceptance remain outstanding; automated accessibility checks do not establish complete WCAG conformance.
 
 Production Linux servers need Docker, Git and flock; deployment/backup helpers run through scripts/server-helper.sh in a temporary container, so host Node/npm are unnecessary. Local development still requires Node.
+# Canvas annotations
+
+Use the floating annotation toolbar at the bottom of the canvas to select, draw with Pen/Highlighter, or place standalone Text. Text starts with immediate keyboard focus and a transparent, borderless appearance. Double-click to edit existing text; select it and open Text style for fonts, size, weight, alignment, colors, background and border options. Drag annotations to move them; use the text corner handle to resize. Delete removes the selected annotation; Ctrl/⌘ Z and Shift-Z undo/redo. Space-drag still pans.
+
+Team annotations save to PostgreSQL and sync through authorized live operations. Viewers can see/select them but cannot edit. Guest annotations save only in that browser. Shapes remain planned. This implementation is on a feature branch and has not been deployed.
+
+Open Board appearance in the board heading to choose a shared background color and Plain, Dots or Grid canvas. Use theme background returns to each person's app theme; explicit colors are shared across themes. Text style offers Heading, Label and Body presets, preserving your text and decorative choices. Appearance is per board, saved and undoable, and viewers have read-only controls. Guest choices stay browser-local.

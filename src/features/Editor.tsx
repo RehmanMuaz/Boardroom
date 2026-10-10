@@ -1,8 +1,14 @@
+import {boardCanvasStyle} from '../boardAppearance';
+import {BoardAppearance} from './BoardAppearance';
 import {useEffect,useRef,useState,type PointerEvent as ReactPointerEvent} from 'react';
 import {validWorkspace,type Workspace,type Kind,type Card,type Board} from '../model';
 import {usePersistence} from '../usePersistence';
 import {type LiveView} from '../liveRepository';
-import {applyChanges,diffWorkspace,type Change} from '../operations';
+import {applyChanges,diffWorkspace,same,type Change} from '../operations';
+import {type Annotation} from '../annotations';
+import {AnnotationLayer} from './annotations/AnnotationLayer';
+import {AnnotationToolbar,type AnnotationTool} from './annotations/AnnotationToolbar';
+import './annotations/annotations.css';
 import {WorkspaceControls} from './WorkspaceControls';
 import {Members} from '../team';
 import {TeamRepository,uploadAsset,type WorkspaceRepository} from '../repository';
@@ -25,6 +31,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  const dirty=repository instanceof TeamRepository?(live?.dirty??false):local.dirty;
  const [boardId,setBoardId]=useState(initial.boards[0].id),[selected,setSelected]=useState<string[]>([]),[zoom,setZoom]=useState(1),[query,setQuery]=useState('');
  const [connection,setConnection]=useState<string|null>(null),[uploading,setUploading]=useState(false),[notice,setNotice]=useState(''),[area,setArea]=useState<Area|null>(null);
+ const [annotationTool,setAnnotationTool]=useState<AnnotationTool>('select'),[selectedAnnotation,setSelectedAnnotation]=useState<string|null>(null),[annotationColor,setAnnotationColor]=useState('#d95d39'),[annotationThickness,setAnnotationThickness]=useState(3),[annotationFocus,setAnnotationFocus]=useState<string|null>(null);
  const leaveBlocked=useRef(false);leaveBlocked.current=dirty||uploading;
  const past=useRef<Change[][]>([]),future=useRef<Change[][]>([]),drag=useRef<Drag|null>(null),resize=useRef<Resize|null>(null),viewport=useRef<HTMLDivElement>(null);
  const pendingCaptionFocus=useRef<string|null>(null);
@@ -34,13 +41,27 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  const uploadInput=useRef<HTMLInputElement>(null),fileAccept=useRef('*');
  const board=state.boards.find(b=>b.id===boardId)||state.boards[0],extent=canvasExtent(board);
  const teamId=repository instanceof TeamRepository?repository.id:undefined;
+ useEffect(()=>{if(selected.length||connection)setSelectedAnnotation(null);},[selected,connection]);
  useEffect(()=>{if(!(repository instanceof TeamRepository))return;return repository.start(view=>{stateRef.current=view.snapshot;setState(view.snapshot);setLive(view);});},[repository]);
  useEffect(()=>{if(!(repository instanceof TeamRepository)||!dirty&&!uploading)return;const warn=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[repository,dirty,uploading]);
  useEffect(()=>{if(repository instanceof TeamRepository)repository.presence(board.id);},[repository,board.id]);
- useEffect(()=>{setSelected([]);setConnection(null);setQuery('');if(viewport.current){viewport.current.scrollLeft=0;viewport.current.scrollTop=0;}},[board.id]);
+ useEffect(()=>{setSelected([]);setConnection(null);setQuery('');setSelectedAnnotation(null);setAnnotationFocus(null);setAnnotationTool('select');if(viewport.current){viewport.current.scrollLeft=0;viewport.current.scrollTop=0;}},[board.id]);
+ useEffect(()=>{if(!writable)setAnnotationTool('select');},[writable]);
  const apply=(next:Workspace)=>{if(!writable)return;if(repository instanceof TeamRepository)repository.change(stateRef.current,next);else {stateRef.current=next;setState(next);}};
  const update=(next:Workspace)=>{if(!writable)return;const inverse=diffWorkspace(next,stateRef.current);if(!inverse.length)return;past.current.push(inverse);future.current=[];apply(next);};
  function changeCard(id:string,patch:Partial<Card>){update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:b.cards.map(c=>c.id===id?{...c,...patch}:c)})});}
+ function changeAnnotation(id:string,patch:Partial<Annotation>,expected?:Partial<Annotation>){
+  const current=stateRef.current.boards.find(b=>b.id===board.id)?.annotations?.find(a=>a.id===id);if(!current||!writable)return;
+  if(expected&&Object.entries(expected).some(([key,value])=>!same((current as unknown as Record<string,unknown>)[key],value))){setNotice('This annotation changed remotely. Try the move or resize again.');return;}
+  const next={...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,annotations:(b.annotations??[]).map(a=>a.id===id?{...a,...patch} as Annotation:a)})};
+  if(!validWorkspace(next)){setNotice('Annotation exceeds the supported size or formatting limits.');return;}update(next);
+ }
+ function addAnnotation(annotation:Annotation){
+  if(!writable)return;const next={...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,annotations:[...(b.annotations??[]),annotation]})};
+  if(!validWorkspace(next)){setNotice('Annotation limit reached. Strokes allow up to 4,096 points and a 10,000-unit span.');return;}update(next);setSelected([]);setConnection(null);setSelectedAnnotation(annotation.id);
+  if(annotation.kind==='text'){setAnnotationTool('select');setAnnotationFocus(annotation.id);}
+ }
+ function selectAnnotation(id:string){setSelectedAnnotation(id);setSelected([]);setConnection(null);}
  function location(){const view=viewport.current;return {x:Math.min(100000,Math.max(60,(view?.scrollLeft??0)/zoom+60+(board.cards.length%3)*300)),y:Math.min(100000,Math.max(70,(view?.scrollTop??0)/zoom+70+Math.floor(board.cards.length/3)*280))};}
  function add(kind:Kind,text?:string){
   if(!writable)return;const id=crypto.randomUUID(),target=kind==='board'?crypto.randomUUID():undefined;
@@ -51,10 +72,10 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  }
  function history(direction:'undo'|'redo'){
   if(!writable)return;const from=direction==='undo'?past:future,to=direction==='undo'?future:past,changes=from.current.pop();
-  if(changes){try{const next=applyChanges(stateRef.current,changes);to.current.push(diffWorkspace(next,stateRef.current));apply(next);setSelected([]);}catch{from.current.push(changes);setNotice('This field changed remotely. Undo would overwrite another edit.');}}
+  if(changes){try{const next=applyChanges(stateRef.current,changes);to.current.push(diffWorkspace(next,stateRef.current));apply(next);setSelected([]);setSelectedAnnotation(null);}catch{from.current.push(changes);setNotice('This field changed remotely. Undo would overwrite another edit.');}}
  }
- function remove(){if(connection){update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,connectors:(b.connectors??[]).filter(line=>line.id!==connection)})});setConnection(null);return;}update(deleteSelection(stateRef.current,board.id,selected));setSelected([]);}
- function choose(id:string,shift=false){setConnection(null);setSelected(current=>shift?(current.includes(id)?current.filter(value=>value!==id):[...current,id]):current.includes(id)?current:[id]);}
+ function remove(){if(selectedAnnotation){update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,annotations:(b.annotations??[]).filter(a=>a.id!==selectedAnnotation)})});setSelectedAnnotation(null);return;}if(connection){update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,connectors:(b.connectors??[]).filter(line=>line.id!==connection)})});setConnection(null);return;}update(deleteSelection(stateRef.current,board.id,selected));setSelected([]);}
+ function choose(id:string,shift=false){setSelectedAnnotation(null);setConnection(null);setSelected(current=>shift?(current.includes(id)?current.filter(value=>value!==id):[...current,id]):current.includes(id)?current:[id]);}
  function expandedIds(ids=selected){return [...new Set([...ids,...board.cards.filter(c=>c.columnId&&ids.includes(c.columnId)).map(c=>c.id)])];}
  function duplicate(){const result=duplicateCards(board,expandedIds());update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:[...b.cards,...result.cards],connectors:[...(b.connectors??[]),...result.connectors]})});setSelected(result.cards.map(c=>c.id));if(selected.some(id=>board.cards.find(c=>c.id===id)?.kind==='board'))setNotice('Nested board tiles are not duplicated.');}
  function connectCards(){if(selected.length!==2)return;update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,connectors:[...(b.connectors??[]),{id:crypto.randomUUID(),from:selected[0],to:selected[1],color:'#789180'}]})});}
@@ -88,12 +109,13 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
    const modifier=e.metaKey||e.ctrlKey;
    if(modifier&&e.key.toLowerCase()==='z'){e.preventDefault();history(e.shiftKey?'redo':'undo');return;}
    if(modifier&&e.key.toLowerCase()==='y'){e.preventDefault();history('redo');return;}
-   if(e.key==='Escape'){setSelected([]);setConnection(null);setNotice('');(document.activeElement as HTMLElement|null)?.blur();return;}
+   if(e.key==='Escape'){setSelected([]);setSelectedAnnotation(null);setAnnotationTool('select');setConnection(null);setNotice('');(document.activeElement as HTMLElement|null)?.blur();return;}
    if(editing(e.target))return;
    if(e.code==='Space'){space.current=true;e.preventDefault();}
    if(modifier&&e.key.toLowerCase()==='a'){e.preventDefault();setSelected(board.cards.map(c=>c.id));}
    if(modifier&&e.key.toLowerCase()==='d'){e.preventDefault();if(writable)duplicate();}
-   if(['Delete','Backspace'].includes(e.key)&&(selected.length||connection)){e.preventDefault();if(writable)remove();}
+   if(['Delete','Backspace'].includes(e.key)&&(selected.length||connection||selectedAnnotation)){e.preventDefault();if(writable)remove();}
+   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)&&selectedAnnotation&&writable){e.preventDefault();const a=board.annotations?.find(a=>a.id===selectedAnnotation);if(a){const step=e.shiftKey?10:1;changeAnnotation(a.id,{x:Math.min(100000,Math.max(0,a.x+(e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0))),y:Math.min(100000,Math.max(0,a.y+(e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0)))});}return;}
    if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)&&selected.length&&writable){e.preventDefault();const step=e.shiftKey?10:1;update(moveSelection(stateRef.current,board.id,selected,e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0));}
    if(modifier&&['+','=','-','0'].includes(e.key)){e.preventDefault();setZoom(z=>e.key==='0'?1:Math.max(.25,Math.min(2,z+(e.key==='-'?-.1:.1))));}
   }
@@ -127,11 +149,11 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   {([['Image','▧','image/png,image/jpeg,image/webp,image/gif'],['Video','▷','video/mp4,video/webm'],['File','⇧','.pdf,.zip,.txt']] as const).map(([label,icon,accept])=><button key={label} aria-label={'Upload '+label.toLowerCase()} disabled={!writable||!teamId||uploading} title={!teamId?'Uploads require a team workspace':undefined} onClick={()=>pickFiles(accept)}><span aria-hidden="true">{icon}</span>{label}</button>)}
  </div><div className="aside-bottom"><button disabled={!writable} onClick={()=>history('undo')}>↶<small>Undo</small></button><button disabled={!writable} onClick={()=>history('redo')}>↷<small>Redo</small></button></div></aside>
  <input ref={uploadInput} className="upload-input" type="file" multiple aria-label="Upload media files" onChange={e=>{void files([...e.target.files??[]]);e.target.value='';}}/>
- <main><div className="board-heading"><div className="board-identity"><nav className="breadcrumbs" aria-label="Board breadcrumbs">{(()=>{const chain:Board[]=[];let current:Board|undefined=board;const seen=new Set<string>();while(current&&!seen.has(current.id)){chain.unshift(current);seen.add(current.id);current=state.boards.find(b=>b.id===current?.parent);}return chain.map((ancestor,index)=><span key={ancestor.id}>{index>0&&<span className="crumb-separator" aria-hidden="true">/</span>}{ancestor.id===board.id?<span aria-current="page">{ancestor.title}</span>:<button onClick={()=>setBoardId(ancestor.id)}>{ancestor.title}</button>}</span>);})()}</nav><h1 aria-label={board.title}><input aria-label="Board title" readOnly={!writable} value={board.title} onChange={e=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id===board.id?{...b,title:e.target.value}:b)})}/></h1><span className="workspace-mode">{teamId?`${live?.role??(repository as TeamRepository).role} access`:'Browser-local | No team sync'}</span></div><input className="search" placeholder="Find on this board…" aria-label="Search cards" value={query} onChange={e=>setQuery(e.target.value)}/></div>
+ <main><BoardAppearance background={board.background} pattern={board.pattern} writable={writable} change={patch=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id===board.id?{...b,...patch}:b)})}/><div className="board-heading"><div className="board-identity"><nav className="breadcrumbs" aria-label="Board breadcrumbs">{(()=>{const chain:Board[]=[];let current:Board|undefined=board;const seen=new Set<string>();while(current&&!seen.has(current.id)){chain.unshift(current);seen.add(current.id);current=state.boards.find(b=>b.id===current?.parent);}return chain.map((ancestor,index)=><span key={ancestor.id}>{index>0&&<span className="crumb-separator" aria-hidden="true">/</span>}{ancestor.id===board.id?<span aria-current="page">{ancestor.title}</span>:<button onClick={()=>setBoardId(ancestor.id)}>{ancestor.title}</button>}</span>);})()}</nav><h1 aria-label={board.title}><input aria-label="Board title" readOnly={!writable} value={board.title} onChange={e=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id===board.id?{...b,title:e.target.value}:b)})}/></h1><span className="workspace-mode">{teamId?`${live?.role??(repository as TeamRepository).role} access`:'Browser-local | No team sync'}</span></div><input className="search" placeholder="Find on this board…" aria-label="Search cards" value={query} onChange={e=>setQuery(e.target.value)}/></div>
   {notice&&<div className="notice" role="alert">{notice}<button aria-label="Dismiss message" onClick={()=>setNotice('')}>×</button></div>}
-  <div className="viewport" ref={viewport} role="region" aria-label="Board canvas" tabIndex={0}
+  <div className="viewport" style={boardCanvasStyle(board.background,board.pattern)} ref={viewport} role="region" aria-label="Board canvas" tabIndex={0}
    onDragOver={e=>{if(e.dataTransfer.types.includes('Files'))e.preventDefault();}} onDrop={e=>{e.preventDefault();void files([...e.dataTransfer.files],contentPoint(e.clientX,e.clientY));}}
-   onPointerDown={e=>{if(e.button===1||space.current){e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);pan.current={x:e.clientX,y:e.clientY,left:e.currentTarget.scrollLeft,top:e.currentTarget.scrollTop};return;}if(!(e.target instanceof HTMLElement)||!['viewport','canvas','plane'].some(name=>(e.target as HTMLElement).classList.contains(name)))return;const point=contentPoint(e.clientX,e.clientY);const next={...point,endX:point.x,endY:point.y,before:e.shiftKey?selected:[]};marquee.current=next;setArea(next);setSelected(next.before);setConnection(null);e.currentTarget.setPointerCapture(e.pointerId);}}
+   onPointerDown={e=>{if(e.button===1||space.current){e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);pan.current={x:e.clientX,y:e.clientY,left:e.currentTarget.scrollLeft,top:e.currentTarget.scrollTop};return;}if(!(e.target instanceof HTMLElement)||!['viewport','canvas','plane'].some(name=>(e.target as HTMLElement).classList.contains(name)))return;const point=contentPoint(e.clientX,e.clientY);const next={...point,endX:point.x,endY:point.y,before:e.shiftKey?selected:[]};marquee.current=next;setArea(next);setSelected(next.before);setSelectedAnnotation(null);setConnection(null);e.currentTarget.setPointerCapture(e.pointerId);}}
    onPointerMove={e=>{if(pan.current){e.currentTarget.scrollLeft=pan.current.left-(e.clientX-pan.current.x);e.currentTarget.scrollTop=pan.current.top-(e.clientY-pan.current.y);}else if(marquee.current){const point=contentPoint(e.clientX,e.clientY),next={...marquee.current,endX:point.x,endY:point.y};setArea(next);const left=Math.min(next.x,next.endX),right=Math.max(next.x,next.endX),top=Math.min(next.y,next.endY),bottom=Math.max(next.y,next.endY);if(right-left>3||bottom-top>3){const ids=board.cards.filter(c=>c.kind==='column'?c.x>=left&&c.x+cardWidth(c)<=right&&c.y>=top&&c.y+cardHeight(c)<=bottom:c.x<right&&c.x+cardWidth(c)>left&&c.y<bottom&&c.y+cardHeight(c)>top).map(c=>c.id);setSelected([...new Set([...next.before,...ids])]);}}}}
    onPointerUp={()=>{pan.current=null;marquee.current=null;setArea(null);}} onPointerCancel={()=>{pan.current=null;marquee.current=null;setArea(null);}}
   ><div className="canvas" style={{width:extent.width*zoom,height:extent.height*zoom}}><div className="plane" style={{width:extent.width,height:extent.height,transform:`scale(${zoom})`}}>
@@ -149,7 +171,9 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
      onPointerMove={e=>{const gesture=resize.current;if(gesture?.id===c.id){const delta=screenDelta(e.clientX-gesture.x,e.clientY-gesture.y,zoom);apply({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:b.cards.map(card=>card.id!==c.id?card:{...card,...resizeCard(card,gesture.width+delta.x,gesture.height+delta.y,mediaAspects.current.get(card.id))})})});}}} onPointerUp={()=>finishGesture()} onPointerCancel={()=>finishGesture(true)}/>
     }
    </article>)}
+   <AnnotationLayer canvasBackground={board.background} key={board.id} annotations={board.annotations??[]} tool={annotationTool} writable={writable} selectedId={selectedAnnotation} onSelect={selectAnnotation} add={addAnnotation} change={changeAnnotation} point={contentPoint} panActive={()=>space.current} width={extent.width} height={extent.height} color={annotationColor} thickness={annotationThickness} focusId={annotationFocus} focused={()=>setAnnotationFocus(null)}/>
   </div>{rectangle&&<div className="marquee" style={rectangle}/>}</div>{board.cards.length===0&&<div className="empty">A fresh board.<br/><small>Add a note or drop an image to start.</small></div>}</div>
+  <AnnotationToolbar tool={annotationTool} setTool={tool=>{setAnnotationTool(tool);setSelected([]);setConnection(null);setSelectedAnnotation(null);if(tool==='highlighter'){setAnnotationColor('#f5c542');setAnnotationThickness(18);}else if(tool==='pen'){setAnnotationColor('#d95d39');setAnnotationThickness(3);}}} writable={writable} color={annotationColor} setColor={setAnnotationColor} thickness={annotationThickness} setThickness={setAnnotationThickness} selected={board.annotations?.find(a=>a.id===selectedAnnotation)} change={changeAnnotation} remove={remove}/>
   <div className="zoom"><button aria-label="Zoom out" onClick={()=>setZoom(z=>Math.max(.25,z-.1))}>−</button><button onClick={()=>setZoom(1)}>{Math.round(zoom*100)}%</button><button aria-label="Zoom in" onClick={()=>setZoom(z=>Math.min(2,z+.1))}>+</button></div>
   {(selected.length>0||connection)&&writable&&<div className="selection">{connection?<button onClick={remove}>Delete connection</button>:<><span>{selected.length} selected</span>{['#fff','#fff4c9','#e3efe9','#e7e8f7','#f7dfdc'].map(color=><button className="swatch" key={color} aria-label={'Set color '+color} style={{background:color}} onClick={()=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:b.cards.map(c=>selected.includes(c.id)?{...c,color}:c)})})}/>)}<button onClick={duplicate}>Duplicate</button>{selected.length===2&&<button onClick={connectCards}>Connect cards</button>}{board.cards.some(c=>c.kind==='column')&&<select aria-label="Move selection to column" value="" onChange={e=>{update(putInColumn(stateRef.current,board.id,selected,e.target.value));}}><option value="">Move to column…</option>{board.cards.filter(c=>c.kind==='column').map(c=><option key={c.id} value={c.id}>{c.text}</option>)}</select>}<button onClick={remove}>Delete {selected.length===1?'card':'cards'}</button></>}</div>}
   <footer>{teamId?`${live?.role??(repository as TeamRepository).role} | Live team workspace | ${new Set(live?.members.map(m=>m.userId)).size} online`:'Browser-local canvas | No team sync'} · Space-drag to pan · Shift-click to select</footer>

@@ -3,6 +3,8 @@ import {test,expect} from '@playwright/test';
 test('guest annotations draw at zoom, focus text, format, move, undo and survive reload',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).click();
+ await page.getByText('Board appearance',{exact:true}).click();await page.getByLabel('Board background color').fill('#19302a');await page.getByLabel('Board canvas pattern').selectOption('plain');await page.getByText('Board appearance',{exact:true}).click();
+ await expect(page.locator('.viewport')).toHaveCSS('background-image','none');
  for(const zoom of [1,.5,1.5]){
   await page.locator('.zoom button').nth(1).click();
   for(let i=0;i<5&&zoom!==1;i++)await page.getByLabel(zoom<1?'Zoom out':'Zoom in').click();
@@ -19,6 +21,7 @@ test('guest annotations draw at zoom, focus text, format, move, undo and survive
  await page.mouse.click(viewport.x+400,viewport.y+320);
  const input=page.getByLabel('Annotation text',{exact:true});await expect(input).toBeFocused();await input.fill('Styled canvas title');await input.press('Escape');
  await page.getByText('Text style',{exact:true}).click();
+ await page.getByLabel('Annotation text preset').selectOption('heading');await expect(page.locator('.text-annotation')).toHaveCSS('font-size','40px');
  await page.getByLabel('Annotation font',{exact:true}).selectOption('serif');
  await page.getByLabel('Annotation font weight').selectOption('700');
  await page.getByLabel('Annotation border width').selectOption('2');
@@ -30,6 +33,7 @@ test('guest annotations draw at zoom, focus text, format, move, undo and survive
  await page.getByRole('button',{name:'Delete annotation',exact:true}).click();await expect(text).toHaveCount(0);await page.keyboard.press('Control+z');await expect(text).toContainText('Styled canvas title');
  await expect(page.locator('.save')).toContainText('Saved locally');await page.reload();await page.getByRole('button',{name:'Continue as guest'}).click();
  await expect(page.locator('.stroke-annotation')).toHaveCount(3);await expect(text).toContainText('Styled canvas title');await expect(text).toHaveCSS('font-weight','700');
+ await expect(page.locator('.viewport')).toHaveCSS('background-color','rgb(25, 48, 42)');await expect(page.locator('.viewport')).toHaveCSS('background-image','none');
  await page.screenshot({path:'test-results/annotations-desktop.png'});
  await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Highlighter',exact:true}).click();
  await expect(page.getByLabel('Stroke thickness')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);

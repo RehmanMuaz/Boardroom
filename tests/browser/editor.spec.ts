@@ -49,6 +49,9 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
   await owner.getByLabel('Note content').first().fill('Shared durable browser edit');await expect(owner.locator('.save')).toContainText('Saved to team database');
   await expect(viewer.getByLabel('Note content').first()).toHaveValue('Shared durable browser edit');
   await expect(owner.locator('.presence')).toContainText('2 online');
+  await owner.getByText('Board appearance',{exact:true}).click();await owner.getByLabel('Board background color').fill('#19302a');await owner.getByLabel('Board canvas pattern').selectOption('grid');await owner.getByText('Board appearance',{exact:true}).click();
+  await expect(viewer.locator('.viewport')).toHaveCSS('background-color','rgb(25, 48, 42)');await expect(viewer.locator('.viewport')).toHaveCSS('background-image',/linear-gradient/);
+  await viewer.getByText('Board appearance',{exact:true}).click();await expect(viewer.getByLabel('Board background color')).toBeDisabled();await expect(viewer.getByLabel('Board canvas pattern')).toBeDisabled();await viewer.getByText('Board appearance',{exact:true}).click();
   await expect(viewer.getByRole('button',{name:'Text annotation tool'})).toBeDisabled();
   await owner.getByRole('button',{name:'Text annotation tool'}).click();
   const canvasBounds=await owner.locator('.viewport').boundingBox();if(!canvasBounds)throw Error('Missing canvas');

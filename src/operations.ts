@@ -1,7 +1,7 @@
 import {type Workspace,type Board,type Card,validWorkspace} from './model';
 import {type Annotation} from './annotations';
 
-export type Field='$board'|'$card'|'$annotation'|'$boardOrder'|'$cardOrder'|'$annotationOrder'|'title'|'parent'|'kind'|'x'|'y'|'text'|'color'|'target'|'width'|'height'|'assetId'|'columnId'|'captionVisible'|'richText'|'connectors'|'points'|'thickness'|'style';
+export type Field='$board'|'$card'|'$annotation'|'$boardOrder'|'$cardOrder'|'$annotationOrder'|'title'|'parent'|'kind'|'x'|'y'|'text'|'color'|'target'|'width'|'height'|'assetId'|'columnId'|'captionVisible'|'richText'|'connectors'|'points'|'thickness'|'style'|'background'|'pattern';
 export type Change={boardId:string;cardId?:string;annotationId?:string;field:Field;before:unknown;after:unknown};
 const annotationFields=['kind','x','y','width','height','color','text','points','thickness','style'] as const;
 export type Operation={id:string;baseRevision:number;changes:Change[]};
@@ -21,7 +21,7 @@ export function diffWorkspace(before:Workspace,after:Workspace):Change[]{
  for(const board of after.boards){
   const old=before.boards.find(b=>b.id===board.id);
   if(!old){changes.push({boardId:board.id,field:'$board',before:null,after:board});continue;}
-  for(const field of ['title','parent','connectors'] as const)if(!same(old[field],board[field]))changes.push({boardId:board.id,field,before:old[field]??null,after:board[field]??null});
+  for(const field of ['title','parent','connectors','background','pattern'] as const)if(!same(old[field],board[field]))changes.push({boardId:board.id,field,before:old[field]??null,after:board[field]??null});
   for(const card of old.cards)if(!board.cards.some(c=>c.id===card.id))changes.push({boardId:board.id,cardId:card.id,field:'$card',before:card,after:null});
   for(const card of board.cards){
    const previous=old.cards.find(c=>c.id===card.id);
@@ -82,7 +82,7 @@ export function applyChanges(original:Workspace,changes:Change[],check=true):Wor
     else {const next=change.after as Card;if(next?.id!==change.cardId)throw Error('Card ID mismatch');if(card)board.cards[board.cards.indexOf(card)]=structuredClone(next);else board.cards.push(structuredClone(next));}
    }else{
     if(['points','thickness','style'].includes(change.field))throw Error('Annotation ID required');
-    const boardField=change.field==='title'||change.field==='parent'||change.field==='connectors';
+    const boardField=change.field==='title'||change.field==='parent'||change.field==='connectors'||change.field==='background'||change.field==='pattern';
     if(boardField===Boolean(change.cardId))throw Error('Invalid field for entity');
     const entity=boardField?board:board.cards.find(c=>c.id===change.cardId);
     if(!entity)throw new OperationConflict(change);

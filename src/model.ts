@@ -1,10 +1,11 @@
+import {validBoardBackground,validBoardPattern,type BoardPattern} from './boardAppearance';
 import {validAnnotation,type Annotation} from './annotations';
 export type Kind = 'note' | 'checklist' | 'link' | 'board' | 'image' | 'video' | 'file' | 'column';
 export type RichRun={text:string;bold?:boolean;italic?:boolean;underline?:boolean;href?:string};
 export type RichDocument={blocks:{type:'paragraph'|'heading'|'bullet'|'quote';runs:RichRun[]}[]};
 export type Card = {id:string; kind:Kind; x:number; y:number; text:string; color:string; target?:string; width?:number; height?:number; assetId?:string; columnId?:string; captionVisible?:boolean; richText?:RichDocument};
 export type Connector={id:string;from:string;to:string;color:string};
-export type Board = {id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[]};
+export type Board = {id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[];background?:string;pattern?:BoardPattern};
 export type Workspace = {version:1; boards:Board[]};
 export const seed:Workspace = {version:1,boards:[{id:'home',title:'Creative studio',cards:[
 {id:'welcome',kind:'note',x:70,y:70,text:'A space for your next big idea\n\nCollect references, map out the story, and bring your team into the process.',color:'#fff'},
@@ -21,6 +22,7 @@ export function validWorkspace(value:unknown): value is Workspace {
  const id=(v:unknown):v is string=>typeof v==='string'&&v.length>0&&v.length<=128;
  for(const b of w.boards){
   if(!b||!id(b.id)||boards.has(b.id)||typeof b.title!=='string'||b.title.length>500||!Array.isArray(b.cards)||b.cards.length>10000)return false;
+  if(b.background!==undefined&&!validBoardBackground(b.background)||b.pattern!==undefined&&!validBoardPattern(b.pattern))return false;
   boards.add(b.id);
   if(b.annotations!==undefined){if(!Array.isArray(b.annotations)||b.annotations.length>2000)return false;for(const a of b.annotations){if(!validAnnotation(a)||annotations.has(a.id))return false;annotations.add(a.id);if(a.kind!=='text'&&(points+=a.points.length)>100000)return false;}}
   for(const c of b.cards){

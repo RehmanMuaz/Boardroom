@@ -39,13 +39,14 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 - Type: Feature
 - Priority: Soon
-- Status: Partially implemented locally
+- Status: Done locally; awaiting release
 - What I want: Users can change the board background color and optionally its texture. Standalone text annotations support different fonts, sizes, weights and colors, with alignment controls.
 - Clarification: Notes already have basic text formatting. This request is specifically for styling annotation text; it does not require rebuilding note formatting.
 - Expected behavior or example: Borderless text annotations can be moved, edited and resized. Selecting a text annotation exposes its typography controls through the annotation toolbar. Board appearance has its own controls.
 - Reference links or screenshot paths:
 - Constraints or things to preserve: Reuse the existing formatting foundation where useful. Shared board appearance and annotation styles persist with the board; an individual's app theme is separate. Changes respect permissions, live saving and undo/redo.
-- Delivery stages: Annotation typography, optional text backgrounds and borders are implemented with IDEA-002. Shared board backgrounds, textures and typography presets remain planned.
+- Delivery stages: Annotation typography, optional text backgrounds and borders are implemented with IDEA-002. Shared board colors, Plain/Dots/Grid patterns and Heading/Label/Body presets are implemented with IDEA-003. Optional paper textures and additional presets can follow.
+- Result: Board appearance controls change the current board's shared canvas color and pattern. Use theme background restores the personal theme default. Text presets change typography while retaining text, position, alignment and decorative choices. Automatic text color accounts for custom board backgrounds. Changes save locally for guests or persist/sync with the team; viewers cannot edit; undo and field conflicts remain enforced. Not deployed.
 - Done when: Background changes and styled annotation text persist, appear consistently for teammates and do not alter the existing note formatting behavior.
 
 ### IDEA-004: Dark theme

@@ -76,6 +76,8 @@ IDEA-004 is implemented on the development feature branch, awaiting production p
 
 The header shows Boardroom and the selected workspace. Use its workspace dropdown to switch teams, open the browser-local canvas or return to all workspaces. Account contains sign-in/sign-out; owners retain Manage team. Board titles are editable in the canvas heading, with nested breadcrumbs above. Actions contains JSON import/export and keyboard shortcuts. Save/conflict status remains visible; switching is blocked while uploads or unsaved operations remain.
 
+Workspace owners can choose Rename workspace in the workspace dropdown, enter a name and save. Names are shared, persist in PostgreSQL and update for connected teammates. Editors/viewers cannot rename; browser-local mode has no team workspace name. Renaming preserves boards, uploads, invitations and permissions. Competing renames produce a conflict; reopen the form to use the latest name. Available on the development feature branch, not deployed.
+
 New image/video uploads start without a subtitle. Use the subtitle icon in the bottom-right hover overlay on editable media to show or hide its caption field. Visibility is shared and saved; hiding preserves the caption text. Existing media captions remain visible.
 
 Images and videos use borderless canvas frames with icon downloads in a bottom-right gradient overlay that appears on hover or keyboard focus. Drag directly on image/video surfaces; native video controls remain interactive; selecting editable media reveals resize handles. Dragging a resize handle or using its arrow keys preserves source proportions within supported size limits. Captions and native video controls remain available.
@@ -91,6 +93,10 @@ Production Linux servers need Docker, Git and flock; deployment/backup helpers r
 
 Use the floating annotation toolbar at the bottom of the canvas to select, draw with Pen/Highlighter, or place standalone Text. Text starts with immediate keyboard focus and a transparent, borderless appearance. Double-click to edit existing text; select it and open Text style for fonts, size, weight, alignment, colors, background and border options. Drag annotations to move them; use the text corner handle to resize. Delete removes the selected annotation; Ctrl/⌘ Z and Shift-Z undo/redo. Space-drag still pans.
 
-Team annotations save to PostgreSQL and sync through authorized live operations. Viewers can see/select them but cannot edit. Guest annotations save only in that browser. Shapes remain planned. This implementation is on a feature branch and has not been deployed.
+Team annotations save to PostgreSQL and sync through authorized live operations. Viewers can see/select them but cannot edit. Guest annotations save only in that browser. This implementation is on a feature branch and has not been deployed.
+
+Choose Shape and select Arrow, Line, Rectangle or Circle, then drag on the canvas. Circles can be drawn/resized as ellipses. Arrows point toward the end of your drag. Switch to Select to move shapes, resize with the corner handle, change outline color/thickness/type, or enable fill for rectangles/circles. The resize handle also supports arrows for width and Shift-arrows for height. Shapes are standalone annotations; they do not attach to cards or replace card connectors.
 
 Open Board appearance in the board heading to choose a shared background color and Plain, Dots or Grid canvas. Use theme background returns to each person's app theme; explicit colors are shared across themes. Text style offers Heading, Label and Body presets, preserving your text and decorative choices. Appearance is per board, saved and undoable, and viewers have read-only controls. Guest choices stay browser-local.
+
+Stroke width and annotation font size each have a slider alongside a numeric input. Drag for quick adjustments or type an exact value; both controls stay in sync. Width ranges from 1–60 and font size from 12–120.

@@ -9,6 +9,7 @@ test('guest annotations draw at zoom, focus text, format, move, undo and survive
   await page.locator('.zoom button').nth(1).click();
   for(let i=0;i<5&&zoom!==1;i++)await page.getByLabel(zoom<1?'Zoom out':'Zoom in').click();
   await page.getByRole('button',{name:'Pen',exact:true}).click();
+  if(zoom===1){await page.getByLabel('Stroke thickness slider',{exact:true}).press('End');await expect(page.getByLabel('Stroke thickness',{exact:true})).toHaveValue('60');await page.getByLabel('Stroke thickness',{exact:true}).fill('6');await expect(page.getByLabel('Stroke thickness slider',{exact:true})).toHaveValue('6');}
   const viewport=await page.locator('.viewport').boundingBox();if(!viewport)throw Error('Missing canvas');
   const x=viewport.x+350,y=viewport.y+210;
   await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+60,y+30,{steps:6});await page.mouse.up();
@@ -22,6 +23,8 @@ test('guest annotations draw at zoom, focus text, format, move, undo and survive
  const input=page.getByLabel('Annotation text',{exact:true});await expect(input).toBeFocused();await input.fill('Styled canvas title');await input.press('Escape');
  await page.getByText('Text style',{exact:true}).click();
  await page.getByLabel('Annotation text preset').selectOption('heading');await expect(page.locator('.text-annotation')).toHaveCSS('font-size','40px');
+ await page.getByLabel('Annotation font size slider',{exact:true}).press('End');await expect(page.getByLabel('Annotation font size',{exact:true})).toHaveValue('120');await expect(page.locator('.text-annotation')).toHaveCSS('font-size','120px');
+ await page.getByLabel('Annotation font size',{exact:true}).fill('40');await expect(page.getByLabel('Annotation font size slider',{exact:true})).toHaveValue('40');
  await page.getByLabel('Annotation font',{exact:true}).selectOption('serif');
  await page.getByLabel('Annotation font weight').selectOption('700');
  await page.getByLabel('Annotation border width').selectOption('2');
@@ -36,7 +39,7 @@ test('guest annotations draw at zoom, focus text, format, move, undo and survive
  await expect(page.locator('.viewport')).toHaveCSS('background-color','rgb(25, 48, 42)');await expect(page.locator('.viewport')).toHaveCSS('background-image','none');
  await page.screenshot({path:'test-results/annotations-desktop.png'});
  await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Highlighter',exact:true}).click();
- await expect(page.getByLabel('Stroke thickness')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+ await expect(page.getByLabel('Stroke thickness',{exact:true})).toBeVisible();await expect(page.getByLabel('Stroke thickness slider',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
  await page.screenshot({path:'test-results/annotations-mobile.png'});
  expect(errors).toEqual([]);
 });

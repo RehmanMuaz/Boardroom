@@ -49,10 +49,18 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
   await owner.getByLabel('Note content').first().fill('Shared durable browser edit');await expect(owner.locator('.save')).toContainText('Saved to team database');
   await expect(viewer.getByLabel('Note content').first()).toHaveValue('Shared durable browser edit');
   await expect(owner.locator('.presence')).toContainText('2 online');
+  await owner.getByLabel('Switch workspace',{exact:true}).click();await owner.getByRole('button',{name:'Rename workspace',exact:true}).click();await expect(owner.getByLabel('Workspace name',{exact:true})).toBeFocused();await owner.getByLabel('Workspace name',{exact:true}).fill('Renamed browser team');await owner.getByRole('button',{name:'Save name',exact:true}).click();
+  await expect(owner.getByLabel('Switch workspace',{exact:true})).toContainText('Renamed browser team');await expect(viewer.getByLabel('Switch workspace',{exact:true})).toContainText('Renamed browser team');
+  await viewer.getByLabel('Switch workspace',{exact:true}).click();await expect(viewer.getByRole('button',{name:'Rename workspace',exact:true})).toHaveCount(0);await viewer.getByLabel('Switch workspace',{exact:true}).click();
+  await owner.getByRole('button',{name:'Rename workspace',exact:true}).click();await owner.getByLabel('Workspace name',{exact:true}).fill('Browser team '+suffix);await owner.getByRole('button',{name:'Save name',exact:true}).click();await owner.getByLabel('Switch workspace',{exact:true}).click();await expect(viewer.getByLabel('Switch workspace',{exact:true})).toContainText('Browser team '+suffix);
   await owner.getByText('Board appearance',{exact:true}).click();await owner.getByLabel('Board background color').fill('#19302a');await owner.getByLabel('Board canvas pattern').selectOption('grid');await owner.getByText('Board appearance',{exact:true}).click();
   await expect(viewer.locator('.viewport')).toHaveCSS('background-color','rgb(25, 48, 42)');await expect(viewer.locator('.viewport')).toHaveCSS('background-image',/linear-gradient/);
   await viewer.getByText('Board appearance',{exact:true}).click();await expect(viewer.getByLabel('Board background color')).toBeDisabled();await expect(viewer.getByLabel('Board canvas pattern')).toBeDisabled();await viewer.getByText('Board appearance',{exact:true}).click();
   await expect(viewer.getByRole('button',{name:'Text annotation tool'})).toBeDisabled();
+  await expect(viewer.getByRole('button',{name:'Shape annotation tool'})).toBeDisabled();
+  await owner.getByRole('button',{name:'Shape annotation tool'}).click();const shapeCanvas=await owner.locator('.viewport').boundingBox();if(!shapeCanvas)throw Error('Missing canvas');
+  await owner.mouse.move(shapeCanvas.x+800,shapeCanvas.y+100);await owner.mouse.down();await owner.mouse.move(shapeCanvas.x+900,shapeCanvas.y+150,{steps:5});await owner.mouse.up();
+  await expect(viewer.getByRole('button',{name:'arrow annotation',exact:true})).toHaveCount(1);
   await owner.getByRole('button',{name:'Text annotation tool'}).click();
   const canvasBounds=await owner.locator('.viewport').boundingBox();if(!canvasBounds)throw Error('Missing canvas');
   await owner.mouse.click(canvasBounds.x+400,canvasBounds.y+300);

@@ -52,6 +52,7 @@ All routes begin with /api. Board/card IDs are scoped by workspace URL because l
 
 - GET /session: session user ID and CSRF token, including before sign-in.
 - POST /auth/register, POST /auth/login, POST /logout.
+- PATCH /workspaces/:id: owner-only rename with `{name,expectedName}`. Names are trimmed, nonempty and at most 120 characters. A transaction locks the workspace row and rechecks membership with a shared lock; competing names return 409, and replaying the same result is safe. Renaming does not change snapshot/revision, assets or memberships.
 - GET/POST /workspaces: list memberships or create an owned workspace.
 - GET/PUT /workspaces/:id: read or replace a document; PUT takes {expectedRevision,snapshot}.
 - GET/POST /workspaces/:id/boards: list or create {expectedRevision,board:{id,title,parent?}}.
@@ -87,6 +88,8 @@ GET upgrade /api/live requires the exact configured Origin and the same signed d
 Responses are snapshot, ack (operationId, snapshot, revision, duplicate), presence, role, error or revoked. Every operation, presence change and snapshot recipient rechecks the database session and membership. Owner membership updates/removal and logout close affected sockets before the HTTP response. Heartbeats additionally detect dead connections and externally expired/revoked sessions. Presence is ephemeral, workspace-scoped, lists actual connected accounts and includes active board IDs. A deleted active board falls back to the root.
 
 The gateway runs inside one API process. Cross-process notifications and shared presence are required before horizontally scaling. Multiple writers are transactionally safe in PostgreSQL, but live fan-out currently covers this single process only.
+
+Authorized snapshot messages also include the current workspace name. Rename commits call the existing publication hook without advancing the canvas revision. The client updates workspace controls through a scoped metadata event while preserving pending canvas operations. Reconnect snapshots and workspace listing refresh names from PostgreSQL; existing clients can ignore the added name field.
 
 ## Planned work
 
@@ -124,3 +127,5 @@ Boards may contain ordered `annotations`; older snapshots without this field rem
 Annotation entity/order and field changes use the existing compare-and-set operation ledger, PostgreSQL snapshot transaction, and authorized WebSocket fan-out. Independent annotation fields merge; competing edits to the same field conflict, including the grouped text style field. Gesture previews stay in the client until pointer release. Undo uses inverse operations and refuses to overwrite competing work. Workspace validation bounds annotation counts, stroke points, coordinates and styles at the existing API boundary; no database migration or new public endpoint is needed.
 
 Optional board `background` (six-digit hex) and `pattern` (plain/dots/grid) fields use separate board field operations. Legacy snapshots default to the personal theme canvas and dots. Explicit colors remain shared across themes; pattern contrast and automatic transparent annotation text color adapt to those colors. Arbitrary CSS, images and URLs are rejected. Text presets write the existing validated annotation style, rather than storing a preset ID or changing notes. These fields use existing JSONB persistence and authorization without a database migration.
+
+Shape annotations add an allowlisted `shape` (line/arrow/rectangle/circle), validated outline thickness/fill and two bounded local endpoints. Endpoints preserve drag direction; normalized geometry and resize operations keep them within their box. Arrowheads and ellipse/rectangle paths are generated from numeric domain data, never imported SVG. Shape type/fill use separate compare-and-set fields; geometry resizing updates dimensions and endpoints atomically. Existing annotation limits, snapshot validation, membership enforcement and JSONB persistence apply without a schema migration. Shapes remain independent of card connectors.

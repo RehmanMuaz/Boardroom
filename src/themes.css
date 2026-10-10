@@ -37,3 +37,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .notice{color:#393c3b;color-scheme:light}
 @media(max-width:800px){header .save{background:var(--surface)}}
 @media(max-width:600px){header .save{background:transparent}}
+.workspace-rename{display:grid;gap:8px;padding:10px 0;border-top:1px solid var(--border)}
+.workspace-rename label{display:grid;gap:6px;color:var(--ink);font-size:12px}
+.workspace-rename input{width:100%;min-width:0;padding:8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink)}

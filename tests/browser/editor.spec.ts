@@ -13,7 +13,7 @@ test('local canvas edits, zoom-aware dragging, nested navigation and backup roun
   for(let i=0;i<5&&zoom!==1;i++)await page.getByLabel(zoom<1?'Zoom out':'Zoom in').click();
   const before=await card.evaluate(el=>({x:parseFloat((el as HTMLElement).style.left),y:parseFloat((el as HTMLElement).style.top)}));
   const handle=await card.boundingBox();if(!handle)throw Error('Missing card surface');
-  await page.mouse.move(handle.x+handle.width/2,handle.y+handle.height/2);await page.mouse.down();await page.mouse.move(handle.x+handle.width/2+40,handle.y+handle.height/2+20,{steps:5});await page.mouse.up();
+  const sidebar=await page.locator('aside').boundingBox();const startX=Math.min(handle.x+handle.width-6,Math.max(handle.x+10,(sidebar?.x??0)+(sidebar?.width??0)+6));const startY=handle.y+6;await page.mouse.move(startX,startY);await page.mouse.down();await page.mouse.move(startX+40,startY+20,{steps:5});await page.mouse.up();
   const after=await card.evaluate(el=>({x:parseFloat((el as HTMLElement).style.left),y:parseFloat((el as HTMLElement).style.top)}));
   expect(after.x-before.x).toBeCloseTo(40/zoom);expect(after.y-before.y).toBeCloseTo(20/zoom);
  }

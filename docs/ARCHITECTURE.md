@@ -52,6 +52,7 @@ All routes begin with /api. Board/card IDs are scoped by workspace URL because l
 
 - GET /session: session user ID and CSRF token, including before sign-in.
 - POST /auth/register, POST /auth/login, POST /logout.
+- PATCH /workspaces/:id: owner-only rename with `{name,expectedName}`. Names are trimmed, nonempty and at most 120 characters. A transaction locks the workspace row and rechecks membership with a shared lock; competing names return 409, and replaying the same result is safe. Renaming does not change snapshot/revision, assets or memberships.
 - GET/POST /workspaces: list memberships or create an owned workspace.
 - GET/PUT /workspaces/:id: read or replace a document; PUT takes {expectedRevision,snapshot}.
 - GET/POST /workspaces/:id/boards: list or create {expectedRevision,board:{id,title,parent?}}.
@@ -87,6 +88,8 @@ GET upgrade /api/live requires the exact configured Origin and the same signed d
 Responses are snapshot, ack (operationId, snapshot, revision, duplicate), presence, role, error or revoked. Every operation, presence change and snapshot recipient rechecks the database session and membership. Owner membership updates/removal and logout close affected sockets before the HTTP response. Heartbeats additionally detect dead connections and externally expired/revoked sessions. Presence is ephemeral, workspace-scoped, lists actual connected accounts and includes active board IDs. A deleted active board falls back to the root.
 
 The gateway runs inside one API process. Cross-process notifications and shared presence are required before horizontally scaling. Multiple writers are transactionally safe in PostgreSQL, but live fan-out currently covers this single process only.
+
+Authorized snapshot messages also include the current workspace name. Rename commits call the existing publication hook without advancing the canvas revision. The client updates workspace controls through a scoped metadata event while preserving pending canvas operations. Reconnect snapshots and workspace listing refresh names from PostgreSQL; existing clients can ignore the added name field.
 
 ## Planned work
 

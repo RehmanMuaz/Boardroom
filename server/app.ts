@@ -44,6 +44,14 @@ export function createApp(pool:Pool, options:{secret:string; origin:string; secu
  app.get('/api/workspaces',async(req,res)=>{const result=await pool.query('SELECT w.id,w.name,m.role FROM team_workspaces w JOIN memberships m ON m.workspace_id=w.id WHERE m.user_id=$1 ORDER BY w.name',[req.session.userId]);res.json(result.rows);});
  app.post('/api/workspaces',async(req,res)=>{const {name}=z.object({name:z.string().trim().min(1).max(120)}).strict().parse(req.body);const id=randomUUID();const db=await pool.connect();try{await db.query('BEGIN');await db.query('INSERT INTO team_workspaces(id,name,snapshot) VALUES ($1,$2,$3)',[id,name,JSON.stringify(seed)]);await db.query('INSERT INTO memberships(workspace_id,user_id,role) VALUES ($1,$2,$3)',[id,req.session.userId,'owner']);await db.query('COMMIT');}catch(e){await db.query('ROLLBACK');throw e;}finally{db.release();}res.status(201).json({id,name,role:'owner'});});
  app.get('/api/workspaces/:id',async(req,res)=>{const id=String(req.params.id);const role=await membership(pool,req,id);const result=await pool.query('SELECT snapshot,revision,name FROM team_workspaces WHERE id=$1',[id]);res.json({...result.rows[0],role});});
+ app.patch('/api/workspaces/:id',async(req,res)=>{
+  const id=uuid.parse(req.params.id),{name,expectedName}=z.object({name:z.string().trim().min(1).max(120),expectedName:z.string().min(1).max(120)}).strict().parse(req.body);
+  const db=await pool.connect();try{await db.query('BEGIN');const current=await db.query('SELECT name FROM team_workspaces WHERE id=$1 FOR UPDATE',[id]);await membership(db,req,id,false,true);
+   if(current.rows[0].name!==expectedName&&current.rows[0].name!==name)throw new HttpError(409,'Workspace name changed. Reopen Rename workspace to use the latest name.');
+   await db.query('UPDATE team_workspaces SET name=$1 WHERE id=$2',[name,id]);await db.query('COMMIT');
+  }catch(e){await db.query('ROLLBACK');throw e;}finally{db.release();}
+  await live()?.publish(id);res.json({id,name});
+ });
  app.put('/api/workspaces/:id',async(req,res)=>{
   const body=z.object({expectedRevision:z.number().int().nonnegative(),snapshot:z.unknown()}).strict().parse(req.body);
   if(!validWorkspace(body.snapshot))throw new HttpError(400,'Invalid workspace snapshot');

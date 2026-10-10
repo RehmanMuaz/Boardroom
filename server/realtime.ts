@@ -43,7 +43,7 @@ export function attachRealtime(server:Server,app:Express,pool:Pool,origin:string
  async function publish(id:string,operationId?:string){
   const previous=lanes.get(id)??Promise.resolve();
   const next=previous.then(async()=>{
-   const result=await pool.query('SELECT snapshot,revision FROM team_workspaces WHERE id=$1',[id]);if(!result.rowCount)return;
+   const result=await pool.query('SELECT snapshot,revision,name FROM team_workspaces WHERE id=$1',[id]);if(!result.rowCount)return;
    for(const peer of peers)if(peer.workspaceId===id&&peer.socket.readyState===WebSocket.OPEN){try{const identity=await authorize(peer);send(peer,{type:'snapshot',...result.rows[0],role:identity.role,operationId});}catch{revokePeer(peer);}}
   }).catch(error=>{logFailure(error);for(const peer of peers)if(peer.workspaceId===id)peer.socket.terminate();});
   lanes.set(id,next);await next;if(lanes.get(id)===next)lanes.delete(id);
@@ -71,7 +71,7 @@ export function attachRealtime(server:Server,app:Express,pool:Pool,origin:string
         if(peer.workspaceId)throw new HttpError(400,'Already subscribed');
         const identity=await authorize(peer,message.workspaceId);if(message.csrf!==peer.request.session.csrf)throw new HttpError(403,'Invalid CSRF token');
         peer.workspaceId=message.workspaceId;
-        const result=await pool.query('SELECT snapshot,revision FROM team_workspaces WHERE id=$1',[peer.workspaceId]);
+        const result=await pool.query('SELECT snapshot,revision,name FROM team_workspaces WHERE id=$1',[peer.workspaceId]);
         send(peer,{type:'snapshot',...result.rows[0],role:identity.role});await presence(peer.workspaceId);
        }else if(message.type==='operation'){
         operationId=message.operation.id;const identity=await authorize(peer);

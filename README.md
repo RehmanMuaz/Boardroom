@@ -76,6 +76,8 @@ IDEA-004 is implemented on the development feature branch, awaiting production p
 
 The header shows Boardroom and the selected workspace. Use its workspace dropdown to switch teams, open the browser-local canvas or return to all workspaces. Account contains sign-in/sign-out; owners retain Manage team. Board titles are editable in the canvas heading, with nested breadcrumbs above. Actions contains JSON import/export and keyboard shortcuts. Save/conflict status remains visible; switching is blocked while uploads or unsaved operations remain.
 
+Workspace owners can choose Rename workspace in the workspace dropdown, enter a name and save. Names are shared, persist in PostgreSQL and update for connected teammates. Editors/viewers cannot rename; browser-local mode has no team workspace name. Renaming preserves boards, uploads, invitations and permissions. Competing renames produce a conflict; reopen the form to use the latest name. Available on the development feature branch, not deployed.
+
 New image/video uploads start without a subtitle. Use the subtitle icon in the bottom-right hover overlay on editable media to show or hide its caption field. Visibility is shared and saved; hiding preserves the caption text. Existing media captions remain visible.
 
 Images and videos use borderless canvas frames with icon downloads in a bottom-right gradient overlay that appears on hover or keyboard focus. Drag directly on image/video surfaces; native video controls remain interactive; selecting editable media reveals resize handles. Dragging a resize handle or using its arrow keys preserves source proportions within supported size limits. Captions and native video controls remain available.

@@ -9,15 +9,22 @@ import {type Annotation,type ShapeKind} from '../annotations';
 import {AnnotationLayer} from './annotations/AnnotationLayer';
 import {AnnotationToolbar,type AnnotationTool} from './annotations/AnnotationToolbar';
 import './annotations/annotations.css';
+import './canvas/organization.css';
 import {WorkspaceControls} from './WorkspaceControls';
 import {Members} from '../team';
 import {TeamRepository,uploadAsset,type WorkspaceRepository} from '../repository';
-import {cardWidth,cardHeight,moveSelection,deleteSelection,putInColumn,duplicateCards,canvasExtent,screenDelta,resizeCard,mediaFooterHeight} from './canvas/domain';
+import {cardWidth,cardHeight,moveSelection,deleteSelection,duplicateCards,canvasExtent,screenDelta,mediaFooterHeight} from './canvas/domain';
 import {RichNote} from './content/RichNote';
 import {MediaCard,VideoLink} from './content/MediaCard';
+import {Checklist} from './content/Checklist';
+import {NoteLabels} from './content/NoteLabels';
+import {UrlIcon} from './content/UrlIcon';
+import {ConnectorLayer} from './canvas/ConnectorLayer';
+import {LayerControls} from './canvas/LayerControls';
+import {cardLayer,columnAt,columnSummary,dropIntoColumn,resizeInColumns,reorderLayers,layoutColumns} from './canvas/organization';
 
-type Drag={id:string;ids:string[];x:number;y:number;before:Workspace};
-type Resize={id:string;x:number;y:number;width:number;height:number;before:Workspace};
+type Drag={id:string;ids:string[];x:number;y:number;startX:number;startY:number;moved:boolean;point?:{x:number;y:number};inverse:Change[]};
+type Resize={id:string;x:number;y:number;width:number;height:number;inverse:Change[]};
 type Area={x:number;y:number;endX:number;endY:number;before:string[]};
 const clipboardPrefix='BOARDROOM-CARDS:';
 const editing=(target:EventTarget|null)=>target instanceof HTMLElement&&(target.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(target.tagName));
@@ -31,6 +38,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  const dirty=repository instanceof TeamRepository?(live?.dirty??false):local.dirty;
  const [boardId,setBoardId]=useState(initial.boards[0].id),[selected,setSelected]=useState<string[]>([]),[zoom,setZoom]=useState(1),[query,setQuery]=useState('');
  const [connection,setConnection]=useState<string|null>(null),[uploading,setUploading]=useState(false),[notice,setNotice]=useState(''),[area,setArea]=useState<Area|null>(null);
+ const [connectorTool,setConnectorTool]=useState(false),[connectorSource,setConnectorSource]=useState<string|null>(null),[dropTarget,setDropTarget]=useState<string|null>(null);
  const [annotationShape,setAnnotationShape]=useState<ShapeKind>('arrow');
  const [annotationTool,setAnnotationTool]=useState<AnnotationTool>('select'),[selectedAnnotation,setSelectedAnnotation]=useState<string|null>(null),[annotationColor,setAnnotationColor]=useState('#d95d39'),[annotationThickness,setAnnotationThickness]=useState(3),[annotationFocus,setAnnotationFocus]=useState<string|null>(null);
  const leaveBlocked=useRef(false);leaveBlocked.current=dirty||uploading;
@@ -46,11 +54,14 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  useEffect(()=>{if(!(repository instanceof TeamRepository))return;return repository.start(view=>{stateRef.current=view.snapshot;setState(view.snapshot);setLive(view);});},[repository]);
  useEffect(()=>{if(!(repository instanceof TeamRepository)||!dirty&&!uploading)return;const warn=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[repository,dirty,uploading]);
  useEffect(()=>{if(repository instanceof TeamRepository)repository.presence(board.id);},[repository,board.id]);
- useEffect(()=>{setSelected([]);setConnection(null);setQuery('');setSelectedAnnotation(null);setAnnotationFocus(null);setAnnotationTool('select');if(viewport.current){viewport.current.scrollLeft=0;viewport.current.scrollTop=0;}},[board.id]);
- useEffect(()=>{if(!writable)setAnnotationTool('select');},[writable]);
+ useEffect(()=>{setSelected([]);setConnection(null);setQuery('');setSelectedAnnotation(null);setAnnotationFocus(null);setAnnotationTool('select');setConnectorTool(false);setConnectorSource(null);if(viewport.current){viewport.current.scrollLeft=0;viewport.current.scrollTop=0;}},[board.id]);
+ useEffect(()=>{if(!writable){setAnnotationTool('select');setConnectorTool(false);setConnectorSource(null);}},[writable]);
  const apply=(next:Workspace)=>{if(!writable)return;if(repository instanceof TeamRepository)repository.change(stateRef.current,next);else {stateRef.current=next;setState(next);}};
- const update=(next:Workspace)=>{if(!writable)return;const inverse=diffWorkspace(next,stateRef.current);if(!inverse.length)return;past.current.push(inverse);future.current=[];apply(next);};
- function changeCard(id:string,patch:Partial<Card>){update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:b.cards.map(c=>c.id===id?{...c,...patch}:c)})});}
+ const update=(next:Workspace)=>{if(!writable)return;if(!validWorkspace(next)){setNotice('This change exceeds supported card, label or column limits.');return;}const inverse=diffWorkspace(next,stateRef.current);if(!inverse.length)return;past.current.push(inverse);future.current=[];apply(next);};
+ function changeCard(id:string,patch:Partial<Card>){update({...stateRef.current,boards:stateRef.current.boards.map(b=>{
+  if(b.id!==board.id)return b;const card=b.cards.find(c=>c.id===id);const next={...b,cards:b.cards.map(c=>c.id===id?{...c,...patch}:c)};
+  return card&&(patch.width!==undefined||patch.height!==undefined)?layoutColumns(next,card.kind==='column'?[id]:card.columnId?[card.columnId]:[],mediaAspects.current):next;
+ })});}
  function changeAnnotation(id:string,patch:Partial<Annotation>,expected?:Partial<Annotation>){
   const current=stateRef.current.boards.find(b=>b.id===board.id)?.annotations?.find(a=>a.id===id);if(!current||!writable)return;
   if(expected&&Object.entries(expected).some(([key,value])=>!same((current as unknown as Record<string,unknown>)[key],value))){setNotice('This annotation changed remotely. Try the move or resize again.');return;}
@@ -65,9 +76,9 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  function selectAnnotation(id:string){setSelectedAnnotation(id);setSelected([]);setConnection(null);}
  function location(){const view=viewport.current;return {x:Math.min(100000,Math.max(60,(view?.scrollLeft??0)/zoom+60+(board.cards.length%3)*300)),y:Math.min(100000,Math.max(70,(view?.scrollTop??0)/zoom+70+Math.floor(board.cards.length/3)*280))};}
  function add(kind:Kind,text?:string){
-  if(!writable)return;const id=crypto.randomUUID(),target=kind==='board'?crypto.randomUUID():undefined;
+  if(!writable)return;setConnectorTool(false);setConnectorSource(null);const id=crypto.randomUUID(),target=kind==='board'?crypto.randomUUID():undefined;
   const card:Card={id,kind,text:text??(kind==='board'?'Untitled board':kind==='column'?'New column':kind==='checklist'?'First task\nSecond task':kind==='link'?'https://example.com':'Write your idea…'),color:'#fff',...location()};
-  if(target)card.target=target;if(kind==='column'){card.width=320;card.height=520;card.color='#ebeee8';}
+  if(target)card.target=target;if(kind==='checklist')card.title='Untitled list';if(kind==='column'){card.width=320;card.height=520;card.color='#ebeee8';}
   const next={...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:[...b.cards,card]})};
   if(target)next.boards.push({id:target,parent:board.id,title:card.text,cards:[]});update(next);setSelected([id]);
  }
@@ -75,8 +86,17 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   if(!writable)return;const from=direction==='undo'?past:future,to=direction==='undo'?future:past,changes=from.current.pop();
   if(changes){try{const next=applyChanges(stateRef.current,changes);to.current.push(diffWorkspace(next,stateRef.current));apply(next);setSelected([]);setSelectedAnnotation(null);}catch{from.current.push(changes);setNotice('This field changed remotely. Undo would overwrite another edit.');}}
  }
- function remove(){if(selectedAnnotation){update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,annotations:(b.annotations??[]).filter(a=>a.id!==selectedAnnotation)})});setSelectedAnnotation(null);return;}if(connection){update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,connectors:(b.connectors??[]).filter(line=>line.id!==connection)})});setConnection(null);return;}update(deleteSelection(stateRef.current,board.id,selected));setSelected([]);}
- function choose(id:string,shift=false){setSelectedAnnotation(null);setConnection(null);setSelected(current=>shift?(current.includes(id)?current.filter(value=>value!==id):[...current,id]):current.includes(id)?current:[id]);}
+ function remove(){if(selectedAnnotation){update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,annotations:(b.annotations??[]).filter(a=>a.id!==selectedAnnotation)})});setSelectedAnnotation(null);return;}if(connection){update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,connectors:(b.connectors??[]).filter(line=>line.id!==connection)})});setConnection(null);return;}const removed=deleteSelection(stateRef.current,board.id,selected);update({...removed,boards:removed.boards.map(b=>b.id===board.id?layoutColumns(b,board.cards.filter(c=>selected.includes(c.id)&&c.columnId).map(c=>c.columnId!),mediaAspects.current):b)});setSelected([]);}
+ function choose(id:string,shift=false){
+  setSelectedAnnotation(null);setConnection(null);
+  if(connectorTool&&writable){
+   if(!connectorSource){setConnectorSource(id);setSelected([id]);return;}
+   if(connectorSource===id)return;
+   update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,connectors:[...(b.connectors??[]),{id:crypto.randomUUID(),from:connectorSource,to:id,color:'#789180'}]})});
+   setConnectorSource(null);setConnectorTool(false);setSelected([]);return;
+  }
+  setSelected(current=>shift?(current.includes(id)?current.filter(value=>value!==id):[...current,id]):current.includes(id)?current:[id]);
+ }
  function expandedIds(ids=selected){return [...new Set([...ids,...board.cards.filter(c=>c.columnId&&ids.includes(c.columnId)).map(c=>c.id)])];}
  function duplicate(){const result=duplicateCards(board,expandedIds());update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:[...b.cards,...result.cards],connectors:[...(b.connectors??[]),...result.connectors]})});setSelected(result.cards.map(c=>c.id));if(selected.some(id=>board.cards.find(c=>c.id===id)?.kind==='board'))setNotice('Nested board tiles are not duplicated.');}
  function connectCards(){if(selected.length!==2)return;update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,connectors:[...(b.connectors??[]),{id:crypto.randomUUID(),from:selected[0],to:selected[1],color:'#789180'}]})});}
@@ -94,23 +114,44 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  function pickFiles(accept:string){fileAccept.current=accept;if(uploadInput.current){uploadInput.current.accept=accept;uploadInput.current.click();}}
  function contentPoint(x:number,y:number){const view=viewport.current,rect=view?.getBoundingClientRect();return {x:(x-(rect?.left??0)+(view?.scrollLeft??0))/zoom,y:(y-(rect?.top??0)+(view?.scrollTop??0))/zoom};}
  function startDrag(e:ReactPointerEvent<HTMLDivElement>,card:Card){
-  if(!writable||e.button!==0||space.current)return;e.preventDefault();e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);
-  const ids=selected.includes(card.id)?selected:[card.id];setSelected(ids);drag.current={id:card.id,ids:expandedIds(ids),x:e.clientX,y:e.clientY,before:stateRef.current};
+  if(!writable||connectorTool||annotationTool!=='select'||e.button!==0||space.current)return;e.preventDefault();e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);
+  const ids=selected.includes(card.id)?selected:[card.id];setSelected(ids);drag.current={id:card.id,ids:expandedIds(ids),x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false,inverse:[]};
+ }
+ function previewGesture(next:Workspace){
+  const gesture=drag.current??resize.current;if(!gesture||!validWorkspace(next))return;
+  const inverse=diffWorkspace(next,stateRef.current);
+  for(const change of inverse){
+   const prior=gesture.inverse.find(c=>c.boardId===change.boardId&&c.cardId===change.cardId&&c.annotationId===change.annotationId&&c.field===change.field);
+   if(prior)prior.before=change.before;else gesture.inverse.push(change);
+  }
+  gesture.inverse=gesture.inverse.filter(c=>!same(c.before,c.after));apply(next);
+ }
+ function moveDrag(e:{clientX:number;clientY:number},id:string){
+  const moving=drag.current;if(moving?.id!==id)return;
+  if(Math.hypot(e.clientX-moving.startX,e.clientY-moving.startY)>3)moving.moved=true;
+  if(!moving.moved)return;
+  const delta=screenDelta(e.clientX-moving.x,e.clientY-moving.y,zoom);
+  previewGesture(moveSelection(stateRef.current,board.id,moving.ids,delta.x,delta.y));moving.x=e.clientX;moving.y=e.clientY;moving.point=contentPoint(e.clientX,e.clientY);
+  const current=stateRef.current.boards.find(b=>b.id===board.id)!;
+  setDropTarget(current.cards.find(c=>c.id===moving.id)?.kind==='column'?null:columnAt(current,moving.point,moving.ids)?.id??null);
  }
  function finishGesture(cancel=false){
   const gesture=drag.current??resize.current;if(!gesture)return;
-  const fields=drag.current?['x','y']:['width','height'],ids=drag.current?.ids??[gesture.id];
-  const inverse=diffWorkspace(stateRef.current,gesture.before).filter(change=>change.cardId&&ids.includes(change.cardId)&&fields.includes(change.field));
-  if(cancel){try{apply(applyChanges(stateRef.current,inverse));}catch{setNotice('A remote change prevented canceling this gesture.');}}
-  else if(inverse.length){past.current.push(inverse);future.current=[];}
-  drag.current=null;resize.current=null;
+  if(!cancel&&drag.current?.moved&&drag.current.point){
+   const current=stateRef.current.boards.find(b=>b.id===board.id)!;
+   const target=columnAt(current,drag.current.point,drag.current.ids);
+   previewGesture(dropIntoColumn(stateRef.current,board.id,drag.current.ids,target?.id,drag.current.point.y,mediaAspects.current));
+  }
+  if(cancel){try{apply(applyChanges(stateRef.current,gesture.inverse));}catch{setNotice('A remote change prevented canceling this gesture.');}}
+  else if(gesture.inverse.length){past.current.push(gesture.inverse);future.current=[];}
+  drag.current=null;resize.current=null;setDropTarget(null);
  }
  useEffect(()=>{
   function key(e:KeyboardEvent){
    const modifier=e.metaKey||e.ctrlKey;
    if(modifier&&e.key.toLowerCase()==='z'){e.preventDefault();history(e.shiftKey?'redo':'undo');return;}
    if(modifier&&e.key.toLowerCase()==='y'){e.preventDefault();history('redo');return;}
-   if(e.key==='Escape'){setSelected([]);setSelectedAnnotation(null);setAnnotationTool('select');setConnection(null);setNotice('');(document.activeElement as HTMLElement|null)?.blur();return;}
+   if(e.key==='Escape'){setSelected([]);setSelectedAnnotation(null);finishGesture(true);setAnnotationTool('select');setConnectorTool(false);setConnectorSource(null);setConnection(null);setNotice('');(document.activeElement as HTMLElement|null)?.blur();return;}
    if(editing(e.target))return;
    if(e.code==='Space'){space.current=true;e.preventDefault();}
    if(modifier&&e.key.toLowerCase()==='a'){e.preventDefault();setSelected(board.cards.map(c=>c.id));}
@@ -146,7 +187,8 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   <div className="import"><button disabled={!writable} onClick={()=>importInput.current?.click()}>Import</button><input ref={importInput} aria-label="Import backup" type="file" disabled={!writable} accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file){try{const value:unknown=JSON.parse(await file.text());if(!validWorkspace(value))throw Error('Invalid backup');update(value);setBoardId(value.boards[0].id);setSelected([]);}catch(e){setNotice(e instanceof Error?e.message:'Invalid backup');}}e.target.value='';}}/></div>
   <details className="shortcuts"><summary>?</summary><div><strong>Canvas shortcuts</strong><p>Shift-click or drag empty space: select cards<br/>Space-drag or middle drag: pan<br/>Arrows / Shift-arrows: move 1 / 10 px<br/>Ctrl/⌘ A: select all · D: duplicate<br/>Ctrl/⌘ C/X/V: copy, cut, paste<br/>Ctrl/⌘ Z / Shift-Z: undo / redo<br/>Delete: remove · Escape: clear selection<br/>Ctrl/⌘ +/−/0: zoom</p></div></details>
  </div></details></header>
- <aside><div className="tools">{([['note','▤','Note'],['link','↗','Link'],['checklist','☑','To-do'],['board','▦','Board'],['column','▥','Column']] as [Kind,string,string][]).map(([kind,icon,label])=><button key={kind} aria-label={label} disabled={!writable} onClick={()=>add(kind)}><span aria-hidden="true">{icon}</span>{label}</button>)}
+ <aside><div className="tools">{([['note','▤','Note'],['link','↗','Link'],['checklist','☑','To-do'],['board','▦','Board'],['column','▥','Column']] as [Kind,string,string][]).map(([kind,icon,label])=><button key={kind} aria-label={label} disabled={!writable} onClick={()=>add(kind)}><span aria-hidden="true">{label==='Link'?<UrlIcon/>:icon}</span>{label}</button>)}
+  <button aria-label="Connect items" title="Line tool: connect two items" aria-pressed={connectorTool} disabled={!writable} onClick={()=>{setConnectorTool(!connectorTool);setConnectorSource(null);setAnnotationTool('select');setSelectedAnnotation(null);setSelected([]);setConnection(null);}}><span aria-hidden="true">↗</span>Line</button>
   {([['Image','▧','image/png,image/jpeg,image/webp,image/gif'],['Video','▷','video/mp4,video/webm'],['File','⇧','.pdf,.zip,.txt']] as const).map(([label,icon,accept])=><button key={label} aria-label={'Upload '+label.toLowerCase()} disabled={!writable||!teamId||uploading} title={!teamId?'Uploads require a team workspace':undefined} onClick={()=>pickFiles(accept)}><span aria-hidden="true">{icon}</span>{label}</button>)}
  </div><div className="aside-bottom"><button disabled={!writable} onClick={()=>history('undo')}>↶<small>Undo</small></button><button disabled={!writable} onClick={()=>history('redo')}>↷<small>Redo</small></button></div></aside>
  <input ref={uploadInput} className="upload-input" type="file" multiple aria-label="Upload media files" onChange={e=>{void files([...e.target.files??[]]);e.target.value='';}}/>
@@ -157,26 +199,29 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
    onPointerDown={e=>{if(e.button===1||space.current){e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);pan.current={x:e.clientX,y:e.clientY,left:e.currentTarget.scrollLeft,top:e.currentTarget.scrollTop};return;}if(!(e.target instanceof HTMLElement)||!['viewport','canvas','plane'].some(name=>(e.target as HTMLElement).classList.contains(name)))return;const point=contentPoint(e.clientX,e.clientY);const next={...point,endX:point.x,endY:point.y,before:e.shiftKey?selected:[]};marquee.current=next;setArea(next);setSelected(next.before);setSelectedAnnotation(null);setConnection(null);e.currentTarget.setPointerCapture(e.pointerId);}}
    onPointerMove={e=>{if(pan.current){e.currentTarget.scrollLeft=pan.current.left-(e.clientX-pan.current.x);e.currentTarget.scrollTop=pan.current.top-(e.clientY-pan.current.y);}else if(marquee.current){const point=contentPoint(e.clientX,e.clientY),next={...marquee.current,endX:point.x,endY:point.y};setArea(next);const left=Math.min(next.x,next.endX),right=Math.max(next.x,next.endX),top=Math.min(next.y,next.endY),bottom=Math.max(next.y,next.endY);if(right-left>3||bottom-top>3){const ids=board.cards.filter(c=>c.kind==='column'?c.x>=left&&c.x+cardWidth(c)<=right&&c.y>=top&&c.y+cardHeight(c)<=bottom:c.x<right&&c.x+cardWidth(c)>left&&c.y<bottom&&c.y+cardHeight(c)>top).map(c=>c.id);setSelected([...new Set([...next.before,...ids])]);}}}}
    onPointerUp={()=>{pan.current=null;marquee.current=null;setArea(null);}} onPointerCancel={()=>{pan.current=null;marquee.current=null;setArea(null);}}
-  ><div className="canvas" style={{width:extent.width*zoom,height:extent.height*zoom}}><div className="plane" style={{width:extent.width,height:extent.height,transform:`scale(${zoom})`}}>
-   <svg className="connectors" width={extent.width} height={extent.height} aria-label="Card connections"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#789180"/></marker></defs>{(board.connectors??[]).map(line=>{const from=board.cards.find(c=>c.id===line.from),to=board.cards.find(c=>c.id===line.to);if(!from||!to)return null;const x=from.x+cardWidth(from)/2,y=from.y+cardHeight(from)/2,tx=to.x+cardWidth(to)/2,ty=to.y+cardHeight(to)/2;return <path key={line.id} className={connection===line.id?'connection selected-line':'connection'} d={`M ${x} ${y} C ${x+(tx-x)/2} ${y},${x+(tx-x)/2} ${ty},${tx} ${ty}`} stroke={line.color} markerEnd="url(#arrow)" tabIndex={0} role="button" aria-label={`Connection from ${from.text.slice(0,30)} to ${to.text.slice(0,30)}`} onClick={()=>{setConnection(line.id);setSelected([]);}} onKeyDown={e=>{if(e.key==='Enter'){setConnection(line.id);setSelected([]);}}}/>;})}</svg>
-   {board.cards.filter(c=>c.kind==='column'||c.text.toLowerCase().includes(query.toLowerCase())).map(c=><article key={c.id} data-card-id={c.id} className={'card '+c.kind+(selected.includes(c.id)?' selected':'')} style={{left:c.x,top:c.y,background:['image','video'].includes(c.kind)?'transparent':c.color,width:cardWidth(c),height:c.height??(['image','video','file','column'].includes(c.kind)?cardHeight(c):undefined)}} role="group" aria-label={`${c.kind} card: ${c.text.slice(0,60)}`} tabIndex={0} onClick={e=>choose(c.id,e.shiftKey)} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();choose(c.id,e.shiftKey);}}}>
-    <div className="handle" title="Drag card" onPointerDown={e=>startDrag(e,c)} onPointerMove={e=>{const moving=drag.current;if(moving?.id===c.id){const delta=screenDelta(e.clientX-moving.x,e.clientY-moving.y,zoom);apply(moveSelection(stateRef.current,board.id,moving.ids,delta.x,delta.y));moving.x=e.clientX;moving.y=e.clientY;}}} onPointerUp={()=>finishGesture()} onPointerCancel={()=>finishGesture(true)}>⠿</div>
+  ><div className="canvas" style={{width:extent.width*zoom,height:extent.height*zoom}}><div className={'plane'+(connectorTool?' connecting':'')} style={{width:extent.width,height:extent.height,transform:`scale(${zoom})`}}>
+
+   {board.cards.filter(c=>c.kind==='column'||[c.text,c.title,...(c.labels??[]).map(l=>l.text)].join(' ').toLowerCase().includes(query.toLowerCase())).map(c=><article key={c.id} data-card-id={c.id} className={'card '+c.kind+(selected.includes(c.id)?' selected':'')+(dropTarget===c.id?' drop-target':'')} style={{zIndex:cardLayer(board,c),left:c.x,top:c.y,background:['image','video'].includes(c.kind)?'transparent':c.color,width:cardWidth(c),height:cardHeight(c)}} role="group" aria-label={`${c.kind} card: ${c.text.slice(0,60)}`} tabIndex={0} onPointerDownCapture={e=>{if(connectorTool&&!space.current){e.preventDefault();e.stopPropagation();}}} onClickCapture={e=>{if(connectorTool){e.preventDefault();e.stopPropagation();choose(c.id);}}} onClick={e=>choose(c.id,e.shiftKey)} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();choose(c.id,e.shiftKey);}}}>
+    <div className="handle" title="Drag card" onPointerDown={e=>startDrag(e,c)} onPointerMove={e=>moveDrag(e,c.id)} onPointerUp={()=>finishGesture()} onPointerCancel={()=>finishGesture(true)}>⠿</div>
     {c.kind==='board'?<button className="board-tile" onDoubleClick={()=>{if(state.boards.some(b=>b.id===c.target))setBoardId(c.target!);}}><div className="folder">▦</div><strong>{state.boards.find(b=>b.id===c.target)?.title||c.text}</strong><small>Double-click to open</small></button>
-    :c.kind==='column'?<input className="column-title" aria-label="Column title" readOnly={!writable} value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/>
-    :['image','video','file'].includes(c.kind)?<><MediaCard card={c} workspaceId={teamId} dragHandlers={['image','video'].includes(c.kind)?{onPointerDown:e=>{if(c.kind==='video'){const video=e.currentTarget.querySelector('video'),rect=video?.getBoundingClientRect();if(rect&&e.clientY>rect.bottom-40*zoom)return;}startDrag(e,c);},onPointerMove:e=>{const moving=drag.current;if(moving?.id===c.id){const delta=screenDelta(e.clientX-moving.x,e.clientY-moving.y,zoom);apply(moveSelection(stateRef.current,board.id,moving.ids,delta.x,delta.y));moving.x=e.clientX;moving.y=e.clientY;}},onPointerUp:()=>finishGesture(),onPointerCancel:()=>finishGesture(true)}:undefined} editable={writable} toggleCaption={()=>{const visible=c.captionVisible===false;if(visible)pendingCaptionFocus.current=c.id;changeCard(c.id,{captionVisible:visible,height:Math.min(10000,Math.max(100,cardHeight(c)+(visible?28:-28)))});}} onAspect={ratio=>{if(Number.isFinite(ratio)&&ratio>0)mediaAspects.current.set(c.id,ratio);}}/>{(c.kind==='file'||c.captionVisible!==false)&&<input className="media-caption" placeholder={c.kind==='file'?undefined:'Write a subtitle...'} ref={input=>{if(input&&pendingCaptionFocus.current===c.id){pendingCaptionFocus.current=null;input.focus();input.setSelectionRange(input.value.length,input.value.length);}}} aria-label="Media caption" readOnly={!writable} value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/>}</>
-    :c.kind==='note'?<RichNote text={c.text} document={c.richText} editable={writable} change={(text,richText)=>changeCard(c.id,{text,richText})}/>
-    :c.kind==='checklist'?<div className="checklist"><strong>TO DO</strong>{c.text.split('\n').map((line,i)=><label key={i}><input type="checkbox" disabled={!writable} checked={line.startsWith('[x] ')} onChange={()=>changeCard(c.id,{text:c.text.split('\n').map((l,j)=>j===i?(l.startsWith('[x] ')?l.slice(4):'[x] '+l):l).join('\n')})}/><span className={line.startsWith('[x] ')?'done':''}>{line.replace(/^\[x\] /,'')}</span></label>)}<textarea readOnly={!writable} aria-label="Edit task list, one task per line" value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/></div>
-    :<><textarea readOnly={!writable} aria-label="Link address" value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/>{/^https?:\/\//.test(c.text)&&<a href={c.text} target="_blank" rel="noreferrer">Open reference ↗</a>}<VideoLink url={c.text}/></>}
-    {writable&&selected.includes(c.id)&&<div className="resize-handle" style={['image','video'].includes(c.kind)?{bottom:mediaFooterHeight(c)}:undefined} role="slider" tabIndex={0} aria-label={`Resize ${c.kind} card`} aria-valuemin={160} aria-valuemax={4000} aria-valuenow={cardWidth(c)} title={['image','video'].includes(c.kind)?'Drag or use arrows to resize proportionally':'Drag to resize; arrows change width, Shift-arrows change height'} onKeyDown={e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();e.stopPropagation();const step=e.key==='ArrowLeft'||e.key==='ArrowDown'?-10:10;changeCard(c.id,resizeCard(c,cardWidth(c)+(e.shiftKey&&!['image','video'].includes(c.kind)?0:step),cardHeight(c)+(e.shiftKey?step:0),mediaAspects.current.get(c.id)));}}
-     onPointerDown={e=>{e.stopPropagation();e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);resize.current={id:c.id,x:e.clientX,y:e.clientY,width:cardWidth(c),height:cardHeight(c),before:stateRef.current};}}
-     onPointerMove={e=>{const gesture=resize.current;if(gesture?.id===c.id){const delta=screenDelta(e.clientX-gesture.x,e.clientY-gesture.y,zoom);apply({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:b.cards.map(card=>card.id!==c.id?card:{...card,...resizeCard(card,gesture.width+delta.x,gesture.height+delta.y,mediaAspects.current.get(card.id))})})});}}} onPointerUp={()=>finishGesture()} onPointerCancel={()=>finishGesture(true)}/>
+    :c.kind==='column'?<><input className="column-title" aria-label="Column title" readOnly={!writable} value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/><div className="column-summary" aria-live="polite">{columnSummary(board,c.id)}</div></>
+    :['image','video','file'].includes(c.kind)?<><MediaCard card={c} workspaceId={teamId} dragHandlers={['image','video'].includes(c.kind)?{onPointerDown:e=>{if(c.kind==='video'){const video=e.currentTarget.querySelector('video'),rect=video?.getBoundingClientRect();if(rect&&e.clientY>rect.bottom-40*zoom)return;}startDrag(e,c);},onPointerMove:e=>moveDrag(e,c.id),onPointerUp:()=>finishGesture(),onPointerCancel:()=>finishGesture(true)}:undefined} editable={writable} toggleCaption={()=>{const visible=c.captionVisible===false;if(visible)pendingCaptionFocus.current=c.id;changeCard(c.id,{captionVisible:visible,height:Math.min(10000,Math.max(100,cardHeight(c)+(visible?28:-28)))});}} onAspect={ratio=>{if(Number.isFinite(ratio)&&ratio>0)mediaAspects.current.set(c.id,ratio);}}/>{(c.kind==='file'||c.captionVisible!==false)&&<input className="media-caption" placeholder={c.kind==='file'?undefined:'Write a subtitle...'} ref={input=>{if(input&&pendingCaptionFocus.current===c.id){pendingCaptionFocus.current=null;input.focus();input.setSelectionRange(input.value.length,input.value.length);}}} aria-label="Media caption" readOnly={!writable} value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/>}</>
+    :c.kind==='note'?<><div className="note-body"><RichNote text={c.text} document={c.richText} editable={writable} change={(text,richText)=>changeCard(c.id,{text,richText})}/></div><NoteLabels labels={c.labels} editable={writable} change={labels=>changeCard(c.id,{labels})}/></>
+    :c.kind==='checklist'?<Checklist card={c} editable={writable} change={patch=>changeCard(c.id,patch)}/>
+    :<><div className="link-card-icon"><UrlIcon/></div><textarea readOnly={!writable} aria-label="Link address" value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/>{/^https?:\/\//.test(c.text)&&<a href={c.text} target="_blank" rel="noreferrer">Open reference ↗</a>}<VideoLink url={c.text}/></>}
+    {writable&&selected.includes(c.id)&&<div className="resize-handle" style={['image','video'].includes(c.kind)?{bottom:mediaFooterHeight(c)}:undefined} role="slider" tabIndex={0} aria-label={`Resize ${c.kind} card`} aria-valuemin={160} aria-valuemax={4000} aria-valuenow={cardWidth(c)} title={['image','video'].includes(c.kind)?'Drag or use arrows to resize proportionally':'Drag to resize; arrows change width, Shift-arrows change height'} onKeyDown={e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();e.stopPropagation();const step=e.key==='ArrowLeft'||e.key==='ArrowDown'?-10:10;update(resizeInColumns(stateRef.current,board.id,c.id,cardWidth(c)+(e.shiftKey&&!['image','video'].includes(c.kind)?0:step),cardHeight(c)+(e.shiftKey?step:0),mediaAspects.current.get(c.id),mediaAspects.current));}}
+     onPointerDown={e=>{e.stopPropagation();e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);resize.current={id:c.id,x:e.clientX,y:e.clientY,width:cardWidth(c),height:cardHeight(c),inverse:[]};}}
+     onPointerMove={e=>{const gesture=resize.current;if(gesture?.id===c.id){const delta=screenDelta(e.clientX-gesture.x,e.clientY-gesture.y,zoom);previewGesture(resizeInColumns(stateRef.current,board.id,c.id,gesture.width+delta.x,gesture.height+delta.y,mediaAspects.current.get(c.id),mediaAspects.current));}}} onPointerUp={()=>finishGesture()} onPointerCancel={()=>finishGesture(true)}/>
     }
    </article>)}
+   <ConnectorLayer board={board} width={extent.width} height={extent.height} selected={connection} interactive={annotationTool==='select'&&!connectorTool} select={id=>{setConnection(id);setSelected([]);setSelectedAnnotation(null);}}/>
    <AnnotationLayer canvasBackground={board.background} key={board.id} shape={annotationShape} annotations={board.annotations??[]} tool={annotationTool} writable={writable} selectedId={selectedAnnotation} onSelect={selectAnnotation} add={addAnnotation} change={changeAnnotation} point={contentPoint} panActive={()=>space.current} width={extent.width} height={extent.height} color={annotationColor} thickness={annotationThickness} focusId={annotationFocus} focused={()=>setAnnotationFocus(null)}/>
   </div>{rectangle&&<div className="marquee" style={rectangle}/>}</div>{board.cards.length===0&&<div className="empty">A fresh board.<br/><small>Add a note or drop an image to start.</small></div>}</div>
-  <AnnotationToolbar shape={annotationShape} setShape={setAnnotationShape} tool={annotationTool} setTool={tool=>{setAnnotationTool(tool);setSelected([]);setConnection(null);setSelectedAnnotation(null);if(tool==='highlighter'){setAnnotationColor('#f5c542');setAnnotationThickness(18);}else if(tool==='pen'||tool==='shape'){setAnnotationColor('#d95d39');setAnnotationThickness(3);}}} writable={writable} color={annotationColor} setColor={setAnnotationColor} thickness={annotationThickness} setThickness={setAnnotationThickness} selected={board.annotations?.find(a=>a.id===selectedAnnotation)} change={changeAnnotation} remove={remove}/>
+  <AnnotationToolbar shape={annotationShape} setShape={setAnnotationShape} tool={annotationTool} setTool={tool=>{setConnectorTool(false);setConnectorSource(null);setAnnotationTool(tool);setSelected([]);setConnection(null);setSelectedAnnotation(null);if(tool==='highlighter'){setAnnotationColor('#f5c542');setAnnotationThickness(18);}else if(tool==='pen'||tool==='shape'){setAnnotationColor('#d95d39');setAnnotationThickness(3);}}} writable={writable} color={annotationColor} setColor={setAnnotationColor} thickness={annotationThickness} setThickness={setAnnotationThickness} selected={board.annotations?.find(a=>a.id===selectedAnnotation)} change={changeAnnotation} remove={remove}/>
+  {selectedAnnotation&&writable&&<div className="annotation-arrange"><LayerControls change={action=>update(reorderLayers(stateRef.current,board.id,[selectedAnnotation],action))}/></div>}
+  {connectorTool&&<div className="connector-hint" role="status">{connectorSource?'Choose the destination item':'Choose the first item to connect'}<button onClick={()=>{setConnectorTool(false);setConnectorSource(null);setSelected([]);}}>Cancel</button></div>}
   <div className="zoom"><button aria-label="Zoom out" onClick={()=>setZoom(z=>Math.max(.25,z-.1))}>−</button><button onClick={()=>setZoom(1)}>{Math.round(zoom*100)}%</button><button aria-label="Zoom in" onClick={()=>setZoom(z=>Math.min(2,z+.1))}>+</button></div>
-  {(selected.length>0||connection)&&writable&&<div className="selection">{connection?<button onClick={remove}>Delete connection</button>:<><span>{selected.length} selected</span>{['#fff','#fff4c9','#e3efe9','#e7e8f7','#f7dfdc'].map(color=><button className="swatch" key={color} aria-label={'Set color '+color} style={{background:color}} onClick={()=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:b.cards.map(c=>selected.includes(c.id)?{...c,color}:c)})})}/>)}<button onClick={duplicate}>Duplicate</button>{selected.length===2&&<button onClick={connectCards}>Connect cards</button>}{board.cards.some(c=>c.kind==='column')&&<select aria-label="Move selection to column" value="" onChange={e=>{update(putInColumn(stateRef.current,board.id,selected,e.target.value));}}><option value="">Move to column…</option>{board.cards.filter(c=>c.kind==='column').map(c=><option key={c.id} value={c.id}>{c.text}</option>)}</select>}<button onClick={remove}>Delete {selected.length===1?'card':'cards'}</button></>}</div>}
+  {(selected.length>0||connection)&&writable&&<div className="selection">{connection?<button onClick={remove}>Delete connection</button>:<><span>{selected.length} selected</span>{['#fff','#fff4c9','#e3efe9','#e7e8f7','#f7dfdc'].map(color=><button className="swatch" key={color} aria-label={'Set color '+color} style={{background:color}} onClick={()=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:b.cards.map(c=>selected.includes(c.id)?{...c,color}:c)})})}/>)}<LayerControls change={action=>update(reorderLayers(stateRef.current,board.id,selected,action))}/><button onClick={duplicate}>Duplicate</button>{selected.length===2&&<button onClick={connectCards}>Connect cards</button>}{board.cards.some(c=>c.kind==='column')&&<select aria-label="Move selection to column" value="" onChange={e=>{update(dropIntoColumn(stateRef.current,board.id,selected,e.target.value,Infinity,mediaAspects.current));}}><option value="">Move to column…</option>{board.cards.filter(c=>c.kind==='column').map(c=><option key={c.id} value={c.id}>{c.text}</option>)}</select>}<button onClick={remove}>Delete {selected.length===1?'card':'cards'}</button></>}</div>}
   <footer>{teamId?`${live?.role??(repository as TeamRepository).role} | Live team workspace | ${new Set(live?.members.map(m=>m.userId)).size} online`:'Browser-local canvas | No team sync'} · Space-drag to pan · Shift-click to select</footer>
  </main></div>;
 }

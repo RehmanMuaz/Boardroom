@@ -7,7 +7,7 @@ import {validateAssetReferences} from './assets';
 import {HttpError} from './workspace-store';
 
 const value=z.json();
-export const operationSchema=z.object({id:z.string().uuid(),baseRevision:z.number().int().nonnegative(),changes:z.array(z.object({boardId:z.string().min(1).max(128),cardId:z.string().min(1).max(128).optional(),annotationId:z.string().min(1).max(128).optional(),field:z.enum(['$board','$card','$annotation','$boardOrder','$cardOrder','$annotationOrder','title','parent','kind','x','y','text','color','target','width','height','assetId','columnId','captionVisible','richText','connectors','points','thickness','style','shape','fill','background','pattern']),before:value,after:value}).strict()).min(1).max(10000)}).strict();
+export const operationSchema=z.object({id:z.string().uuid(),baseRevision:z.number().int().nonnegative(),changes:z.array(z.object({boardId:z.string().min(1).max(128),cardId:z.string().min(1).max(128).optional(),annotationId:z.string().min(1).max(128).optional(),field:z.enum(['$board','$card','$annotation','$boardOrder','$cardOrder','$annotationOrder','title','parent','kind','x','y','text','color','target','width','height','assetId','columnId','captionVisible','richText','connectors','points','thickness','style','shape','fill','background','pattern','labels','layer']),before:value,after:value}).strict()).min(1).max(10000)}).strict();
 export async function persistOperation(pool:Pool,workspaceId:string,userId:string,input:unknown){
  const operation=operationSchema.parse(input);
  const payloadHash=createHash('sha256').update(JSON.stringify(operation)).digest('hex');

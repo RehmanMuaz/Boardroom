@@ -1,6 +1,6 @@
 export type Point=[number,number];
 export type TextStyle={fontFamily:'sans'|'serif'|'mono'|'rounded';fontSize:number;fontWeight:400|500|600|700|800;italic:boolean;underline:boolean;align:'left'|'center'|'right';background:string;borderColor:string;borderWidth:number;borderStyle:'solid'|'dashed'|'dotted'};
-type Base={id:string;x:number;y:number;width:number;height:number;color:string};
+type Base={id:string;x:number;y:number;width:number;height:number;color:string;layer?:number};
 export type StrokeAnnotation=Base&{kind:'pen'|'highlighter';thickness:number;points:Point[]};
 export type TextAnnotation=Base&{kind:'text';text:string;style:TextStyle};
 export type ShapeKind='line'|'arrow'|'rectangle'|'circle';
@@ -13,7 +13,8 @@ const number=(value:unknown,min:number,max:number)=>typeof value==='number'&&Num
 export function validAnnotation(value:unknown):value is Annotation{
  if(!value||typeof value!=='object')return false;const a=value as Annotation;
  if(typeof a.id!=='string'||!a.id.length||a.id.length>128||!number(a.x,0,100000)||!number(a.y,0,100000)||!number(a.width,1,10000)||!number(a.height,1,10000))return false;
- const base=['id','kind','x','y','width','height','color'];
+ if(a.layer!==undefined&&(!Number.isInteger(a.layer)||a.layer<0||a.layer>20000))return false;
+ const base=['id','kind','x','y','width','height','color','layer'];
  if(a.kind==='text'){
   if(Object.keys(a).some(k=>![...base,'text','style'].includes(k))||a.width<80||a.width>4000||a.height<32||typeof a.text!=='string'||a.text.length>10000||!(hex(a.color)||a.color==='auto'))return false;
   const s=a.style;if(!s||typeof s!=='object'||Object.keys(s).sort().join(',')!==Object.keys(defaultTextStyle).sort().join(','))return false;

@@ -62,7 +62,7 @@ IDEA-025 is implemented locally and remains first for user review. IDEA-018 thro
 - What I want: Controls to bring an object forward, send it backward, bring it to the front or send it to the back.
 - Constraints or things to preserve: Layer order persists, syncs and supports undo/redo. Define ordering for cards, columns and annotations consistently with IDEA-015. Connectors from IDEA-020 remain behind all objects regardless of their layer order.
 - Done when: Users can change overlapping objects' front/back order predictably, and that order survives reload and appears consistently for teammates.
-- Result: Arrange offers Bring forward, Send backward, Bring to front and Send to back for selected cards or annotations. Shared, bounded layers preserve relative group order and keep columns behind their children; connectors remain behind all objects. Undo/redo, reload, operation validation and viewer restrictions are covered.
+- Result: A compact row of four accessible icon buttons with tooltips offers Bring forward, Send backward, Bring to front and Send to back for selected cards or annotations. Shared, bounded layers preserve relative group order and keep columns behind their children; connectors remain behind all objects. Undo/redo, reload, operation validation and viewer restrictions are covered.
 
 
 ### IDEA-022: Drag-and-drop column layout, fitting and reordering

@@ -35,11 +35,10 @@
 .url-icon{display:block;color:inherit;flex-shrink:0}
 .link-card-icon{color:#536558;margin-bottom:8px}
 .card.link textarea{min-height:70px}
-.layer-controls{position:relative;font-size:12px}
-.layer-controls summary{padding:5px 7px;cursor:pointer;list-style:none}
-.layer-controls summary:focus-visible{outline:2px solid var(--focus)}
-.layer-menu{position:absolute;left:0;bottom:calc(100% + 8px);display:flex;flex-direction:column;min-width:150px;padding:5px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--ink);box-shadow:0 4px 16px var(--shadow);z-index:25}
-.layer-menu button{text-align:left;white-space:nowrap;padding:8px}
+.layer-controls{display:flex;align-items:center;gap:6px}
+.layer-controls button{display:grid;place-items:center;width:36px;height:36px;padding:6px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--ink)}
+.layer-controls button:hover{background:var(--hover)}
+.layer-controls button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .annotation-arrange{position:absolute;left:30px;bottom:140px;z-index:21;background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--ink)}
 .connector-hint{position:absolute;left:50%;top:170px;transform:translateX(-50%);z-index:20;padding:8px 12px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--ink);font-size:12px}
 .connector-hint button{margin-left:12px;text-decoration:underline}

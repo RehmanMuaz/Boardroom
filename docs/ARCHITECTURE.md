@@ -5,6 +5,7 @@
 React + strict TypeScript + Vite preserve the existing canvas. An Express 5 Node/TypeScript API uses PostgreSQL for team data and sessions. Development services bind to loopback; the production API is private behind the configured TLS proxy. The API also hosts the live WebSocket gateway; private local filesystem assets are implemented; S3-compatible storage and hosting are planned.
 
 - src/main.tsx: application bootstrap.
+- src/theme.tsx and src/themes.css: personal Light/Dark/System appearance, semantic interface color tokens, separate device/account preferences and system-theme change handling. Session responses hydrate the account preference; account changes use the authenticated, CSRF-protected PATCH /api/account/preferences endpoint. Preferences rehydrate on login, reload and window focus; they are not workspace live operations.
 - src/features/Editor.tsx: preserved editor and interactions.
 - src/features/WorkspaceControls.tsx: authorized workspace discovery/switching and account actions; the editor guards navigation while edits/uploads are pending. Root remounts the editor when workspace identity changes so canvas state/history cannot leak between teams.
 - src/features/canvas/domain.ts: group movement, columns, deletion, duplication and canvas extents.
@@ -29,7 +30,7 @@ React + strict TypeScript + Vite preserve the existing canvas. An Express 5 Node
 - server/operations.ts: validated, transactionally persisted, idempotent field operations.
 - server/realtime.ts: session-authenticated sockets, authorized broadcasts, ephemeral presence and revocation.
 - server/migrate.ts: migration tracking and advisory-lock application.
-- db/migrations/002_team_mvp.sql through 006_session_version.sql: live schema and operation ledger; 001 is an unused historical scaffold.
+- db/migrations/002_team_mvp.sql through 007_account_theme.sql: implemented schema, operation ledger and constrained personal account theme; 001 is an unused historical scaffold. Migration 007 is feature-branch work awaiting release.
 - tests/backend.test.ts: real PostgreSQL HTTP permission/persistence/concurrency checks.
 - tests/browser/: Chromium canvas and two-account workflow checks.
 
@@ -51,6 +52,7 @@ All routes begin with /api. Board/card IDs are scoped by workspace URL because l
 
 - GET /session: session user ID and CSRF token, including before sign-in.
 - POST /auth/register, POST /auth/login, POST /logout.
+- PATCH /workspaces/:id: owner-only rename with `{name,expectedName}`. Names are trimmed, nonempty and at most 120 characters. A transaction locks the workspace row and rechecks membership with a shared lock; competing names return 409, and replaying the same result is safe. Renaming does not change snapshot/revision, assets or memberships.
 - GET/POST /workspaces: list memberships or create an owned workspace.
 - GET/PUT /workspaces/:id: read or replace a document; PUT takes {expectedRevision,snapshot}.
 - GET/POST /workspaces/:id/boards: list or create {expectedRevision,board:{id,title,parent?}}.
@@ -87,6 +89,8 @@ Responses are snapshot, ack (operationId, snapshot, revision, duplicate), presen
 
 The gateway runs inside one API process. Cross-process notifications and shared presence are required before horizontally scaling. Multiple writers are transactionally safe in PostgreSQL, but live fan-out currently covers this single process only.
 
+Authorized snapshot messages also include the current workspace name. Rename commits call the existing publication hook without advancing the canvas revision. The client updates workspace controls through a scoped metadata event while preserving pending canvas operations. Reconnect snapshots and workspace listing refresh names from PostgreSQL; existing clients can ignore the added name field.
+
 ## Planned work
 
 Rich-text CRDTs, rendered shared cursors, cross-process fan-out, operation-ledger maintenance and persistent offline queues remain planned. Plain-text same-field collisions are explicit conflicts; no character-level merge is claimed.
@@ -116,3 +120,12 @@ Full backup stops the single API writer, captures a custom-format database dump 
 Production proxy selection: scripts/compose-config.mjs reads DEPLOY_PROXY from the private server environment file. The Traefik variant reuses API/database/backup services and joins only the API to the existing external proxy network; the Caddy variant remains available for standalone installations.
 
 Linux production automation uses scripts/server-helper.sh and deploy/helper/Dockerfile. Node and Compose run in a temporary helper with the local Docker socket, identical host/project mount paths, and read-only registry login. The server needs Docker, Git and flock, without host Node/npm. Existing backup/readiness gates and immutable release tracking remain.
+# Annotation model
+
+Boards may contain ordered `annotations`; older snapshots without this field remain valid. Pen/highlighter strokes store bounded local point arrays, position, dimensions, color and thickness. Standalone text stores plain text plus a validated typography/background/border style. Font choices map to bundled system font families; arbitrary CSS and remote fonts are rejected.
+
+Annotation entity/order and field changes use the existing compare-and-set operation ledger, PostgreSQL snapshot transaction, and authorized WebSocket fan-out. Independent annotation fields merge; competing edits to the same field conflict, including the grouped text style field. Gesture previews stay in the client until pointer release. Undo uses inverse operations and refuses to overwrite competing work. Workspace validation bounds annotation counts, stroke points, coordinates and styles at the existing API boundary; no database migration or new public endpoint is needed.
+
+Optional board `background` (six-digit hex) and `pattern` (plain/dots/grid) fields use separate board field operations. Legacy snapshots default to the personal theme canvas and dots. Explicit colors remain shared across themes; pattern contrast and automatic transparent annotation text color adapt to those colors. Arbitrary CSS, images and URLs are rejected. Text presets write the existing validated annotation style, rather than storing a preset ID or changing notes. These fields use existing JSONB persistence and authorization without a database migration.
+
+Shape annotations add an allowlisted `shape` (line/arrow/rectangle/circle), validated outline thickness/fill and two bounded local endpoints. Endpoints preserve drag direction; normalized geometry and resize operations keep them within their box. Arrowheads and ellipse/rectangle paths are generated from numeric domain data, never imported SVG. Shape type/fill use separate compare-and-set fields; geometry resizing updates dimensions and endpoints atomically. Existing annotation limits, snapshot validation, membership enforcement and JSONB persistence apply without a schema migration. Shapes remain independent of card connectors.

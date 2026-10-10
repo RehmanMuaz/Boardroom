@@ -40,5 +40,5 @@ export function duplicateCards(board:Board,ids:string[],offset=32){
  const connectors=(board.connectors??[]).filter(line=>map.has(line.from)&&map.has(line.to)&&idsIncluded.has(map.get(line.from)!)&&idsIncluded.has(map.get(line.to)!)).map(line=>({...line,id:crypto.randomUUID(),from:map.get(line.from)!,to:map.get(line.to)!}));
  return {cards,connectors};
 }
-export function canvasExtent(board:Board){return {width:Math.max(2400,...board.cards.map(c=>c.x+cardWidth(c)+300)),height:Math.max(1800,...board.cards.map(c=>c.y+cardHeight(c)+300))};}
+export function canvasExtent(board:Board){return {width:Math.max(2400,...board.cards.map(c=>c.x+cardWidth(c)+300),...(board.annotations??[]).map(a=>a.x+a.width+300)),height:Math.max(1800,...board.cards.map(c=>c.y+cardHeight(c)+300),...(board.annotations??[]).map(a=>a.y+a.height+300))};}
 export const screenDelta=(dx:number,dy:number,zoom:number)=>({x:dx/zoom,y:dy/zoom});

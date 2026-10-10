@@ -33,7 +33,7 @@ These commands avoid container environment variables, where provider credentials
 
 ## What runs automatically
 
-`.github/workflows/ci-deploy.yml` runs on pull requests, pushes to `main`, and manual workflow runs. CI installs dependencies, runs real PostgreSQL backend/model/deployment tests, builds the client/API, runs Chromium acceptance and builds the Docker image. It uses disposable test credentials, never production SMTP or production data.
+`.github/workflows/ci-deploy.yml` runs on pull requests, pushes to `main` or `develop`, and manual workflow runs. CI installs dependencies, runs real PostgreSQL backend/model/deployment tests, builds the client/API, runs Chromium acceptance and builds the Docker image. It uses disposable test credentials, never production SMTP or production data.
 
 Publishing/deployment are disabled until the repository variable `AUTO_DEPLOY` is exactly `true`. When enabled, a successful `main` run publishes `ghcr.io/OWNER/REPO:COMMIT`, deploys its immutable digest over SSH and uses the GitHub `production` environment. Pull requests never receive deployment access. Workflow concurrency and server locks serialize updates; a commit superseded on `main` is skipped before deployment. Protect `main` and require the `test` job before merging. GitHub environment approval rules are optional; omit required reviewers for fully automatic deployments.
 
@@ -132,4 +132,12 @@ Local validation: 24 tests and the production build passed; the additional Linux
 Helper implementation references: [Docker container mounts and runtime options](https://docs.docker.com/reference/cli/docker/container/run/), [Docker multi-stage builds](https://docs.docker.com/build/building/multi-stage/).
 
 
+
+
+
+## Development and production branches
+
+Use feature/fix branches from develop, merge into develop after CI passes, then open a release pull request from develop to main. Develop runs CI but cannot publish or deploy because the publication job requires refs/heads/main. No staging environment is provisioned by this branch.
+
+Configure GitHub rulesets for main and develop to require pull requests and the test status check. Block force pushes and branch deletion; optionally require review when another reviewer is available. Branch protection has not been configured remotely. Keep the production environment restricted to main. Configure branch rules in GitHub Settings > Rules > Rulesets; availability depends on repository visibility and GitHub plan.
 

@@ -43,6 +43,7 @@ export class LiveRepository {
     const message=JSON.parse(event.data);
     if(message.type==='snapshot'||message.type==='ack'){
      if(!validWorkspace(message.snapshot)||!Number.isInteger(message.revision)||message.revision<0)throw Error('Invalid live snapshot');
+     if(typeof message.name==='string'&&typeof window.dispatchEvent==='function')window.dispatchEvent(new CustomEvent('boardroom:workspace-name',{detail:{id:this.id,name:message.name}}));
      const own=this.pending.some(op=>op.id===message.operationId);
      if(message.type==='ack'){
       if(message.operationId!==this.pending[0]?.id)throw Error('Unexpected acknowledgement');

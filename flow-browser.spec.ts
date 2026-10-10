@@ -1,0 +1,26 @@
+import {test,expect} from '@playwright/test';
+import {randomUUID} from 'node:crypto';
+import {seed} from './src/model';
+test('a signed-in user reviews and creates a Flow workspace in their own account',async({page})=>{
+ const origin='http://127.0.0.1:3109';
+ const session=await (await page.request.get('/api/session')).json();
+ const accountResponse=await page.request.post('/api/auth/register',{headers:{Origin:origin,'x-csrf-token':session.csrf},data:{email:'flow-browser@example.invalid',password:'flow-browser-test-password'}});
+ expect(accountResponse.status()).toBe(201);
+ const stage=await page.request.post('/api/flow/previews',{headers:{Authorization:'Bearer '+'b'.repeat(64)},data:{requestId:randomUUID(),name:'Browser accepted pitch',snapshot:seed}});
+ expect(stage.status()).toBe(201);
+ const staged=await stage.json();
+ expect((await(await page.request.get('/api/workspaces')).json()).length).toBe(0);
+ await page.goto(staged.reviewUrl);
+ await expect(page.getByRole('heading',{name:'Browser accepted pitch'})).toBeVisible();
+ await page.getByText('Review all board content',{exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Creative studio'})).toBeVisible();
+ await page.getByRole('button',{name:'Create workspace in my account'}).click();
+ await page.waitForURL(origin+'/');
+ const workspaces=await(await page.request.get('/api/workspaces')).json();
+ expect(workspaces).toHaveLength(1);expect(workspaces[0].role).toBe('owner');expect(workspaces[0].name).toBe('Browser accepted pitch');
+ const created=await(await page.request.get('/api/workspaces/'+workspaces[0].id)).json();
+ expect(created.snapshot).toEqual(seed);
+ await page.goto(staged.reviewUrl);
+ await expect(page.getByText(/Workspace created/)).toBeVisible();
+ await expect(page.getByRole('button',{name:'Create workspace in my account'})).toHaveCount(0);
+});

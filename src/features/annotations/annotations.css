@@ -30,6 +30,9 @@
 .annotation-toolbar input,.annotation-toolbar select{background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:4px;padding:4px;font:inherit}
 .annotation-toolbar input[type=color]{width:28px;height:28px;padding:2px}
 .annotation-toolbar input[type=number]{width:55px}
+.annotation-number-control{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.annotation-toolbar .annotation-number-control input[type=range]{width:72px;min-width:0;height:28px;padding:0;border:0;accent-color:var(--accent);cursor:pointer}
+.annotation-toolbar .annotation-number-control input[type=number]{width:48px}
 .annotation-style summary{cursor:pointer;padding:9px;font-size:12px;white-space:nowrap}
 .annotation-properties{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);width:520px;max-width:calc(100vw - 120px);max-height:45vh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px var(--shadow);padding:14px;display:flex;align-items:center;flex-wrap:wrap;gap:12px;font-size:12px}
 .annotation-properties label{display:flex;align-items:center;gap:6px}

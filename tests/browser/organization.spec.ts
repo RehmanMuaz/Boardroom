@@ -5,7 +5,7 @@ import {defaultTextStyle} from '../../src/annotations';
 
 async function guest(page:Page,state?:Workspace){await page.goto('/');if(state)await page.evaluate(value=>localStorage.setItem('boardroom.v1',JSON.stringify(value)),state);await page.getByRole('button',{name:'Continue as guest'}).click();}
 async function saved(page:Page){await expect(page.locator('.save')).toContainText('Saved locally');}
-async function dragTo(page:Page,card:Locator,x:number,y:number){const handle=await card.boundingBox();if(!handle)throw Error('Missing card surface');await page.mouse.move(handle.x+handle.width/2,handle.y+10);await page.mouse.down();await page.mouse.move(x,y,{steps:8});await page.mouse.up();}
+async function dragTo(page:Page,card:Locator,x:number,y:number){const handle=await card.boundingBox();if(!handle)throw Error('Missing card surface');const sidebar=await page.locator('aside').boundingBox();const startX=Math.min(handle.x+handle.width-10,Math.max(handle.x+handle.width/2,(sidebar?.x??0)+(sidebar?.width??0)+12));await page.mouse.move(startX,handle.y+10);await page.mouse.down();await page.mouse.move(x,y,{steps:8});await page.mouse.up();}
 
 test('checklists edit titles/items directly and colorful note labels add/edit/remove, duplicate and persist',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await guest(page);

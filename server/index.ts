@@ -1,3 +1,4 @@
+import {withFlow,flowSettings} from './flow-integration';
 import {Pool} from 'pg';
 import {resolve} from 'node:path';
 import {mkdir,access,constants} from 'node:fs/promises';
@@ -12,9 +13,10 @@ const settings=config(process.env),pool=new Pool({connectionString:settings.data
 pool.on('error',error=>logger({event:'database_connection_failed',level:'error',code:errorCode(error)}));
 await migrate(pool);
 const assetRoot=resolve(process.env.ASSET_DIR??'data/assets');await mkdir(assetRoot,{recursive:true});
-const app=createApp(pool,{...settings,mailer:smtpMailer(process.env),staticRoot:settings.production?resolve('dist'):undefined,
+const base=createApp(pool,{...settings,mailer:smtpMailer(process.env),staticRoot:settings.production?resolve('dist'):undefined,
  assetRoot,readyCheck:()=>access(assetRoot,constants.R_OK|constants.W_OK),
  rateNamespace:!settings.production?process.env.TEST_RATE_NAMESPACE:undefined});
+const app=withFlow(base,pool,flowSettings(process.env,settings.origin,settings.requireVerification));
 const server=app.listen(settings.port,settings.host,()=>logger({event:'api_started'}));
 server.requestTimeout=120000;server.headersTimeout=15000;
 const realtime=attachRealtime(server,app,pool,settings.origin),stopMaintenance=startMaintenance(pool,logger);

@@ -1,0 +1,57 @@
+.app>aside{width:248px}
+.app>main{left:248px}
+.app .board-identity{min-width:0;overflow:hidden}
+.app .board-identity .breadcrumbs{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.app>aside .tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 4px}
+.app>aside .aside-bottom{display:flex}
+.app>aside>.annotation-dock{position:static;transform:none;width:100%;max-width:100%;margin:18px 0}
+.app>aside .annotation-toolbar{flex-wrap:wrap;justify-content:center;max-width:100%}
+.app>aside .annotation-hint{white-space:normal}
+.app>aside .stroke-options{flex-wrap:wrap;max-width:100%;padding:0}
+.app>aside .annotation-number-control{flex-shrink:1;flex-wrap:wrap}
+.app.contextual-sidebar>aside{padding:0;z-index:35;overflow:auto;background:var(--surface);color:var(--ink)}
+.object-sidebar{padding:18px 16px;display:flex;flex-direction:column;gap:12px;min-height:100%;font-size:12px}
+.object-sidebar h2{margin:6px 0 4px;font-size:16px;text-transform:capitalize}
+.object-sidebar .back-tools{display:flex;align-items:center;gap:10px;border:0;padding:8px 0;color:var(--muted);font-size:12px}
+.object-sidebar .back-tools span{font-size:21px}
+.object-sidebar button:not(.swatch){border-radius:5px;text-align:left;padding:8px;min-height:32px}
+.object-sidebar>button:not(.back-tools),.object-sidebar .task-tools button,.object-sidebar .format-note{border:1px solid var(--border)}
+.object-sidebar .object-content-tools:empty{display:none}
+.object-sidebar .object-content-tools,.object-sidebar .task-tools{display:flex;flex-direction:column;gap:6px}
+.object-sidebar .task-tools{max-height:220px;overflow:auto}
+.object-sidebar fieldset{border:0;padding:0;margin:3px 0}
+.object-sidebar legend{font-size:11px;margin-bottom:10px;color:var(--muted)}
+.object-colors{display:flex;gap:9px}
+.object-sidebar label{display:flex;flex-direction:column;gap:5px;color:var(--muted)}
+.object-sidebar select{width:100%;min-height:32px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink)}
+.object-sidebar .note-labels{margin:0;overflow:visible;max-height:none}
+.object-sidebar .label-badges button{min-height:0;padding:4px 7px}
+.object-sidebar .add-label{border:1px dashed var(--border)}
+.object-sidebar .label-editor input{background:var(--surface);color:var(--ink);border-color:var(--border)}
+.object-sidebar .layer-menu{position:static;box-shadow:none;min-width:0;margin-top:4px}
+.object-history{display:flex;gap:8px;margin-top:auto;padding-top:16px;border-top:1px solid var(--border)}
+.object-history button{flex:1}
+.object-sidebar .media-actions{position:static;display:flex;align-items:center;gap:10px;opacity:1;transform:none;pointer-events:auto;background:transparent;padding:0}
+.object-sidebar .media-actions a{display:flex;align-items:center;gap:5px;color:var(--ink);padding:8px;border:1px solid var(--border);border-radius:5px}
+.object-sidebar .media-actions a:after{content:attr(aria-label)}
+.object-sidebar .media-caption-toggle:after{content:attr(aria-label);padding-left:5px}
+.object-sidebar .annotation-dock{position:static;transform:none;max-width:100%;width:auto;background:transparent;box-shadow:none;padding:0}
+.object-sidebar .annotation-toolbar{display:flex;flex-direction:column;align-items:stretch;gap:10px;box-shadow:none;border:0;background:transparent;padding:0}
+.object-sidebar .stroke-options{display:flex;flex-wrap:wrap;border:0;gap:8px;margin:0;padding:0}
+.object-sidebar .annotation-style{position:static}
+.object-sidebar .annotation-properties{position:static;transform:none;display:flex;flex-direction:column;width:auto;max-height:none;overflow:visible;box-shadow:none;border:0;padding:8px 0;background:transparent}
+.object-sidebar .annotation-properties label{width:100%}
+.object-sidebar .view-only{margin:0;color:var(--muted)}
+.object-dimensions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.object-dimensions input{width:100%;min-width:0;padding:7px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink)}
+.plane>article.card{cursor:grab;touch-action:none;padding-top:16px}
+.plane>article.card:active{cursor:grabbing}
+.plane>article.card input,.plane>article.card textarea{cursor:inherit}
+.plane>article.card textarea{resize:none}
+.plane>article.card.editing input,.plane>article.card.editing textarea,.plane>article.card.editing .rich-note{cursor:text;touch-action:auto}
+.plane>article.card input[type=checkbox]{cursor:pointer}
+.plane>article.card.note .note-body>textarea{height:100%;resize:none}
+.plane>article.card.image,.plane>article.card.video{padding:0}
+.plane>article.card .board-tile{cursor:inherit;background:transparent}
+.plane>article.card .resize-handle{cursor:nwse-resize}
+@media(max-width:600px){.app>aside{width:190px}.app>main{left:190px}.app>aside .tools{grid-template-columns:repeat(2,minmax(0,1fr))}.object-sidebar{padding:12px;gap:10px}}

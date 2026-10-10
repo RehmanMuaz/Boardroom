@@ -6,7 +6,18 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-IDEA-018 through IDEA-024 are implemented and locally validated on feature/backlog-editor-improvements, awaiting user review. Existing requests follow these improvements. No deployment or remote publication was performed.
+IDEA-025 is implemented locally and remains first for user review. IDEA-018 through IDEA-024 are implemented and locally validated on feature/backlog-editor-improvements, awaiting user review. No deployment was performed.
+
+### IDEA-025: Content-only objects and a contextual left sidebar
+
+- Type: Improvement / UI
+- Priority: Now
+- Status: Done locally; awaiting user review
+- What I want: A cleaner Milanote-inspired canvas. Remove top drag buttons from every item and allow dragging from the item surface. Keep content, images and labels on objects; place their formatting and usage tools together in the left sidebar.
+- Expected behavior: Selecting an object temporarily replaces the creation rail with its relevant controls. A back arrow restores the main rail. Double-click content to edit it; text selection and native media controls remain usable while editing/viewing.
+- Constraints: Preserve keyboard access, group dragging, column membership/reordering, resizing, undo/redo, persistence, live collaboration and viewer permissions. Keep all testing local; do not deploy.
+- Done when: No object has a top drag button or inline formatting/action toolbar, surface dragging works, selected-object controls appear together on the left, and the back arrow restores creation tools.
+- Result: Removed top drag handles and inline object toolbars. Drag directly from object content; double-click or use Edit content to edit text, with native checkboxes/playback preserved. A contextual left sidebar replaces creation tools and groups formatting, labels, checklist actions, media downloads/subtitles, dimensions, colors, duplication, column placement, layers and deletion. Back to tools restores the creation rail, including annotation tools. Local build, core tests, browser interaction/live/viewer checks and accessibility/mobile checks validate the change; no deployment.
 
 ### IDEA-018: Editable checklist titles and inline editing
 
@@ -313,7 +324,7 @@ Canvas polish (IDEA-015) can accompany the relevant editor slices. Collaboration
 ## Optional request template
 
 ```markdown
-### IDEA-025: Short title
+### IDEA-026: Short title
 
 - Type: Feature / Improvement / Bug / UI
 - Priority: Now / Soon / Later / Unsure

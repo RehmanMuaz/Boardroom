@@ -46,6 +46,7 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+      - run: node node_modules/@playwright/test/cli.js test --config flow-browser.config.ts
       - run: docker build --tag boardroom-ci:${{ github.sha }} .
       - run: docker build --tag boardroom-server-helper:ci deploy/helper
       - run: docker run --rm boardroom-server-helper:ci --version

@@ -17,7 +17,7 @@ Requires Node.js 22.12+ and a running Docker daemon. On PowerShell, use npm.cmd 
 
 Create an account, then create a workspace. Registration grants no access to existing workspaces. Owners use **Manage team** to invite an email as editor/viewer, change roles or remove members. Share the returned one-use token privately. The recipient signs into the matching email account and pastes the token into **Invitation token**. Tokens expire after 48 hours. SMTP delivery is available when configured; the owner sees sent/failed/manual status. Owners cannot be demoted or removed through these controls.
 
-Choose **Open browser-local canvas** for the original local workspace. Local data is separate from team data. To transfer local data, export it, open a team workspace as owner/editor and import the backup. Import replaces the team's canvas with permission and revision checks.
+Choose **Continue as guest** at the top of the entry screen for the original local workspace. Local data is separate from team data. To transfer local data, export it, open a team workspace as owner/editor and import the backup. Import replaces the team's canvas with permission and revision checks.
 
 ## Implemented
 

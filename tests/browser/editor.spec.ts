@@ -4,7 +4,7 @@ import {Pool} from 'pg';
 
 test('local canvas edits, zoom-aware dragging, nested navigation and backup round-trip',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto('/');await page.getByRole('button',{name:'Open browser-local canvas'}).click();
+ await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).click();
  const note=page.getByLabel('Note content').first();await note.fill('Browser-tested idea');
  await expect(page.locator('.save')).toContainText('Saved locally');
  const card=page.locator('.card.note').first();
@@ -23,11 +23,11 @@ test('local canvas edits, zoom-aware dragging, nested navigation and backup roun
  await expect(page.locator('.save')).toContainText('Saved locally');
  await page.getByLabel('Board actions',{exact:true}).click();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export',exact:true}).click();const backup=await download;const path=await backup.path();if(!path)throw Error('No backup file');
  await note.fill('Temporary change');await page.getByLabel('Board actions',{exact:true}).click();await page.locator('.import input[type=file]').setInputFiles(path);await expect(note).toHaveValue('Browser-tested idea');
- await expect(page.locator('.save')).toContainText('Saved locally');await page.reload();await page.getByRole('button',{name:'Open browser-local canvas'}).click();await expect(note).toHaveValue('Browser-tested idea');
+ await expect(page.locator('.save')).toContainText('Saved locally');await page.reload();await page.getByRole('button',{name:'Continue as guest'}).click();await expect(note).toHaveValue('Browser-tested idea');
  expect(errors).toEqual([]);
 });
 
-async function register(page:Page,email:string){await page.goto('/');await page.getByRole('button',{name:'Create account',exact:true}).click();await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password (12+ characters)').fill('browser-test-password');await page.getByRole('button',{name:'Continue'}).click();await expect(page.getByRole('heading',{name:'Your workspaces'})).toBeVisible();}
+async function register(page:Page,email:string){await page.goto('/');await page.getByRole('button',{name:'Create account',exact:true}).click();await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password (12+ characters)').fill('browser-test-password');await page.getByRole('button',{name:'Continue',exact:true}).click();await expect(page.getByRole('heading',{name:'Your workspaces'})).toBeVisible();}
 
 test('live sharing, viewer permissions, reconnect retries, conflicts and revocation',async({browser})=>{
  const ownerContext=await browser.newContext(),viewerContext=await browser.newContext();const owner=await ownerContext.newPage(),viewer=await viewerContext.newPage();
@@ -78,7 +78,7 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
 });
 
 test('board breadcrumbs, title editing and compact navigation remain usable',async({page})=>{
- await page.goto('/');await page.getByRole('button',{name:'Open browser-local canvas'}).click();
+ await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).click();
  await expect(page.getByLabel('Switch workspace',{exact:true})).toContainText('Browser-local canvas');await expect(page.locator('.workspace-mode')).toContainText('No team sync');
  await page.locator('.board-tile').dblclick();await page.getByLabel('Board title').fill('Renamed project');
  await page.getByRole('button',{name:'Board',exact:true}).click();await page.locator('.board-tile').dblclick();

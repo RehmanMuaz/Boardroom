@@ -13,6 +13,12 @@ button:hover,.header-popover summary:hover,.board-heading h1 input:not([readonly
 .theme-control [role=alert]{color:var(--ink)}
 .team-entry .theme-control{margin:20px 0 8px;padding:0}
 .team-entry .theme-control label{display:flex}
+.guest-entry{margin:24px 0 16px}
+.team-entry .guest-entry button{display:block;width:100%;margin:0;padding:13px;background:var(--accent-soft);color:var(--accent);border-color:var(--border);font-weight:600}
+.team-entry .guest-entry button:hover{background:var(--hover)}
+.guest-entry p{font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0}
+.entry-divider{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:12px;margin:22px 0}
+.entry-divider:before,.entry-divider:after{content:'';height:1px;background:var(--border);flex:1}
 .search{background:var(--input);color:var(--ink);border-color:var(--border)}
 .search::placeholder{color:var(--muted)}
 header .save,.board-heading p,.board-heading span,.board-heading .workspace-mode,footer,.empty,.breadcrumbs,.popover-content>strong,.popover-content p,.popover-content button small,.tools button span,.aside-bottom small{color:var(--muted)}

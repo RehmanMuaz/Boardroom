@@ -10,7 +10,7 @@ test('device appearance follows System, survives reload, preserves cards and fit
  await page.reload();await expect(page.getByLabel('Appearance',{exact:true})).toHaveValue('light');
  await page.getByLabel('Appearance',{exact:true}).selectOption('system');await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
  await page.emulateMedia({colorScheme:'light'});await expect(page.locator('html')).toHaveAttribute('data-theme','light');
- await page.getByRole('button',{name:'Open browser-local canvas'}).click();
+ await page.getByRole('button',{name:'Continue as guest'}).click();
  const card=page.locator('.card.note').first(),original=await card.evaluate(el=>getComputedStyle(el).backgroundColor);
  await page.getByLabel('Account',{exact:true}).click();await page.getByLabel('Appearance',{exact:true}).selectOption('dark');await page.getByLabel('Account',{exact:true}).click();
  await expect(page.locator('html')).toHaveAttribute('data-theme','dark');expect(await card.evaluate(el=>getComputedStyle(el).backgroundColor)).toBe(original);
@@ -26,7 +26,7 @@ test('account appearance survives sign out and a second browser without leaking 
   await page.emulateMedia({colorScheme:'light'});await page.goto('/');await page.getByLabel('Appearance',{exact:true}).selectOption('light');
   await page.getByRole('button',{name:'Create account',exact:true}).click();await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Password (12+ characters)').fill(password);await page.getByRole('button',{name:'Continue',exact:true}).click();await expect(page.getByRole('heading',{name:'Your workspaces'})).toBeVisible();
   await page.getByLabel('Appearance',{exact:true}).selectOption('dark');await expect(page.locator('html')).toHaveAttribute('data-theme','dark');await expect(page.getByLabel('Appearance',{exact:true})).toBeEnabled();
-  await page.getByRole('button',{name:'Open browser-local canvas'}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','light');
+  await page.getByRole('button',{name:'Continue as guest'}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','light');
   await page.getByLabel('Switch workspace',{exact:true}).click();await page.getByRole('button',{name:'All workspaces',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
   await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','light');
   const other=await second.newPage();await other.goto('/');await other.getByLabel('Email',{exact:true}).fill(email);await other.getByLabel('Password (12+ characters)').fill(password);await other.getByRole('button',{name:'Continue',exact:true}).click();await expect(other.getByRole('heading',{name:'Your workspaces'})).toBeVisible();await expect(other.getByLabel('Appearance',{exact:true})).toHaveValue('dark');await expect(other.locator('html')).toHaveAttribute('data-theme','dark');

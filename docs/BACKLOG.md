@@ -36,11 +36,11 @@ IDEA-018 through IDEA-024 are implemented and locally validated on feature/backl
 - Type: Feature / Improvement / UI
 - Priority: Now
 - Status: Done locally; awaiting user review
-- What I want: A dedicated line tool, separate from shape annotations, connects two notes/items. Each endpoint attaches to its item's center and follows the item as it moves. The connector and arrow must render above objects so the arrow is always visible.
-- Expected behavior or example: Connect two notes, move or resize either note, and the line stays attached to their current centers without disappearing behind cards or columns.
-- Constraints or things to preserve: Reuse existing item connectors where appropriate. Keep free-drawn annotation shapes distinct from attached connectors. Preserve zoom/pan alignment, undo/redo, persistence and permissions. Item layer ordering in IDEA-021 must not hide connectors.
-- Done when: The dedicated tool creates center-attached connectors between two items; moving/resizing either endpoint updates the line, and the arrow remains visible above canvas objects.
-- Result: The separate Line tool in the creation rail connects the first and second selected items. Straight arrows attach to their centers and track movement/resizing; a dedicated overlay above all allowed object layers and a light outline keep lines/arrowheads visible. The existing Connect cards action remains available; drawing shapes stay separate.
+- What I want: A dedicated line tool, separate from shape annotations, connects two notes/items. The line aims along the axis between the items' centers and follows movement/resizing, but its start and arrow tip stop just outside their outer edges. Connectors render behind all cards, columns and annotations.
+- Expected behavior or example: Connect two notes, move or resize either note, and the line keeps its center-based direction while updating both outer-edge attachment points. Other objects can cover the connector because it stays behind them.
+- Constraints or things to preserve: Reuse existing item connectors where appropriate. Keep free-drawn annotation shapes distinct from attached connectors. Preserve zoom/pan alignment, undo/redo, persistence and permissions. Item layer ordering in IDEA-021 always leaves connectors behind every object. Overlapping endpoint items have no exposed segment, so their arrow is hidden until they separate.
+- Done when: The dedicated tool creates arrows aligned between two item centers with their start/end just outside the item edges. Moving/resizing updates those edge attachments, and arrows remain behind all objects.
+- Result: The separate Line tool in the creation rail connects the first and second selected items. Straight arrows follow the center-to-center axis and clip to a two-unit clearance outside each item rectangle. The arrow marker places its exact tip at the destination endpoint without protruding into the card. Connectors render behind every object; overlapping/touching endpoint rectangles suppress the arrow until there is an exposed segment. The existing Connect cards action remains available; drawing shapes stay separate.
 
 
 ### IDEA-021: Move objects in front of or behind others
@@ -49,9 +49,9 @@ IDEA-018 through IDEA-024 are implemented and locally validated on feature/backl
 - Priority: Now
 - Status: Done locally; awaiting user review
 - What I want: Controls to bring an object forward, send it backward, bring it to the front or send it to the back.
-- Constraints or things to preserve: Layer order persists, syncs and supports undo/redo. Define ordering for cards, columns and annotations consistently with IDEA-015. Connectors from IDEA-020 retain their visible overlay behavior.
+- Constraints or things to preserve: Layer order persists, syncs and supports undo/redo. Define ordering for cards, columns and annotations consistently with IDEA-015. Connectors from IDEA-020 remain behind all objects regardless of their layer order.
 - Done when: Users can change overlapping objects' front/back order predictably, and that order survives reload and appears consistently for teammates.
-- Result: Arrange offers Bring forward, Send backward, Bring to front and Send to back for selected cards or annotations. Shared, bounded layers preserve relative group order and keep columns behind their children; connector overlays remain above objects. Undo/redo, reload, operation validation and viewer restrictions are covered.
+- Result: Arrange offers Bring forward, Send backward, Bring to front and Send to back for selected cards or annotations. Shared, bounded layers preserve relative group order and keep columns behind their children; connectors remain behind all objects. Undo/redo, reload, operation validation and viewer restrictions are covered.
 
 
 ### IDEA-022: Drag-and-drop column layout, fitting and reordering

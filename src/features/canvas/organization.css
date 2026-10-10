@@ -23,8 +23,10 @@
 .add-task{font-size:11px;padding:4px 0;color:#536558}
 .column-summary{font-size:11px;color:#536558;padding:6px 4px 0;line-height:16px}
 .card.column.drop-target{outline:3px dashed var(--focus);outline-offset:3px}
-.plane>.connectors{z-index:30001}
-.connection{stroke-linecap:round}
+.plane{isolation:isolate}
+.plane>.connectors{z-index:-1}
+.connection{stroke-linecap:butt}
+.plane>.connectors .connection:focus{outline:none}
 .connection:focus-visible{outline:none;stroke-width:6}
 .plane>.annotation-layer{z-index:auto}
 .annotation-interaction{z-index:30002}

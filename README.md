@@ -2,6 +2,8 @@
 
 A self-hosted visual workspace for a small creative team. Original branding and a Milanote-inspired canvas. The existing editor supports browser-local storage and durable team storage. Exact visual parity needs reference screenshots/workflows.
 
+Development uses feature/fix branches from `develop`, with pull requests back into `develop`. CI runs on `develop` without deployment. A release pull request from `develop` into `main` promotes tested changes to production; successful `main` builds deploy automatically when `AUTO_DEPLOY=true`. See [deployment setup](docs/DEPLOYMENT.md) for branch protection recommendations.
+
 ## Run locally
 
 Requires Node.js 22.12+ and a running Docker daemon. On PowerShell, use npm.cmd if execution policy blocks npm.ps1.

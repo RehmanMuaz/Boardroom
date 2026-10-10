@@ -49,3 +49,5 @@ Live fan-out requires one API process. Same-field rich/plain text edits conflict
 Traefik deployment configuration prepared locally for note.vertexfilms.ca using reverse-proxy/websecure/vertexfilms. Deployment and backup helpers select it with DEPLOY_PROXY=traefik. Static proxy IP has been confirmed; GitHub/server wiring and public acceptance remain pending; nothing deployed.
 
 Operator confirmed Traefik static IP 172.19.0.7; the Traefik environment template now trusts only 172.19.0.7/32. Server Git, Docker Compose and flock are available. Deployment and backup helpers now run in a temporary Node/Docker CLI container; host Node/npm are unnecessary. GitHub/server wiring and public acceptance remain pending.
+
+Development workflow: develop integration branch with CI; feature/fix branches merge into develop; release PRs promote to main. Only main publishes/deploys. Remote branch protections remain pending; no staging server added.

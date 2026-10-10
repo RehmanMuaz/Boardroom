@@ -5,15 +5,15 @@ import {Pool} from 'pg';
 test('local canvas edits, zoom-aware dragging, nested navigation and backup round-trip',async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).click();
- const note=page.getByLabel('Note content').first();await note.fill('Browser-tested idea');
+ const note=page.getByLabel('Note content').first();await note.fill('Browser-tested idea');await note.press('Escape');
  await expect(page.locator('.save')).toContainText('Saved locally');
  const card=page.locator('.card.note').first();
  for(const zoom of [1,.5,1.5]){
   await page.locator('.zoom button').nth(1).click();
   for(let i=0;i<5&&zoom!==1;i++)await page.getByLabel(zoom<1?'Zoom out':'Zoom in').click();
   const before=await card.evaluate(el=>({x:parseFloat((el as HTMLElement).style.left),y:parseFloat((el as HTMLElement).style.top)}));
-  const handle=await card.locator('.handle').boundingBox();if(!handle)throw Error('Missing drag handle');
-  await page.mouse.move(handle.x+handle.width/2,handle.y+handle.height/2);await page.mouse.down();await page.mouse.move(handle.x+handle.width/2+40,handle.y+handle.height/2+20,{steps:5});await page.mouse.up();
+  const handle=await card.boundingBox();if(!handle)throw Error('Missing card surface');
+  const sidebar=await page.locator('aside').boundingBox();const startX=Math.min(handle.x+handle.width-6,Math.max(handle.x+10,(sidebar?.x??0)+(sidebar?.width??0)+6));const startY=handle.y+6;await page.mouse.move(startX,startY);await page.mouse.down();await page.mouse.move(startX+40,startY+20,{steps:5});await page.mouse.up();
   const after=await card.evaluate(el=>({x:parseFloat((el as HTMLElement).style.left),y:parseFloat((el as HTMLElement).style.top)}));
   expect(after.x-before.x).toBeCloseTo(40/zoom);expect(after.y-before.y).toBeCloseTo(20/zoom);
  }
@@ -58,17 +58,17 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
   await viewer.getByText('Board appearance',{exact:true}).click();await expect(viewer.getByLabel('Board background color')).toBeDisabled();await expect(viewer.getByLabel('Board canvas pattern')).toBeDisabled();await viewer.getByText('Board appearance',{exact:true}).click();
   await expect(viewer.getByRole('button',{name:'Text annotation tool'})).toBeDisabled();
   await expect(viewer.getByRole('button',{name:'Shape annotation tool'})).toBeDisabled();
-  await owner.getByRole('button',{name:'Shape annotation tool'}).click();const shapeCanvas=await owner.locator('.viewport').boundingBox();if(!shapeCanvas)throw Error('Missing canvas');
+  if(await owner.getByRole('button',{name:'Back to tools'}).count())await owner.getByRole('button',{name:'Back to tools'}).click();await owner.getByRole('button',{name:'Shape annotation tool'}).click();const shapeCanvas=await owner.locator('.viewport').boundingBox();if(!shapeCanvas)throw Error('Missing canvas');
   await owner.mouse.move(shapeCanvas.x+800,shapeCanvas.y+100);await owner.mouse.down();await owner.mouse.move(shapeCanvas.x+900,shapeCanvas.y+150,{steps:5});await owner.mouse.up();
   await expect(viewer.getByRole('button',{name:'arrow annotation',exact:true})).toHaveCount(1);
-  await owner.getByRole('button',{name:'Text annotation tool'}).click();
+  if(await owner.getByRole('button',{name:'Back to tools'}).count())await owner.getByRole('button',{name:'Back to tools'}).click();await owner.getByRole('button',{name:'Text annotation tool'}).click();
   const canvasBounds=await owner.locator('.viewport').boundingBox();if(!canvasBounds)throw Error('Missing canvas');
   await owner.mouse.click(canvasBounds.x+400,canvasBounds.y+300);
   await owner.getByLabel('Annotation text',{exact:true}).fill('Shared annotation');await owner.getByLabel('Annotation text',{exact:true}).press('Escape');
   await expect(viewer.locator('.text-annotation')).toContainText('Shared annotation');
   await viewer.locator('.text-annotation').dblclick();await expect(viewer.getByLabel('Annotation text',{exact:true})).toHaveCount(0);
   await expect(viewer.getByRole('button',{name:'Delete annotation'})).toHaveCount(0);
-  const moving=owner.locator('.card.note').first();const handle=await moving.locator('.handle').boundingBox();if(!handle)throw Error('No handle');
+  const moving=owner.locator('.card.note').first();const handle=await moving.boundingBox();if(!handle)throw Error('No card surface');
   await owner.mouse.move(handle.x+handle.width/2,handle.y+10);await owner.mouse.down();await owner.mouse.move(handle.x+handle.width/2+60,handle.y+40,{steps:5});await owner.mouse.up();
   await expect(viewer.locator('.card.note').first()).toHaveCSS('left','130px');await expect(viewer.locator('.card.note').first()).toHaveCSS('top','100px');
   // Role changes close the old subscription immediately; reopening loads the new role.

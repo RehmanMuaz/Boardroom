@@ -22,6 +22,7 @@ Choose **Continue as guest** at the top of the entry screen for the original loc
 ## Implemented
 
 - Notes with optional structured formatting, links, checklists, nested boards, columns, connectors, multi-selection, resize, titles, search, colors and undo/redo.
+- Content-only canvas items: drag their surfaces to move, double-click text or choose Edit content to edit, and use the contextual left sidebar for object tools. Back to tools restores the creation rail.
 - Private team image/video/file uploads, inline image and video playback, authenticated downloads and byte-range streaming.
 - Clipboard copy/cut/paste, duplicate, keyboard movement/resize, space-drag panning and an expanding canvas.
 - Validated JSON import/export and a local/team repository interface.
@@ -100,3 +101,16 @@ Choose Shape and select Arrow, Line, Rectangle or Circle, then drag on the canva
 Open Board appearance in the board heading to choose a shared background color and Plain, Dots or Grid canvas. Use theme background returns to each person's app theme; explicit colors are shared across themes. Text style offers Heading, Label and Body presets, preserving your text and decorative choices. Appearance is per board, saved and undoable, and viewers have read-only controls. Guest choices stay browser-local.
 
 Stroke width and annotation font size each have a slider alongside a numeric input. Drag for quick adjustments or type an exact value; both controls stay in sync. Width ranges from 1–60 and font size from 12–120.
+
+## Checklist, label and canvas improvements (local feature branch)
+
+IDEA-018 through IDEA-024 are implemented on `feature/backlog-editor-improvements` for local review. No deployment was performed.
+
+- Rename a checklist through its title field and edit each task directly next to its checkbox. Enter inserts a task; Add task and the row removal button manage items. Existing checklist text/completion states remain intact.
+- Link cards and the Link creation button use a globe/URL icon. Choose Line in the creation rail, then the source and destination items, to create an arrow aimed between their centers with both ends just outside their outer edges. Escape cancels. Arrows follow movement/resizing and render behind cards, columns and annotations. Touching/overlapping endpoint items hide the arrow until they separate.
+- Select objects and open Arrange to change their front/back order. Cards and annotations share saved layers; a column stays behind its own members. Connectors remain behind all objects.
+- Drag a card into a highlighted column or drag a contained card up/down to reorder it. Drop outside to detach it. Items fit the column width; resize handles allow smaller sizes within that width. Media retains ordinary source proportions. Moving a column carries its members; resizing/deletion/caption changes reflow its layout. Existing maximum dimensions and minimum media frame sizes apply.
+- Use + Label at the bottom of a note to add a compact colored badge. Click a label to edit its name/color or remove it. Label text participates in board search and survives duplication/export/import. Up to 20 labels per note, each with up to 80 characters.
+- Column summaries show direct card/file/board counts below the title, including images/videos as cards and nested board tiles as one board.
+
+Changes support local saves or authorized live team persistence, undo/redo and read-only viewers. The API script does not watch files: after updating the checkout, stop the running API with Ctrl+C and restart `npm.cmd run dev:api`, then refresh the browser. Vite's `npm.cmd run dev` server updates the frontend.

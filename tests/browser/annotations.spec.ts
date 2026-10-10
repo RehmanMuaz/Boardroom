@@ -8,7 +8,7 @@ test('guest annotations draw at zoom, focus text, format, move, undo and survive
  for(const zoom of [1,.5,1.5]){
   await page.locator('.zoom button').nth(1).click();
   for(let i=0;i<5&&zoom!==1;i++)await page.getByLabel(zoom<1?'Zoom out':'Zoom in').click();
-  await page.getByRole('button',{name:'Pen',exact:true}).click();
+  if(await page.getByRole('button',{name:'Back to tools'}).count())await page.getByRole('button',{name:'Back to tools'}).click();await page.getByRole('button',{name:'Pen',exact:true}).click();
   if(zoom===1){await page.getByLabel('Stroke thickness slider',{exact:true}).press('End');await expect(page.getByLabel('Stroke thickness',{exact:true})).toHaveValue('60');await page.getByLabel('Stroke thickness',{exact:true}).fill('6');await expect(page.getByLabel('Stroke thickness slider',{exact:true})).toHaveValue('6');}
   const viewport=await page.locator('.viewport').boundingBox();if(!viewport)throw Error('Missing canvas');
   const x=viewport.x+350,y=viewport.y+210;
@@ -17,7 +17,7 @@ test('guest annotations draw at zoom, focus text, format, move, undo and survive
   expect(await stroke.evaluate(el=>Number(el.getAttribute('width')))).toBeCloseTo(60/zoom);
  }
  await page.locator('.zoom button').nth(1).click();
- await page.getByRole('button',{name:'Text annotation tool'}).click();
+ if(await page.getByRole('button',{name:'Back to tools'}).count())await page.getByRole('button',{name:'Back to tools'}).click();await page.getByRole('button',{name:'Text annotation tool'}).click();
  const viewport=await page.locator('.viewport').boundingBox();if(!viewport)throw Error('Missing canvas');
  await page.mouse.click(viewport.x+400,viewport.y+320);
  const input=page.getByLabel('Annotation text',{exact:true});await expect(input).toBeFocused();await input.fill('Styled canvas title');await input.press('Escape');
@@ -38,7 +38,7 @@ test('guest annotations draw at zoom, focus text, format, move, undo and survive
  await expect(page.locator('.stroke-annotation')).toHaveCount(3);await expect(text).toContainText('Styled canvas title');await expect(text).toHaveCSS('font-weight','700');
  await expect(page.locator('.viewport')).toHaveCSS('background-color','rgb(25, 48, 42)');await expect(page.locator('.viewport')).toHaveCSS('background-image','none');
  await page.screenshot({path:'test-results/annotations-desktop.png'});
- await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Highlighter',exact:true}).click();
+ await page.setViewportSize({width:390,height:844});if(await page.getByRole('button',{name:'Back to tools'}).count())await page.getByRole('button',{name:'Back to tools'}).click();await page.getByRole('button',{name:'Highlighter',exact:true}).click();
  await expect(page.getByLabel('Stroke thickness',{exact:true})).toBeVisible();await expect(page.getByLabel('Stroke thickness slider',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
  await page.screenshot({path:'test-results/annotations-mobile.png'});
  expect(errors).toEqual([]);

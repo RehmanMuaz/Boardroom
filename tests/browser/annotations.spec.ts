@@ -21,14 +21,14 @@ test('guest annotations draw at zoom, focus text, format, move, undo and survive
  const viewport=await page.locator('.viewport').boundingBox();if(!viewport)throw Error('Missing canvas');
  await page.mouse.click(viewport.x+400,viewport.y+320);
  const input=page.getByLabel('Annotation text',{exact:true});await expect(input).toBeFocused();await input.fill('Styled canvas title');await input.press('Escape');
- await page.getByText('Text style',{exact:true}).click();
+
  await page.getByLabel('Annotation text preset').selectOption('heading');await expect(page.locator('.text-annotation')).toHaveCSS('font-size','40px');
  await page.getByLabel('Annotation font size slider',{exact:true}).press('End');await expect(page.getByLabel('Annotation font size',{exact:true})).toHaveValue('120');await expect(page.locator('.text-annotation')).toHaveCSS('font-size','120px');
  await page.getByLabel('Annotation font size',{exact:true}).fill('40');await expect(page.getByLabel('Annotation font size slider',{exact:true})).toHaveValue('40');
  await page.getByLabel('Annotation font',{exact:true}).selectOption('serif');
  await page.getByLabel('Annotation font weight').selectOption('700');
  await page.getByLabel('Annotation border width').selectOption('2');
- await page.getByText('Text style',{exact:true}).click();
+
  const text=page.locator('.text-annotation');await expect(text).toHaveCSS('font-weight','700');await expect(text).toHaveCSS('border-top-width','2px');
  const before=await text.evaluate(el=>parseFloat((el as HTMLElement).style.left));const box=await text.boundingBox();if(!box)throw Error('Missing text');
  await page.mouse.move(box.x+50,box.y+30);await page.mouse.down();await page.mouse.move(box.x+90,box.y+50,{steps:5});await page.mouse.up();

@@ -100,7 +100,7 @@ test('board breadcrumbs, title editing and compact navigation remain usable',asy
  await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).click();
  await expect(page.getByLabel('Switch workspace',{exact:true})).toContainText('Browser-local canvas');await expect(page.locator('.workspace-mode')).toContainText('No team sync');
  await page.locator('.board-tile').dblclick();await page.getByLabel('Board title').fill('Renamed project');
- await page.getByRole('button',{name:'Board',exact:true}).click();await page.locator('.board-tile').dblclick();
+ await page.getByRole('button',{name:'Board',exact:true}).click();await page.locator('.creation-placement').click({position:{x:900,y:300}});await page.locator('.board-tile').dblclick();
  const crumbs=page.getByRole('navigation',{name:'Board breadcrumbs'});await expect(crumbs.getByRole('button',{name:'Renamed project',exact:true})).toBeVisible();
  await crumbs.getByRole('button',{name:'Creative studio',exact:true}).click();await expect(page.locator('.board-tile')).toContainText('Renamed project');
  await page.setViewportSize({width:390,height:844});await expect(page.getByLabel('Board actions',{exact:true})).toBeVisible();await page.screenshot({path:'test-results/mobile-before-menu.png'});await page.getByLabel('Board actions',{exact:true}).click();await expect(page.getByRole('button',{name:'Export',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('.board-actions')).not.toHaveAttribute('open','');

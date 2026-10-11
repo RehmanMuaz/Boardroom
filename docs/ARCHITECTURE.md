@@ -11,6 +11,7 @@ React + strict TypeScript + Vite preserve the existing canvas. An Express 5 Node
 - src/features/canvas/domain.ts: group movement, columns, deletion, duplication and canvas extents.
 - src/features/canvas/useCreationPlacement.ts: pointer drag and click/keyboard placement state, bounded screen-to-canvas coordinates, previews, safe cancellation and outside-drop rejection. Existing creation buttons retain their layout. Item creation delegates to the current validated domain/update path; upload placement captures position/board before opening the picker. No new persistence or API boundary is introduced.
 - src/features/content/: safe structured notes, media rendering and allowlisted video embeds.
+- src/features/content/ColorPicker.tsx: shared native-picker/hex editor with short-hex normalization, pending input validation, mixed/automatic values and accessible error feedback. Only valid colors reach the existing domain operations; no new API or database fields. Custom dark card backgrounds derive readable foreground text at render time rather than storing another shared style field.
 - server/assets.ts: validated private uploads, authorized streaming and asset-reference checks.
 - src/model.ts: domain model, movement, document and backup validation.
 - src/repository.ts: typed local/team repository boundary and HTTP client.

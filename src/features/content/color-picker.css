@@ -1,0 +1,14 @@
+.color-picker{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:12px}
+.color-picker-label{color:var(--muted)}
+.color-picker-controls{display:flex;align-items:center;gap:8px;min-width:0}
+.color-picker .color-picker-controls input[type=color]{width:32px;height:32px;flex:none;padding:2px;border:1px solid var(--border);border-radius:4px;background:var(--surface)}
+.color-picker .color-picker-controls input[type=text]{width:96px;min-width:0;flex:1;padding:7px 8px;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:4px;font:12px ui-monospace,monospace}
+.color-picker .color-picker-controls input[aria-invalid=true]{border-color:#b13939}
+.color-picker-error{color:var(--ink);font-size:11px;line-height:1.4}
+.object-sidebar .color-picker{width:100%}
+.object-colors + .color-picker{margin-top:12px}
+.object-sidebar .color-picker .color-picker-controls input[type=text]{width:100%}
+.annotation-toolbar .color-picker{max-width:160px}
+.object-sidebar .annotation-toolbar .color-picker{max-width:100%}
+.card.dark-background input:not([type=checkbox]),.card.dark-background textarea,.card.dark-background a,.card.dark-background blockquote,.card.dark-background .column-summary,.card.dark-background .task-text.done,.card.dark-background .board-tile small,.card.dark-background .folder{color:inherit}
+.card.dark-background input::placeholder,.card.dark-background textarea::placeholder{color:inherit;opacity:.8}

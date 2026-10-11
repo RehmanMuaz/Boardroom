@@ -1,3 +1,4 @@
+import {ColorPicker} from './ColorPicker';
 import {useState} from 'react';
 import {type NoteLabel} from '../../model';
 
@@ -11,7 +12,7 @@ export function NoteLabels({labels=[],editable,change}:{labels?:NoteLabel[];edit
   </div>
   {editable&&editing&&<form className="label-editor" onSubmit={e=>{e.preventDefault();if(!name.trim())return;const label={id:editing==='new'?crypto.randomUUID():editing,text:name.trim(),color};change(editing==='new'?[...labels,label]:labels.map(l=>l.id===editing?label:l));setEditing(null);}}>
    <input autoFocus aria-label="Label name" maxLength={80} placeholder="Label name" value={name} onChange={e=>setName(e.target.value)}/>
-   <input aria-label="Label color" type="color" value={color} onChange={e=>setColor(e.target.value)}/>
+   <ColorPicker name="Label color" value={color} change={setColor}/>
    <button type="submit" disabled={!name.trim()}>Save label</button>
    {editing!=='new'&&<button type="button" onClick={()=>{change(labels.filter(l=>l.id!==editing));setEditing(null);}}>Remove label</button>}
    <button type="button" onClick={()=>setEditing(null)}>Cancel</button>

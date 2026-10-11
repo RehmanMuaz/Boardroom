@@ -6,7 +6,7 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-IDEA-026 is implemented locally and ready for review. IDEA-027 and IDEA-028 are the next implementation priorities, in that order, at the user's request. IDEA-025 and IDEA-018 through IDEA-024 are implemented locally and awaiting user review. No deployment was performed.
+IDEA-026 is implemented and approved. IDEA-027 is implemented locally and ready for review. IDEA-028 modifier-sidebar organization is next; the main creation sidebar layout stays unchanged. IDEA-025 and IDEA-018 through IDEA-024 are implemented locally and awaiting user review. No deployment was performed.
 
 ### IDEA-026: Drag new elements from the creation sidebar onto the canvas
 
@@ -23,11 +23,13 @@ IDEA-026 is implemented locally and ready for review. IDEA-027 and IDEA-028 are 
 
 - Type: Improvement / Formatting
 - Priority: Now - second implementation priority
-- Status: Ready; implementation not started
+- Status: Done locally; awaiting user review
 - What I want: Choose custom colors instead of being limited to four preset colors.
 - Expected behavior: Keep quick preset swatches and add a labeled color picker with an editable hex value for relevant selected-object color controls. Make it clear whether a control changes text, background, outline, label or connector color. Show the current value; retain transparent/automatic options where supported.
 - Constraints: Reuse existing color validation and persistence. Preserve selected-object styling, undo/redo, live saving and viewer restrictions; do not change an individual's app theme or introduce unsupported object styling.
 - Done when: Users can select any supported custom color or enter its hex value, understand which property it affects, and see it persist after reload and for teammates.
+
+- Result: Preset background swatches remain, with a labeled native picker and editable hex input for custom backgrounds. Annotation stroke/text/background/border/shape-fill colors, note labels and connectors also have picker/hex pairs. Three- and six-digit hex values normalize on Enter/blur; invalid values do not change saved colors. Mixed selected backgrounds are shown explicitly; Auto/transparent annotation choices remain. Dark custom card backgrounds use readable light text, while light preset appearance is retained. Controls are limited to properties the selected object supports. Undo, reload, live sharing, viewer restrictions, accessibility and mobile layout are validated. Main sidebar layout unchanged; not deployed.
 
 ### IDEA-028: Organize the contextual formatting sidebar
 

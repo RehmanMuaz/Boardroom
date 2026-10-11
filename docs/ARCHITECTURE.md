@@ -9,6 +9,7 @@ React + strict TypeScript + Vite preserve the existing canvas. An Express 5 Node
 - src/features/Editor.tsx: editor, surface dragging/edit mode and contextual left rail. Content components portal their selected-object tools into the rail; card pointer handlers ignore those tools outside the card DOM. The creation rail is one icon wide; selected-object properties temporarily overlay it without shifting canvas coordinates. Annotation creation tools remain in the bottom-center dock.
 - src/features/WorkspaceControls.tsx: authorized workspace discovery/switching and account actions; the editor guards navigation while edits/uploads are pending. Root remounts the editor when workspace identity changes so canvas state/history cannot leak between teams.
 - src/features/canvas/domain.ts: group movement, columns, deletion, duplication and canvas extents.
+- src/features/canvas/useCreationPlacement.ts: pointer drag and click/keyboard placement state, bounded screen-to-canvas coordinates, previews, safe cancellation and outside-drop rejection. Existing creation buttons retain their layout. Item creation delegates to the current validated domain/update path; upload placement captures position/board before opening the picker. No new persistence or API boundary is introduced.
 - src/features/content/: safe structured notes, media rendering and allowlisted video embeds.
 - server/assets.ts: validated private uploads, authorized streaming and asset-reference checks.
 - src/model.ts: domain model, movement, document and backup validation.

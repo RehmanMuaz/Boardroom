@@ -23,6 +23,7 @@ Choose **Continue as guest** at the top of the entry screen for the original loc
 
 - Notes with optional structured formatting, links, checklists, nested boards, columns, connectors, multi-selection, resize, titles, search, colors and undo/redo.
 - Content-only canvas items: drag their surfaces to move, double-click text or choose Edit content to edit, and use the contextual left sidebar for object tools. Back to tools restores the creation rail.
+- Drag a creation tool from the existing rail onto the canvas to place a new item exactly where you release it. Clicking/tapping a tool arms placement; choose a canvas position, or press Enter to place in view. Escape cancels. Media tools choose the position before opening the file picker. Drops into columns use the existing layout; viewer creation remains disabled. The creation rail layout is unchanged.
 - Private team image/video/file uploads, inline image and video playback, authenticated downloads and byte-range streaming.
 - Clipboard copy/cut/paste, duplicate, keyboard movement/resize, space-drag panning and an expanding canvas.
 - Validated JSON import/export and a local/team repository interface.

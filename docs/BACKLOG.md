@@ -6,7 +6,38 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-IDEA-025 is implemented locally and remains first for user review. IDEA-018 through IDEA-024 are implemented and locally validated on feature/backlog-editor-improvements, awaiting user review. No deployment was performed.
+IDEA-026 is implemented locally and ready for review. IDEA-027 and IDEA-028 are the next implementation priorities, in that order, at the user's request. IDEA-025 and IDEA-018 through IDEA-024 are implemented locally and awaiting user review. No deployment was performed.
+
+### IDEA-026: Drag new elements from the creation sidebar onto the canvas
+
+- Type: Improvement / Interaction
+- Priority: Now - first implementation priority
+- Status: Done locally; awaiting user review
+- What I want: Drag an element from the creation sidebar onto the workspace and release it exactly where it should appear. Clicking a creation button currently feels like placement at a random location and is not intuitive.
+- Expected behavior: Show a clear placement preview while dragging, then create the element at the drop position with correct zoom/pan coordinates. Dropping outside the canvas or cancelling creates nothing. Replace arbitrary click placement with an explicit placement mode: click a tool, then click the canvas to place it. Preserve an accessible keyboard alternative.
+- Constraints: Preserve the main creation sidebar layout, spacing, icons and tool order exactly as they are. Add drag/click placement behavior without redesigning that sidebar. Extend the existing editor and contextual sidebar from IDEA-025. Preserve selection, column placement, undo/redo, persistence, live permissions and viewer restrictions. For media/files, retain the existing upload/file selection flow and permission checks; define placement before inserting the resulting object. Do not confuse sidebar element dragging with dropping uploaded files.
+- Done when: Supported creation tools can be dragged to a deliberate canvas position at different zoom/pan settings, cancellation is safe, and clicking a tool no longer inserts an object at an unexplained position.
+- Result: Existing creation buttons now support pointer dragging with a canvas preview and exact zoom/scroll-aware drop positions. Clicking or tapping arms placement instead of creating at an arbitrary location; click/tap the canvas or press Enter to place in view. Escape, cancelled gestures and drops outside the canvas create nothing. Media tools choose position before opening the file picker and preserve that position during upload. New content dropped into a column uses existing column layout. Main creation sidebar layout, icons, spacing and order remain unchanged. Undo/reload/live sharing and viewer restrictions are validated. Available in the private local preview; not deployed.
+
+### IDEA-027: Full color picker alongside preset swatches
+
+- Type: Improvement / Formatting
+- Priority: Now - second implementation priority
+- Status: Ready; implementation not started
+- What I want: Choose custom colors instead of being limited to four preset colors.
+- Expected behavior: Keep quick preset swatches and add a labeled color picker with an editable hex value for relevant selected-object color controls. Make it clear whether a control changes text, background, outline, label or connector color. Show the current value; retain transparent/automatic options where supported.
+- Constraints: Reuse existing color validation and persistence. Preserve selected-object styling, undo/redo, live saving and viewer restrictions; do not change an individual's app theme or introduce unsupported object styling.
+- Done when: Users can select any supported custom color or enter its hex value, understand which property it affects, and see it persist after reload and for teammates.
+
+### IDEA-028: Organize the contextual formatting sidebar
+
+- Type: Improvement / UI
+- Priority: Now - third implementation priority, coordinated with IDEA-027
+- Status: Ready; implementation not started
+- What I want: Better organization, layout and labels only in the modifier sidebar shown when an object is selected. The main creation sidebar layout is already good and must remain unchanged.
+- Expected behavior: Group relevant controls into clear sections such as Typography, Appearance, Size and Actions. Use readable labels, consistent spacing/alignment, and visible current values. Keep sliders plus precise numeric inputs for font size and stroke width. Clearly separate text color, background, border and fill controls; show only controls relevant to the selected object.
+- Constraints: Scope layout changes strictly to the selected-object modifier sidebar. Do not change the main creation sidebar layout, spacing, icons or tool order. Build on IDEA-025's contextual left sidebar and back-to-tools navigation. Preserve accessible keyboard/focus behavior, responsive layouts, permissions and existing formatting features. Do not move formatting back onto canvas objects.
+- Done when: Selected-object controls are easy to scan, colors and typography are clearly labeled and grouped, and the layout remains usable on smaller screens.
 
 ### IDEA-025: Content-only objects and a contextual left sidebar
 
@@ -304,7 +335,7 @@ IDEA-025 is implemented locally and remains first for user review. IDEA-018 thro
 
 ## Suggested delivery slices
 
-IDEA-018 through IDEA-024 have completed local implementation and validation; review them before selecting further work. The older proposed sequence below follows these improvements. Pending requests remain ideas rather than implemented features.
+Implement IDEA-026, IDEA-027 and IDEA-028 next, as prioritized by the user. IDEA-018 through IDEA-025 have completed local implementation and validation and remain available for review. The older proposed sequence below follows these improvements. Pending requests remain ideas rather than implemented features.
 
 1. Clean up the header/navigation and media presentation (IDEA-005 and IDEA-001), and settle the placement of the separate annotation toolbar.
 2. Establish shared interface color tokens and account-persistent themes (IDEA-004).
@@ -315,7 +346,7 @@ IDEA-018 through IDEA-024 have completed local implementation and validation; re
 7. Add full board duplication/templates and rich link previews, followed by the Unsorted inbox (IDEA-009 and IDEA-011).
 8. Expand tasks, board-specific sharing and useful exports (IDEA-010, IDEA-012 and IDEA-014).
 
-Canvas polish (IDEA-015) can accompany the relevant editor slices. Collaboration resilience (IDEA-016) needs its own design and validation. Touch/stylus acceptance and advanced content types (IDEA-017) follow demonstrated team needs. Priorities and this sequence are proposals; no new item is marked Ready.
+Canvas polish (IDEA-015) can accompany the relevant editor slices. Collaboration resilience (IDEA-016) needs its own design and validation. Touch/stylus acceptance and advanced content types (IDEA-017) follow demonstrated team needs. Older priorities remain proposals; IDEA-026 through IDEA-028 are explicitly prioritized and marked Ready by the user.
 
 ## Quick ideas
 
@@ -324,7 +355,7 @@ Canvas polish (IDEA-015) can accompany the relevant editor slices. Collaboration
 ## Optional request template
 
 ```markdown
-### IDEA-026: Short title
+### IDEA-029: Short title
 
 - Type: Feature / Improvement / Bug / UI
 - Priority: Now / Soon / Later / Unsure

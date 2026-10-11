@@ -5,6 +5,25 @@
 .app.contextual-sidebar>aside{width:248px;padding:0;z-index:35;overflow:auto;background:var(--surface);color:var(--ink)}
 .object-sidebar{padding:18px 16px;display:flex;flex-direction:column;gap:12px;min-height:100%;font-size:12px}
 .object-sidebar h2{margin:6px 0 4px;font-size:16px;text-transform:capitalize}
+.object-sidebar .modifier-section{border-top:1px solid var(--border);padding-top:14px;margin:0;min-width:0}
+.object-sidebar .modifier-section h3{margin:0 0 12px;font-size:11px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.object-sidebar .modifier-section-content{display:flex;flex-direction:column;align-items:stretch;gap:12px;min-width:0}
+.object-sidebar .modifier-section button:not(.swatch){border:1px solid var(--border);background:var(--surface);text-align:center}
+.object-sidebar .modifier-section button[aria-pressed=true]{background:var(--accent-soft);border-color:var(--focus);color:var(--accent)}
+.object-sidebar .modifier-button-row{display:flex;gap:8px}
+.object-sidebar .modifier-button-row button{flex:1;min-width:0}
+.object-sidebar .modifier-toggle{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+.object-sidebar .modifier-section label{font-size:12px;line-height:1.4}
+.object-sidebar .modifier-section input:not([type=color]):not([type=checkbox]):not([type=range]){min-width:0;max-width:100%;padding:7px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink)}
+.object-sidebar .modifier-section .annotation-number-control{display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:6px;width:100%}
+.object-sidebar .modifier-section .annotation-number-control>span{grid-column:1/-1;color:var(--muted);font-size:12px}
+.object-sidebar .modifier-section .annotation-number-control input[type=range]{width:100%;min-width:0;accent-color:var(--accent);height:30px;padding:0}
+.object-sidebar .modifier-section .annotation-number-control input[type=number]{width:52px}
+.object-sidebar .modifier-section .media-actions{flex-wrap:wrap}
+.object-sidebar .modifier-section .media-actions a{flex:1;justify-content:center}
+.object-sidebar .modifier-section .layer-controls{gap:6px;flex-wrap:wrap}
+.object-sidebar .modifier-section .layer-controls button{min-width:36px}
+.object-sidebar .modifier-section .modifier-delete{color:var(--ink);border-color:var(--border)}
 .object-sidebar .back-tools{display:flex;align-items:center;gap:10px;border:0;padding:8px 0;color:var(--muted);font-size:12px}
 .object-sidebar .back-tools span{font-size:21px}
 .object-sidebar button:not(.swatch){border-radius:5px;text-align:left;padding:8px;min-height:32px}
@@ -22,7 +41,7 @@
 .object-sidebar .add-label{border:1px dashed var(--border)}
 .object-sidebar .label-editor input{background:var(--surface);color:var(--ink);border-color:var(--border)}
 .object-sidebar .layer-controls button{display:grid;place-items:center;flex:1;padding:6px;text-align:center}
-.object-history{display:flex;gap:8px;margin-top:auto;padding-top:16px;border-top:1px solid var(--border)}
+.object-history{display:flex;gap:8px;margin-top:auto;padding:12px 0;border-top:1px solid var(--border);position:sticky;bottom:0;background:var(--surface);z-index:2}
 .object-history button{flex:1}
 .object-sidebar .media-actions{position:static;display:flex;align-items:center;gap:10px;opacity:1;transform:none;pointer-events:auto;background:transparent;padding:0}
 .object-sidebar .media-actions a{display:flex;align-items:center;gap:5px;color:var(--ink);padding:8px;border:1px solid var(--border);border-radius:5px}

@@ -1,4 +1,5 @@
 import {ColorPicker} from '../content/ColorPicker';
+import {AnnotationProperties} from './AnnotationProperties';
 import {type Annotation,type TextStyle,type ShapeKind} from '../../annotations';
 import {NumberSlider} from './NumberSlider';
 export type AnnotationTool='select'|'pen'|'highlighter'|'text'|'shape';
@@ -6,6 +7,7 @@ export function AnnotationToolbar({tool,setTool,shape,setShape,writable,color,se
  const stroke=selected&&selected.kind!=='text'&&tool==='select'?selected:undefined;
  const text=selected?.kind==='text'&&tool==='select'?selected:undefined;
  function style(patch:Partial<TextStyle>){if(text)change(text.id,{style:{...text.style,...patch}});}
+ if(contextual&&selected)return <AnnotationProperties annotation={selected} writable={writable} change={change}/>;
  const tools:[AnnotationTool,string,string][]=[['select','Select annotations','M4 3l14 9-7 1-3 7z'],['pen','Pen','M4 17l-1 4 4-1L20 7l-4-4z M13 6l5 5'],['highlighter','Highlighter','M5 15l4 4 11-11-4-4z M3 21h9 M5 15l-2 4h6'],['shape','Shape annotation tool','M4 4h16v16H4z M7 17L17 7 M11 7h6v6'],['text','Text annotation tool','M4 4h16 M12 4v16 M8 20h8']];
  return <div className="annotation-dock"><div className="annotation-toolbar" role="toolbar" aria-label="Annotation tools">
   {!contextual&&tools.map(([value,label,path])=><button key={value} type="button" aria-label={label} title={label} aria-pressed={tool===value} disabled={!writable&&value!=='select'} onClick={()=>setTool(value)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={path}/></svg></button>)}

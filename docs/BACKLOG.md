@@ -6,7 +6,7 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-IDEA-026 is implemented and approved. IDEA-027 is implemented locally and ready for review. IDEA-028 modifier-sidebar organization is next; the main creation sidebar layout stays unchanged. IDEA-025 and IDEA-018 through IDEA-024 are implemented locally and awaiting user review. No deployment was performed.
+IDEA-026 is implemented and approved. IDEA-027 is implemented locally and ready for review. IDEA-028 modifier-sidebar organization is implemented locally and ready for review; the main creation sidebar layout stays unchanged. IDEA-025 and IDEA-018 through IDEA-024 are implemented locally and awaiting user review. No deployment was performed.
 
 ### IDEA-026: Drag new elements from the creation sidebar onto the canvas
 
@@ -35,11 +35,13 @@ IDEA-026 is implemented and approved. IDEA-027 is implemented locally and ready 
 
 - Type: Improvement / UI
 - Priority: Now - third implementation priority, coordinated with IDEA-027
-- Status: Ready; implementation not started
+- Status: Done locally; awaiting user review
 - What I want: Better organization, layout and labels only in the modifier sidebar shown when an object is selected. The main creation sidebar layout is already good and must remain unchanged.
 - Expected behavior: Group relevant controls into clear sections such as Typography, Appearance, Size and Actions. Use readable labels, consistent spacing/alignment, and visible current values. Keep sliders plus precise numeric inputs for font size and stroke width. Clearly separate text color, background, border and fill controls; show only controls relevant to the selected object.
 - Constraints: Scope layout changes strictly to the selected-object modifier sidebar. Do not change the main creation sidebar layout, spacing, icons or tool order. Build on IDEA-025's contextual left sidebar and back-to-tools navigation. Preserve accessible keyboard/focus behavior, responsive layouts, permissions and existing formatting features. Do not move formatting back onto canvas objects.
 - Done when: Selected-object controls are easy to scan, colors and typography are clearly labeled and grouped, and the layout remains usable on smaller screens.
+
+- Result: Selected-object modifiers are divided into labeled Content/Tasks/Media, Labels, Size, Appearance, Placement, Layers and Actions sections as relevant. Text annotations expose Typography, Appearance, Border and Size separately; shapes expose Shape, Outline, Fill and Size; pen/highlighter show Stroke. Sliders retain exact numeric inputs, dimensions show pixel units, and labels/color controls stay consistent. Empty/unavailable sections are hidden, Undo/Redo remain accessible at the bottom, and annotation size fields preserve validated geometry. The main creation rail layout, icons and order remain unchanged. Existing editing, live/viewer, mobile and accessibility checks are retained. Available in the private local preview; not deployed.
 
 ### IDEA-025: Content-only objects and a contextual left sidebar
 

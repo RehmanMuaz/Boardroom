@@ -94,13 +94,13 @@ Private uploads live under ASSET_DIR (default data/assets), with metadata in Pos
 Production Linux servers need Docker, Git and flock; deployment/backup helpers run through scripts/server-helper.sh in a temporary container, so host Node/npm are unnecessary. Local development still requires Node.
 # Canvas annotations
 
-Use the floating annotation toolbar at the bottom of the canvas to select, draw with Pen/Highlighter, or place standalone Text. Text starts with immediate keyboard focus and a transparent, borderless appearance. Double-click to edit existing text; select it and open Text style for fonts, size, weight, alignment, colors, background and border options. Drag annotations to move them; use the text corner handle to resize. Delete removes the selected annotation; Ctrl/⌘ Z and Shift-Z undo/redo. Space-drag still pans.
+Use the floating annotation toolbar at the bottom of the canvas to select, draw with Pen/Highlighter, or place standalone Text. Text starts with immediate keyboard focus and a transparent, borderless appearance. Double-click to edit existing text; select it and use the Typography, Appearance and Border sections for fonts, size, weight, alignment, colors, background and border options. Drag annotations to move them; use the text corner handle to resize. Delete removes the selected annotation; Ctrl/⌘ Z and Shift-Z undo/redo. Space-drag still pans.
 
 Team annotations save to PostgreSQL and sync through authorized live operations. Viewers can see/select them but cannot edit. Guest annotations save only in that browser. This implementation is on a feature branch and has not been deployed.
 
 Choose Shape and select Arrow, Line, Rectangle or Circle, then drag on the canvas. Circles can be drawn/resized as ellipses. Arrows point toward the end of your drag. Switch to Select to move shapes, resize with the corner handle, change outline color/thickness/type, or enable fill for rectangles/circles. The resize handle also supports arrows for width and Shift-arrows for height. Shapes are standalone annotations; they do not attach to cards or replace card connectors.
 
-Open Board appearance in the board heading to choose a shared background color and Plain, Dots or Grid canvas. Use theme background returns to each person's app theme; explicit colors are shared across themes. Text style offers Heading, Label and Body presets, preserving your text and decorative choices. Appearance is per board, saved and undoable, and viewers have read-only controls. Guest choices stay browser-local.
+Open Board appearance in the board heading to choose a shared background color and Plain, Dots or Grid canvas. Use theme background returns to each person's app theme; explicit colors are shared across themes. Typography offers Heading, Label and Body presets, preserving your text and decorative choices. Appearance is per board, saved and undoable, and viewers have read-only controls. Guest choices stay browser-local.
 
 Stroke width and annotation font size each have a slider alongside a numeric input. Drag for quick adjustments or type an exact value; both controls stay in sync. Width ranges from 1–60 and font size from 12–120.
 
@@ -116,3 +116,5 @@ IDEA-018 through IDEA-024 are implemented on `feature/backlog-editor-improvement
 - Column summaries show direct card/file/board counts below the title, including images/videos as cards and nested board tiles as one board.
 
 Changes support local saves or authorized live team persistence, undo/redo and read-only viewers. The API script does not watch files: after updating the checkout, stop the running API with Ctrl+C and restart `npm.cmd run dev:api`, then refresh the browser. Vite's `npm.cmd run dev` server updates the frontend.
+
+Selected-object modifiers are organized into relevant Content/Tasks/Media, Labels, Size, Appearance, Placement, Layers and Actions sections. Text annotations separate Typography, Appearance and Border; shape outlines and fills have their own sections. Dimensions are in pixels; font/stroke sliders retain exact numeric inputs. Undo/Redo stay at the bottom, and Back to tools restores the unchanged creation rail.

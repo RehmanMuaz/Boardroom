@@ -1,0 +1,9 @@
+import {useEffect,useId,useState} from 'react';
+import './color-picker.css';
+export function normalizeHex(value:string){const hex=value.trim().replace(/^#/,'').toLowerCase();if(!/^(?:[a-f0-9]{3}|[a-f0-9]{6})$/.test(hex))return null;return '#'+(hex.length===3?hex.split('').map(c=>c+c).join(''):hex);}
+export function ColorPicker({name,label=name,value,disabled=false,emptyLabel='Mixed',change}:{name:string;label?:string;value?:string;disabled?:boolean;emptyLabel?:string;change:(value:string)=>void}){
+ const id=useId(),[draft,setDraft]=useState(value?normalizeHex(value)??'':''),[invalid,setInvalid]=useState(false);
+ useEffect(()=>{setDraft(value?normalizeHex(value)??'':'');setInvalid(false);},[value]);
+ function commit(){const color=normalizeHex(draft);if(!color){if(!draft){setDraft(value?normalizeHex(value)??'':'');setInvalid(false);}else setInvalid(true);return;}setDraft(color);setInvalid(false);if(color!==normalizeHex(value??''))change(color);}
+ return <div className="color-picker"><span className="color-picker-label">{label}</span><div className="color-picker-controls"><input aria-label={name} type="color" value={normalizeHex(value??'')??'#ffffff'} disabled={disabled} onChange={e=>{setDraft(e.target.value);setInvalid(false);change(e.target.value);}}/><input aria-label={`${name} hex`} type="text" spellCheck={false} autoComplete="off" maxLength={7} placeholder={value?'#RRGGBB':emptyLabel} value={draft} disabled={disabled} aria-invalid={invalid} aria-describedby={invalid?id:undefined} onChange={e=>{setDraft(e.target.value);setInvalid(false);}} onBlur={commit} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();commit();}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setDraft(value?normalizeHex(value)??'':'');setInvalid(false);}}}/></div>{invalid&&<span id={id} className="color-picker-error" role="alert">Enter a 3- or 6-digit hex color.</span>}</div>;
+}

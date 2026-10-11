@@ -11,7 +11,7 @@ test('shapes draw with zoom, preserve direction, move, resize, fill, undo and re
   const svg=annotation.locator('..');expect(await svg.evaluate(el=>Number(el.getAttribute('width')))).toBeCloseTo(100/zoom);
  }
  if(await page.getByRole('button',{name:'Back to tools'}).count())await page.getByRole('button',{name:'Back to tools'}).click();await page.getByRole('button',{name:'Select annotations'}).click();const rect=page.getByRole('button',{name:'rectangle annotation',exact:true});await rect.focus();await rect.press('Enter');
- await page.getByLabel('Shape fill enabled').check();await page.getByLabel('Shape fill color').fill('#fff4c9');
+ await page.getByLabel('Shape fill enabled').check();await page.getByLabel('Shape fill color',{exact:true}).fill('#fff4c9');
  const svg=rect.locator('..');await expect(svg.locator('path').first()).toHaveAttribute('fill','#fff4c9');
  const box=await svg.boundingBox();if(!box)throw Error('Missing shape');const before=await svg.evaluate(el=>parseFloat((el as HTMLElement).style.left));
  await page.mouse.move(box.x+25,box.y+25);await page.mouse.down();await page.mouse.move(box.x+55,box.y+45,{steps:4});await page.mouse.up();expect(await svg.evaluate(el=>parseFloat((el as HTMLElement).style.left))).toBeCloseTo(before+30);

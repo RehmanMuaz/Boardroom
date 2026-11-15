@@ -27,7 +27,7 @@ test('guest annotations draw at zoom, focus text, format, move, undo and survive
  await page.getByLabel('Annotation font size',{exact:true}).fill('40');await expect(page.getByLabel('Annotation font size slider',{exact:true})).toHaveValue('40');
  await page.getByLabel('Annotation font',{exact:true}).selectOption('serif');
  await page.getByLabel('Annotation font weight').selectOption('700');
- await page.getByLabel('Annotation border width').selectOption('2');
+ await page.getByRole('button',{name:'Border',exact:true}).click();await page.getByLabel('Annotation border width').selectOption('2');
 
  const text=page.locator('.text-annotation');await expect(text).toHaveCSS('font-weight','700');await expect(text).toHaveCSS('border-top-width','2px');
  const before=await text.evaluate(el=>parseFloat((el as HTMLElement).style.left));const box=await text.boundingBox();if(!box)throw Error('Missing text');

@@ -1,4 +1,4 @@
-import {useEffect,useRef} from 'react';
+import {useLayoutEffect,useRef} from 'react';
 import {createPortal} from 'react-dom';
 import {rememberCaret,restoreCaret} from './caret';
 import {type RichDocument,type RichRun,richPlainText,safeLink} from '../../model';
@@ -29,7 +29,7 @@ function renderDocument(element:HTMLElement,doc:RichDocument){
 }
 export function RichNote({text,document:rich,editable,change,toolsTarget}:{text:string;document?:RichDocument;editable:boolean;change:(text:string,doc?:RichDocument)=>void;toolsTarget?:HTMLElement|null}){
  const ref=useRef<HTMLDivElement>(null),composing=useRef(false);
- useEffect(()=>{if(ref.current&&rich&&!composing.current&&JSON.stringify(readDocument(ref.current))!==JSON.stringify(rich)){const caret=rememberCaret(ref.current);renderDocument(ref.current,rich);restoreCaret(ref.current,caret);}},[rich]);
+ useLayoutEffect(()=>{if(ref.current&&rich&&!composing.current&&JSON.stringify(readDocument(ref.current))!==JSON.stringify(rich)){const caret=rememberCaret(ref.current);renderDocument(ref.current,rich);restoreCaret(ref.current,caret);}},[rich]);
  if(!rich)return <><textarea aria-label="Note content" readOnly={!editable} value={text} onChange={e=>change(e.target.value)}/>{editable&&toolsTarget&&createPortal(<button className="format-note" onClick={()=>change(text,plainDocument(text))}>Format note</button>,toolsTarget)}</>;
  const command=(name:string,value?:string)=>{document.execCommand('styleWithCSS',false,'false');document.execCommand(name,false,value);if(ref.current){const doc=readDocument(ref.current);change(richPlainText(doc),doc);}};
  return <>{editable&&toolsTarget&&createPortal(<div className="rich-tools" role="toolbar" aria-label="Note formatting">{[['bold','B'],['italic','I'],['underline','U'],['insertUnorderedList','List']] .map(([name,label])=><button key={name} aria-label={name==='insertUnorderedList'?'Bullet list':name} onMouseDown={e=>e.preventDefault()} onClick={()=>command(name)}>{label}</button>)}<button onMouseDown={e=>e.preventDefault()} onClick={()=>command('formatBlock','h3')}>Heading</button></div>,toolsTarget)}<div ref={ref} className="rich-note" contentEditable={editable} suppressContentEditableWarning role="textbox" aria-label="Rich note content" aria-multiline="true" aria-readonly={!editable} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;if(ref.current){const doc=readDocument(ref.current);change(richPlainText(doc),doc);}}} onInput={()=>{if(ref.current){const doc=readDocument(ref.current);change(richPlainText(doc),doc);}}} onPaste={e=>{if(e.clipboardData.files.length)return;e.preventDefault();command('insertText',e.clipboardData.getData('text/plain'));}}/></>;

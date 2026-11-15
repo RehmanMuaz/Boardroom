@@ -1,5 +1,9 @@
+import {ExportSection} from './export/ExportSection';
+import {ObjectActions} from './ObjectActions';
+import {CommandMenu} from './CommandMenu';
+import {SettingsDialog} from './SettingsDialog';
+import {ModifierPanel} from './ModifierPanel';
 import {SharedRepository} from '../sharedRepository';
-import {ViewerLinks} from './ViewerLinks';
 import {snapPoint} from './canvas/snap';
 import {ModifierSection} from './ModifierSection';
 import {ColorPicker,normalizeHex} from './content/ColorPicker';
@@ -20,7 +24,7 @@ import './canvas/organization.css';
 import './canvas/object-sidebar.css';
 import {WorkspaceControls} from './WorkspaceControls';
 import {Members} from '../team';
-import {TeamRepository,uploadAsset,type WorkspaceRepository} from '../repository';
+import {TeamRepository,uploadAsset,api,type WorkspaceRepository} from '../repository';
 import {cardWidth,cardHeight,moveSelection,deleteSelection,duplicateCards,canvasExtent,screenDelta,mediaFooterHeight} from './canvas/domain';
 import {RichNote} from './content/RichNote';
 import {MediaCard,VideoLink} from './content/MediaCard';
@@ -49,7 +53,8 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  const [connectorTool,setConnectorTool]=useState(false),[connectorSource,setConnectorSource]=useState<string|null>(null),[dropTarget,setDropTarget]=useState<string|null>(null);
  const [annotationShape,setAnnotationShape]=useState<ShapeKind>('arrow');
  const [annotationTool,setAnnotationTool]=useState<AnnotationTool>('select'),[selectedAnnotation,setSelectedAnnotation]=useState<string|null>(null),[annotationColor,setAnnotationColor]=useState('#d95d39'),[annotationThickness,setAnnotationThickness]=useState(3),[annotationFocus,setAnnotationFocus]=useState<string|null>(null);
- const leaveBlocked=useRef(false);leaveBlocked.current=dirty||uploading;
+ const [exporting,setExporting]=useState(false),[pdfRequest,setPdfRequest]=useState(0);
+ const leaveBlocked=useRef(false);leaveBlocked.current=dirty||uploading||exporting;
  const past=useRef<Change[][]>([]),future=useRef<Change[][]>([]),drag=useRef<Drag|null>(null),resize=useRef<Resize|null>(null),viewport=useRef<HTMLDivElement>(null);
  const pendingCaptionFocus=useRef<string|null>(null);
  const [editingCard,setEditingCard]=useState<string|null>(null),[toolsTarget,setToolsTarget]=useState<HTMLDivElement|null>(null);
@@ -219,14 +224,15 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   <span className="save" role="status" title={status}>{uploading?'Uploading...':status}</span>
   {teamId&&!(repository instanceof SharedRepository)&&<span className="presence" title={live?.members.map(m=>m.email).join(', ')}>{new Set(live?.members.map(m=>m.userId)).size} online</span>}
   {repository instanceof TeamRepository&&(live?.role??repository.role)==='owner'&&<Members repository={repository}/>}
-  <details className="board-actions header-popover"><summary aria-label="Board actions">Actions</summary><div className="popover-content">{repository instanceof TeamRepository&&(live?.role??repository.role)==='owner'&&<ViewerLinks workspaceId={repository.id}/>}<button onClick={exportBoard}>Export</button>
-  <div className="import"><button disabled={!writable} onClick={()=>importInput.current?.click()}>Import</button><input ref={importInput} aria-label="Import backup" type="file" disabled={!writable} accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file){try{const value:unknown=JSON.parse(await file.text());if(!validWorkspace(value))throw Error('Invalid backup');update(value);setBoardId(value.boards[0].id);setSelected([]);}catch(e){setNotice(e instanceof Error?e.message:'Invalid backup');}}e.target.value='';}}/></div>
-  <details className="shortcuts"><summary>?</summary><div><strong>Canvas shortcuts</strong><p>Shift-click or drag empty space: select cards<br/>Space-drag or middle drag: pan<br/>Arrows / Shift-arrows: move 1 / 10 px<br/>Ctrl/⌘ A: select all · D: duplicate<br/>Ctrl/⌘ C/X/V: copy, cut, paste<br/>Ctrl/⌘ Z / Shift-Z: undo / redo<br/>Delete: remove · Escape: clear selection<br/>Ctrl/⌘ +/−/0: zoom</p></div></details>
- </div></details></header>
+  <CommandMenu commands={[{id:"pdf",label:"Export current board to PDF",run:()=>setPdfRequest(n=>n+1)},{id:"export",label:"Export workspace backup (JSON)",run:exportBoard},{id:"undo",label:"Undo",shortcut:"Ctrl/Cmd Z",run:()=>history("undo"),disabled:!writable},{id:"redo",label:"Redo",shortcut:"Ctrl/Cmd Shift Z",run:()=>history("redo"),disabled:!writable},{id:"duplicate",label:"Duplicate selection",shortcut:"Ctrl/Cmd D",run:duplicate,disabled:!writable||!selected.length&&!selectedAnnotation},{id:"tools",label:"Back to creation tools",run:backToTools},{id:"snap",label:snap?"Disable grid snapping":"Enable grid snapping",run:()=>setSnapping(!snap),disabled:!writable},{id:"zoom",label:"Reset zoom to 100%",run:()=>setZoom(1)}]}/><SettingsDialog label="Board actions" title="Board actions" busy={exporting} openRequest={pdfRequest}><div className="action-sections"><ExportSection pdfRequest={pdfRequest} board={board} exportJson={exportBoard} onBusy={setExporting} access={{check:async()=>{if(repository instanceof TeamRepository)await api(`/workspaces/${repository.id}`);else if(repository instanceof SharedRepository)await api(`/viewer/${repository.linkId}/workspace`);},assetBase:repository instanceof SharedRepository?`/api/viewer/${repository.linkId}/assets`:repository instanceof TeamRepository?`/api/workspaces/${repository.id}/assets`:undefined}}/><section className="dialog-section"><h3>Import backup</h3><p>Restore a JSON backup. This replaces the current workspace content.</p>
+  <div className="import"><button disabled={!writable} onClick={()=>importInput.current?.click()}>Import</button><input ref={importInput} aria-label="Import backup" type="file" disabled={!writable} accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file){try{const value:unknown=JSON.parse(await file.text());if(!validWorkspace(value))throw Error('Invalid backup');update(value);setBoardId(value.boards[0].id);setSelected([]);}catch(e){setNotice(e instanceof Error?e.message:'Invalid backup');}}e.target.value='';}}/></div></section>
+  <details className="dialog-help"><summary>Keyboard shortcuts</summary><div><strong>Canvas shortcuts</strong><p>Shift-click or drag empty space: select cards<br/>Space-drag or middle drag: pan<br/>Arrows / Shift-arrows: move 1 / 10 px<br/>Ctrl/⌘ A: select all · D: duplicate<br/>Ctrl/⌘ C/X/V: copy, cut, paste<br/>Ctrl/⌘ Z / Shift-Z: undo / redo<br/>Delete: remove · Escape: clear selection<br/>Ctrl/⌘ +/−/0: zoom</p></div></details>
+ </div></SettingsDialog></header>
  <aside aria-label="Left sidebar">{(selected.length||selectedAnnotation||connection)&&!connectorTool?<div className="object-sidebar" role="region" aria-label="Object tools">
   <button className="back-tools" aria-label="Back to tools" onClick={backToTools}><span aria-hidden="true">←</span> Back to tools</button>
   <h2>{connection?'Connection':selectedAnnotation?(activeAnnotation?.kind==='shape'?activeAnnotation.shape:activeAnnotation?.kind==='text'?'Text annotation':activeAnnotation?.kind??'Annotation'):selected.length>1?`${selected.length} items`:activeCard?.kind==='checklist'?'List':activeCard?.kind??'Item'}</h2>
   {!writable&&<p className="view-only">View only</p>}
+  <ModifierPanel key={activeCard?.kind??activeAnnotation?.kind??(connection?'connection':'selection')} kind={activeCard?.kind??activeAnnotation?.kind??(connection?'connection':'selection')}>
   {activeCard&&(writable||['link','board','image','video','file'].includes(activeCard.kind))&&<ModifierSection title={activeCard.kind==='checklist'?'Tasks':['image','video','file'].includes(activeCard.kind)?'Media':'Content'}>
   {activeCard&&writable&&!['board','image','video'].includes(activeCard.kind)&&<button onClick={()=>editContent(activeCard.id)}>Edit content</button>}
   <div className="object-content-tools" ref={setToolsTarget} onClick={()=>{if(activeCard)setEditingCard(activeCard.id);}}/>
@@ -240,13 +246,9 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   {selected.length>0&&writable&&board.cards.some(c=>c.kind==='column'&&!selected.includes(c.id))&&<ModifierSection title="Placement">{board.cards.some(c=>c.kind==='column')&&<label>Column<select aria-label="Move selection to column" value="" onChange={e=>update(dropIntoColumn(stateRef.current,board.id,selected,e.target.value,Infinity,mediaAspects.current))}><option value="">Move to column…</option>{board.cards.filter(c=>c.kind==='column'&&!selected.includes(c.id)).map(c=><option key={c.id} value={c.id}>{c.text}</option>)}</select></label>}</ModifierSection>}
   {(selected.length>0||selectedAnnotation)&&writable&&<ModifierSection title="Layers"><LayerControls change={action=>update(reorderLayers(stateRef.current,board.id,selectedAnnotation?[selectedAnnotation]:selected,action))}/></ModifierSection>}
   {connection&&writable&&<ModifierSection title="Appearance"><ColorPicker name="Connection color" value={board.connectors?.find(line=>line.id===connection)?.color} change={color=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,connectors:(b.connectors??[]).map(line=>line.id===connection?{...line,color}:line)})})}/></ModifierSection>}
-  {writable&&(selected.length>0||selectedAnnotation||connection)&&<ModifierSection title="Actions">
-   {selected.length>0&&<><button onClick={duplicate}>Duplicate</button>{selected.length===2&&<button onClick={connectCards}>Connect cards</button>}<button onClick={remove}>Delete {selected.length===1?'card':'cards'}</button></>}
-   {selectedAnnotation&&<button onClick={duplicate}>Duplicate annotation</button>}
-   {selectedAnnotation&&<button className="modifier-delete" aria-label="Delete annotation" onClick={remove}>Delete annotation</button>}
-  {connection&&writable&&<button onClick={remove}>Delete connection</button>}
-  </ModifierSection>}
-  <div className="object-history"><button disabled={!writable} onClick={()=>history('undo')}>Undo</button><button disabled={!writable} onClick={()=>history('redo')}>Redo</button></div>
+  {writable&&selected.length===2&&<ModifierSection title="Actions"><button onClick={connectCards}>Connect cards</button></ModifierSection>}
+  </ModifierPanel>
+  <ObjectActions writable={writable} canDuplicate={!!(selected.length||selectedAnnotation)} duplicateLabel={selectedAnnotation?'Duplicate annotation':'Duplicate'} deleteLabel={selectedAnnotation?'Delete annotation':connection?'Delete connection':selected.length===1?'Delete card':'Delete cards'} duplicate={duplicate} remove={remove} undo={()=>history('undo')} redo={()=>history('redo')}/>
  </div>:<><div className="tools">{([['note','▤','Note'],['link','↗','Link'],['checklist','☑','To-do'],['board','▦','Board'],['column','▥','Column']] as [Kind,string,string][]).map(([kind,icon,label])=><button key={kind} aria-label={label} disabled={!writable} style={{touchAction:'none'}} aria-pressed={creation.tool===kind} onPointerDown={e=>creation.start(e,kind)} onClick={()=>creation.arm(kind)}><span aria-hidden="true">{label==='Link'?<UrlIcon/>:icon}</span>{label}</button>)}
   <button aria-label="Connect items" title="Line tool: connect two items" aria-pressed={connectorTool} disabled={!writable} onClick={()=>{creation.cancel();setConnectorTool(!connectorTool);setConnectorSource(null);setAnnotationTool('select');setSelectedAnnotation(null);setSelected([]);setConnection(null);}}><span aria-hidden="true">↗</span>Line</button>
   {([['Image','▧','image/png,image/jpeg,image/webp,image/gif'],['Video','▷','video/mp4,video/webm'],['File','⇧','.pdf,.zip,.txt']] as const).map(([label,icon,accept])=><button key={label} aria-label={'Upload '+label.toLowerCase()} disabled={!writable||!teamId||uploading} title={!teamId?'Uploads require a team workspace':undefined} style={{touchAction:'none'}} aria-pressed={creation.tool===label.toLowerCase()} onPointerDown={e=>creation.start(e,label.toLowerCase() as CreationTool)} onClick={()=>creation.arm(label.toLowerCase() as CreationTool)}><span aria-hidden="true">{icon}</span>{label}</button>)}

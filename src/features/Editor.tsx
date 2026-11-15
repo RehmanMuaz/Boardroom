@@ -1,3 +1,6 @@
+import {SharedRepository} from '../sharedRepository';
+import {ViewerLinks} from './ViewerLinks';
+import {snapPoint} from './canvas/snap';
 import {ModifierSection} from './ModifierSection';
 import {ColorPicker,normalizeHex} from './content/ColorPicker';
 import {boardCanvasStyle} from '../boardAppearance';
@@ -28,7 +31,7 @@ import {ConnectorLayer} from './canvas/ConnectorLayer';
 import {LayerControls} from './canvas/LayerControls';
 import {cardLayer,columnAt,columnSummary,dropIntoColumn,resizeInColumns,reorderLayers,layoutColumns} from './canvas/organization';
 
-type Drag={id:string;ids:string[];x:number;y:number;startX:number;startY:number;moved:boolean;point?:{x:number;y:number};inverse:Change[]};
+type Drag={id:string;ids:string[];x:number;y:number;startX:number;startY:number;moved:boolean;point?:{x:number;y:number};inverse:Change[];origin:{x:number;y:number}};
 type Resize={id:string;x:number;y:number;width:number;height:number;inverse:Change[]};
 type Area={x:number;y:number;endX:number;endY:number;before:string[]};
 const clipboardPrefix='BOARDROOM-CARDS:';
@@ -37,9 +40,9 @@ const editing=(target:EventTarget|null)=>target instanceof HTMLElement&&(target.
 export function Editor({repository,initial,exit,open}:{open:(repository:WorkspaceRepository,state:Workspace)=>void;repository:WorkspaceRepository;initial:Workspace;exit:()=>void}){
  const [state,setState]=useState<Workspace>(initial),stateRef=useRef(state);
  const [live,setLive]=useState<LiveView|null>(null);
- const writable=!(repository instanceof TeamRepository)||((live?.role??repository.role)!=='viewer'&&!live?.blocked);
+ const writable=!(repository instanceof SharedRepository)&&(!(repository instanceof TeamRepository)||((live?.role??repository.role)!=='viewer'&&!live?.blocked));
  const local=usePersistence(state,repository,writable);
- const status=repository instanceof TeamRepository?(live?.status??'Connecting...'):local.status;
+ const status=repository instanceof SharedRepository?'Shared view | Refreshes every 5 seconds':repository instanceof TeamRepository?(live?.status??'Connecting...'):local.status;
  const dirty=repository instanceof TeamRepository?(live?.dirty??false):local.dirty;
  const [boardId,setBoardId]=useState(initial.boards[0].id),[selected,setSelected]=useState<string[]>([]),[zoom,setZoom]=useState(1),[query,setQuery]=useState('');
  const [connection,setConnection]=useState<string|null>(null),[uploading,setUploading]=useState(false),[notice,setNotice]=useState(''),[area,setArea]=useState<Area|null>(null);
@@ -56,13 +59,17 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  function backToTools(){setSelected([]);setSelectedAnnotation(null);setConnection(null);setEditingCard(null);setAnnotationTool('select');(document.activeElement as HTMLElement|null)?.blur();}
  function editContent(id:string){if(!writable)return;setEditingCard(id);requestAnimationFrame(()=>{const article=document.querySelector<HTMLElement>(`[data-card-id="${id}"]`);const field=article?.querySelector<HTMLElement>('textarea,input:not([type=checkbox]),[contenteditable=true]');field?.focus();});}
  const mediaAspects=useRef(new Map<string,number>());
+ const snapKey='boardroom.snap.'+('id' in repository?repository.id:'local');
+ const [snap,setSnap]=useState(()=>{try{return localStorage.getItem(snapKey)==='true';}catch{return false;}}),alt=useRef(false);
+ function setSnapping(value:boolean){setSnap(value);try{localStorage.setItem(snapKey,String(value));}catch{setNotice('Grid snapping changed for this tab only.');}}
  const space=useRef(false),pan=useRef<{x:number;y:number;left:number;top:number}|null>(null),marquee=useRef<Area|null>(null);
  const importInput=useRef<HTMLInputElement>(null);
  const uploadInput=useRef<HTMLInputElement>(null),fileAccept=useRef('*'),uploadPlacement=useRef<{point:{x:number;y:number};boardId:string}|null>(null);
  const board=state.boards.find(b=>b.id===boardId)||state.boards[0],extent=canvasExtent(board);
- const teamId=repository instanceof TeamRepository?repository.id:undefined;
+ const teamId=repository instanceof TeamRepository||repository instanceof SharedRepository?repository.id:undefined;
  const activeAnnotation=board.annotations?.find(a=>a.id===selectedAnnotation);
  const coloredCards=board.cards.filter(c=>selected.includes(c.id)&&!['image','video'].includes(c.kind));
+ useEffect(()=>{if(!(repository instanceof SharedRepository))return;let active=true,busy=false;const refresh=async()=>{if(busy)return;busy=true;try{const next=await repository.load();if(active){stateRef.current=next;setState(next);}}catch{if(active)exit();}finally{busy=false;}};const timer=setInterval(()=>void refresh(),5000);return()=>{active=false;clearInterval(timer);};},[repository]);
  useEffect(()=>{if(selected.length||connection)setSelectedAnnotation(null);},[selected,connection]);
  useEffect(()=>{if(!(repository instanceof TeamRepository))return;return repository.start(view=>{stateRef.current=view.snapshot;setState(view.snapshot);setLive(view);});},[repository]);
  useEffect(()=>{if(!(repository instanceof TeamRepository)||!dirty&&!uploading)return;const warn=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[repository,dirty,uploading]);
@@ -111,7 +118,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   setSelected(current=>shift?(current.includes(id)?current.filter(value=>value!==id):[...current,id]):current.includes(id)?current:[id]);
  }
  function expandedIds(ids=selected){return [...new Set([...ids,...board.cards.filter(c=>c.columnId&&ids.includes(c.columnId)).map(c=>c.id)])];}
- function duplicate(){const result=duplicateCards(board,expandedIds());update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:[...b.cards,...result.cards],connectors:[...(b.connectors??[]),...result.connectors]})});setSelected(result.cards.map(c=>c.id));if(selected.some(id=>board.cards.find(c=>c.id===id)?.kind==='board'))setNotice('Nested board tiles are not duplicated.');}
+ function duplicate(){if(selectedAnnotation){const a=board.annotations?.find(a=>a.id===selectedAnnotation);if(!a||!writable)return;const copy={...structuredClone(a),id:crypto.randomUUID(),x:Math.min(100000,a.x+20),y:Math.min(100000,a.y+20)};delete copy.layer;const next={...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,annotations:[...(b.annotations??[]),copy]})};update(reorderLayers(next,board.id,[copy.id],'front'));setSelected([]);setConnection(null);setSelectedAnnotation(copy.id);setAnnotationTool('select');if(copy.kind==='text')setAnnotationFocus(copy.id);return;}const result=duplicateCards(board,expandedIds());update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:[...b.cards,...result.cards],connectors:[...(b.connectors??[]),...result.connectors]})});setSelected(result.cards.map(c=>c.id));if(selected.some(id=>board.cards.find(c=>c.id===id)?.kind==='board'))setNotice('Nested board tiles are not duplicated.');}
  function connectCards(){if(selected.length!==2)return;update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,connectors:[...(b.connectors??[]),{id:crypto.randomUUID(),from:selected[0],to:selected[1],color:'#789180'}]})});}
  function exportBoard(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));a.download='boardroom-backup.json';a.click();URL.revokeObjectURL(a.href);}
  async function files(files:File[],point=location(),destination=board.id){
@@ -126,7 +133,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  }
  function pickFiles(accept:string,point=location()){uploadPlacement.current={point,boardId:board.id};fileAccept.current=accept;if(uploadInput.current){uploadInput.current.accept=accept;uploadInput.current.click();}}
  function contentPoint(x:number,y:number){const view=viewport.current,rect=view?.getBoundingClientRect();return {x:(x-(rect?.left??0)+(view?.scrollLeft??0))/zoom,y:(y-(rect?.top??0)+(view?.scrollTop??0))/zoom};}
- const creation=useCreationPlacement({viewport,point:contentPoint,enabled:writable&&!uploading,place:(kind,point)=>{if(['image','video','file'].includes(kind))pickFiles(kind==='image'?'image/png,image/jpeg,image/webp,image/gif':kind==='video'?'video/mp4,video/webm':'.pdf,.zip,.txt',point);else add(kind,undefined,point);},onArm:()=>{backToTools();setConnectorTool(false);setConnectorSource(null);}});
+ const creation=useCreationPlacement({viewport,point:(x,y)=>snapPoint(contentPoint(x,y),snap&&!alt.current),enabled:writable&&!uploading,place:(kind,point)=>{if(['image','video','file'].includes(kind))pickFiles(kind==='image'?'image/png,image/jpeg,image/webp,image/gif':kind==='video'?'video/mp4,video/webm':'.pdf,.zip,.txt',point);else add(kind,undefined,point);},onArm:()=>{backToTools();setConnectorTool(false);setConnectorSource(null);}});
  useEffect(()=>{creation.cancel();uploadPlacement.current=null;},[board.id]);
  function startDrag(e:ReactPointerEvent<HTMLElement>,card:Card){
   if(!writable||connectorTool||annotationTool!=='select'||e.button!==0||space.current||e.shiftKey)return;
@@ -134,7 +141,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   if(target.closest('.resize-handle,input[type=checkbox],a,.embed-play,iframe')||(editingCard===card.id&&target.closest('input,textarea,[contenteditable=true]')))return;
   const video=target.closest('video');if(video&&e.clientY>video.getBoundingClientRect().bottom-40*zoom)return;
   e.preventDefault();e.stopPropagation();setEditingCard(null);surfaceClick.current=false;
-  const ids=selected.includes(card.id)?selected:[card.id];setSelected(ids);drag.current={id:card.id,ids:expandedIds(ids),x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false,inverse:[]};
+  const ids=selected.includes(card.id)?selected:[card.id];setSelected(ids);drag.current={id:card.id,ids:expandedIds(ids),x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false,inverse:[],origin:{x:card.x,y:card.y}};
  }
  function previewGesture(next:Workspace){
   const gesture=drag.current??resize.current;if(!gesture||!validWorkspace(next))return;
@@ -145,11 +152,11 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   }
   gesture.inverse=gesture.inverse.filter(c=>!same(c.before,c.after));apply(next);
  }
- function moveDrag(e:{clientX:number;clientY:number},id:string){
+ function moveDrag(e:{clientX:number;clientY:number;altKey?:boolean},id:string){
   const moving=drag.current;if(moving?.id!==id)return;
   if(Math.hypot(e.clientX-moving.startX,e.clientY-moving.startY)>3)moving.moved=true;
   if(!moving.moved)return;
-  const delta=screenDelta(e.clientX-moving.x,e.clientY-moving.y,zoom);
+  const anchor=stateRef.current.boards.find(b=>b.id===board.id)?.cards.find(c=>c.id===moving.id);if(!anchor)return;const target=snapPoint({x:moving.origin.x+(e.clientX-moving.startX)/zoom,y:moving.origin.y+(e.clientY-moving.startY)/zoom},snap&&!e.altKey);const delta={x:target.x-anchor.x,y:target.y-anchor.y};
   previewGesture(moveSelection(stateRef.current,board.id,moving.ids,delta.x,delta.y));moving.x=e.clientX;moving.y=e.clientY;moving.point=contentPoint(e.clientX,e.clientY);
   const current=stateRef.current.boards.find(b=>b.id===board.id)!;
   setDropTarget(current.cards.find(c=>c.id===moving.id)?.kind==='column'?null:columnAt(current,moving.point,moving.ids)?.id??null);
@@ -174,6 +181,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  });
  useEffect(()=>{
   function key(e:KeyboardEvent){
+   if(e.key==='Alt')alt.current=true;
    const modifier=e.metaKey||e.ctrlKey;
    if(modifier&&e.key.toLowerCase()==='z'){e.preventDefault();history(e.shiftKey?'redo':'undo');return;}
    if(modifier&&e.key.toLowerCase()==='y'){e.preventDefault();history('redo');return;}
@@ -188,7 +196,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
    if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)&&selected.length&&writable){e.preventDefault();const step=e.shiftKey?10:1;update(moveSelection(stateRef.current,board.id,selected,e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0));}
    if(modifier&&['+','=','-','0'].includes(e.key)){e.preventDefault();setZoom(z=>e.key==='0'?1:Math.max(.25,Math.min(2,z+(e.key==='-'?-.1:.1))));}
   }
-  function up(e:KeyboardEvent){if(e.code==='Space')space.current=false;}
+  function up(e:KeyboardEvent){if(e.key==='Alt')alt.current=false;if(e.code==='Space')space.current=false;}
   function copy(e:ClipboardEvent){if(editing(e.target)||!selected.length)return;const ids=expandedIds();const payload={version:1,workspaceId:teamId,cards:board.cards.filter(c=>ids.includes(c.id)&&c.kind!=='board'),connectors:(board.connectors??[]).filter(line=>ids.includes(line.from)&&ids.includes(line.to))};e.preventDefault();e.clipboardData?.setData('text/plain',clipboardPrefix+JSON.stringify(payload));if(e.type==='cut'&&writable)remove();}
   function paste(e:ClipboardEvent){
    if(e.clipboardData?.files.length){e.preventDefault();void files([...e.clipboardData.files]);return;}if(editing(e.target)||!writable)return;
@@ -200,17 +208,18 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
     const result=duplicateCards(copied,copied.cards.map(c=>c.id));update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,cards:[...b.cards,...result.cards],connectors:[...(b.connectors??[]),...result.connectors]})});setSelected(result.cards.map(c=>c.id));
    }catch(e){setNotice(e instanceof Error?e.message:'Invalid clipboard');}
   }
+  const resetModifiers=()=>{alt.current=false;space.current=false;};window.addEventListener('blur',resetModifiers);
   window.addEventListener('keydown',key);window.addEventListener('keyup',up);window.addEventListener('copy',copy);window.addEventListener('cut',copy);window.addEventListener('paste',paste);
-  return()=>{window.removeEventListener('keydown',key);window.removeEventListener('keyup',up);window.removeEventListener('copy',copy);window.removeEventListener('cut',copy);window.removeEventListener('paste',paste);};
+  return()=>{window.removeEventListener('blur',resetModifiers);window.removeEventListener('keydown',key);window.removeEventListener('keyup',up);window.removeEventListener('copy',copy);window.removeEventListener('cut',copy);window.removeEventListener('paste',paste);};
  });
  const rectangle=area?{left:Math.min(area.x,area.endX)*zoom,top:Math.min(area.y,area.endY)*zoom,width:Math.abs(area.endX-area.x)*zoom,height:Math.abs(area.endY-area.y)*zoom}:undefined;
  return <div className={'app'+((selected.length||selectedAnnotation||connection)&&!connectorTool?' contextual-sidebar':'')}><header onKeyDown={e=>{if(e.key==='Escape'&&e.target instanceof HTMLElement){const details=e.target.closest('details');if(details){e.preventDefault();e.stopPropagation();details.open=false;details.querySelector('summary')?.focus();}}}}>
   <span className="brand" aria-label="Boardroom"><span aria-hidden="true">▦</span><span>boardroom</span></span>
-  <WorkspaceControls repository={repository} canLeave={()=>{if(leaveBlocked.current){setNotice('Wait for saving to finish, or export your edits before switching workspaces.');return false;}return true;}} open={open} exit={exit} onError={setNotice}/>
+  {repository instanceof SharedRepository?<span className="shared-workspace-name">{repository.displayName} ? Read only</span>:<WorkspaceControls repository={repository} canLeave={()=>{if(leaveBlocked.current){setNotice('Wait for saving to finish, or export your edits before switching workspaces.');return false;}return true;}} open={open} exit={exit} onError={setNotice}/>}
   <span className="save" role="status" title={status}>{uploading?'Uploading...':status}</span>
-  {teamId&&<span className="presence" title={live?.members.map(m=>m.email).join(', ')}>{new Set(live?.members.map(m=>m.userId)).size} online</span>}
+  {teamId&&!(repository instanceof SharedRepository)&&<span className="presence" title={live?.members.map(m=>m.email).join(', ')}>{new Set(live?.members.map(m=>m.userId)).size} online</span>}
   {repository instanceof TeamRepository&&(live?.role??repository.role)==='owner'&&<Members repository={repository}/>}
-  <details className="board-actions header-popover"><summary aria-label="Board actions">Actions</summary><div className="popover-content"><button onClick={exportBoard}>Export</button>
+  <details className="board-actions header-popover"><summary aria-label="Board actions">Actions</summary><div className="popover-content">{repository instanceof TeamRepository&&(live?.role??repository.role)==='owner'&&<ViewerLinks workspaceId={repository.id}/>}<button onClick={exportBoard}>Export</button>
   <div className="import"><button disabled={!writable} onClick={()=>importInput.current?.click()}>Import</button><input ref={importInput} aria-label="Import backup" type="file" disabled={!writable} accept="application/json" onChange={async e=>{const file=e.target.files?.[0];if(file){try{const value:unknown=JSON.parse(await file.text());if(!validWorkspace(value))throw Error('Invalid backup');update(value);setBoardId(value.boards[0].id);setSelected([]);}catch(e){setNotice(e instanceof Error?e.message:'Invalid backup');}}e.target.value='';}}/></div>
   <details className="shortcuts"><summary>?</summary><div><strong>Canvas shortcuts</strong><p>Shift-click or drag empty space: select cards<br/>Space-drag or middle drag: pan<br/>Arrows / Shift-arrows: move 1 / 10 px<br/>Ctrl/⌘ A: select all · D: duplicate<br/>Ctrl/⌘ C/X/V: copy, cut, paste<br/>Ctrl/⌘ Z / Shift-Z: undo / redo<br/>Delete: remove · Escape: clear selection<br/>Ctrl/⌘ +/−/0: zoom</p></div></details>
  </div></details></header>
@@ -233,6 +242,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   {connection&&writable&&<ModifierSection title="Appearance"><ColorPicker name="Connection color" value={board.connectors?.find(line=>line.id===connection)?.color} change={color=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id!==board.id?b:{...b,connectors:(b.connectors??[]).map(line=>line.id===connection?{...line,color}:line)})})}/></ModifierSection>}
   {writable&&(selected.length>0||selectedAnnotation||connection)&&<ModifierSection title="Actions">
    {selected.length>0&&<><button onClick={duplicate}>Duplicate</button>{selected.length===2&&<button onClick={connectCards}>Connect cards</button>}<button onClick={remove}>Delete {selected.length===1?'card':'cards'}</button></>}
+   {selectedAnnotation&&<button onClick={duplicate}>Duplicate annotation</button>}
    {selectedAnnotation&&<button className="modifier-delete" aria-label="Delete annotation" onClick={remove}>Delete annotation</button>}
   {connection&&writable&&<button onClick={remove}>Delete connection</button>}
   </ModifierSection>}
@@ -242,7 +252,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   {([['Image','▧','image/png,image/jpeg,image/webp,image/gif'],['Video','▷','video/mp4,video/webm'],['File','⇧','.pdf,.zip,.txt']] as const).map(([label,icon,accept])=><button key={label} aria-label={'Upload '+label.toLowerCase()} disabled={!writable||!teamId||uploading} title={!teamId?'Uploads require a team workspace':undefined} style={{touchAction:'none'}} aria-pressed={creation.tool===label.toLowerCase()} onPointerDown={e=>creation.start(e,label.toLowerCase() as CreationTool)} onClick={()=>creation.arm(label.toLowerCase() as CreationTool)}><span aria-hidden="true">{icon}</span>{label}</button>)}
  </div><div className="aside-bottom"><button disabled={!writable} onClick={()=>history('undo')}>↶<small>Undo</small></button><button disabled={!writable} onClick={()=>history('redo')}>↷<small>Redo</small></button></div></>}</aside>
  <input ref={uploadInput} className="upload-input" type="file" multiple aria-label="Upload media files" onChange={e=>{const destination=uploadPlacement.current;uploadPlacement.current=null;void files([...e.target.files??[]],destination?.point,destination?.boardId);e.target.value='';}}/>
- <main><BoardAppearance background={board.background} pattern={board.pattern} writable={writable} change={patch=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id===board.id?{...b,...patch}:b)})}/><div className="board-heading"><div className="board-identity"><nav className="breadcrumbs" aria-label="Board breadcrumbs">{(()=>{const chain:Board[]=[];let current:Board|undefined=board;const seen=new Set<string>();while(current&&!seen.has(current.id)){chain.unshift(current);seen.add(current.id);current=state.boards.find(b=>b.id===current?.parent);}return chain.map((ancestor,index)=><span key={ancestor.id}>{index>0&&<span className="crumb-separator" aria-hidden="true">/</span>}{ancestor.id===board.id?<span aria-current="page">{ancestor.title}</span>:<button onClick={()=>setBoardId(ancestor.id)}>{ancestor.title}</button>}</span>);})()}</nav><h1 aria-label={board.title}><input aria-label="Board title" readOnly={!writable} value={board.title} onChange={e=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id===board.id?{...b,title:e.target.value}:b)})}/></h1><span className="workspace-mode">{teamId?`${live?.role??(repository as TeamRepository).role} access`:'Browser-local | No team sync'}</span></div><input className="search" placeholder="Find on this board…" aria-label="Search cards" value={query} onChange={e=>setQuery(e.target.value)}/></div>
+ <main><BoardAppearance snap={snap} onSnap={setSnapping} background={board.background} pattern={board.pattern} writable={writable} change={patch=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id===board.id?{...b,...patch}:b)})}/><div className="board-heading"><div className="board-identity"><nav className="breadcrumbs" aria-label="Board breadcrumbs">{(()=>{const chain:Board[]=[];let current:Board|undefined=board;const seen=new Set<string>();while(current&&!seen.has(current.id)){chain.unshift(current);seen.add(current.id);current=state.boards.find(b=>b.id===current?.parent);}return chain.map((ancestor,index)=><span key={ancestor.id}>{index>0&&<span className="crumb-separator" aria-hidden="true">/</span>}{ancestor.id===board.id?<span aria-current="page">{ancestor.title}</span>:<button onClick={()=>setBoardId(ancestor.id)}>{ancestor.title}</button>}</span>);})()}</nav><h1 aria-label={board.title}><input aria-label="Board title" readOnly={!writable} value={board.title} onChange={e=>update({...stateRef.current,boards:stateRef.current.boards.map(b=>b.id===board.id?{...b,title:e.target.value}:b)})}/></h1><span className="workspace-mode">{teamId?`${live?.role??(repository as TeamRepository).role} access`:'Browser-local | No team sync'}</span></div><input className="search" placeholder="Find on this board…" aria-label="Search cards" value={query} onChange={e=>setQuery(e.target.value)}/></div>
   {notice&&<div className="notice" role="alert">{notice}<button aria-label="Dismiss message" onClick={()=>setNotice('')}>×</button></div>}
   <div className="viewport" style={boardCanvasStyle(board.background,board.pattern)} ref={viewport} role="region" aria-label="Board canvas" tabIndex={0}
    onDragOver={e=>{if(e.dataTransfer.types.includes('Files'))e.preventDefault();}} onDrop={e=>{e.preventDefault();void files([...e.dataTransfer.files],contentPoint(e.clientX,e.clientY));}}
@@ -257,7 +267,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
 
     {c.kind==='board'?<button className="board-tile" onDoubleClick={()=>{if(state.boards.some(b=>b.id===c.target))setBoardId(c.target!);}}><div className="folder">▦</div><strong>{state.boards.find(b=>b.id===c.target)?.title||c.text}</strong></button>
     :c.kind==='column'?<><input className="column-title" aria-label="Column title" readOnly={!writable} value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/><div className="column-summary" aria-live="polite">{columnSummary(board,c.id)}</div></>
-    :['image','video','file'].includes(c.kind)?<><MediaCard card={c} workspaceId={teamId} toolsTarget={selected.length===1&&selected[0]===c.id?toolsTarget:null} editable={writable} toggleCaption={()=>{const visible=c.captionVisible===false;if(visible){pendingCaptionFocus.current=c.id;setEditingCard(c.id);}changeCard(c.id,{captionVisible:visible,height:Math.min(10000,Math.max(100,cardHeight(c)+(visible?28:-28)))});}} onAspect={ratio=>{if(Number.isFinite(ratio)&&ratio>0)mediaAspects.current.set(c.id,ratio);}}/>{(c.kind==='file'||c.captionVisible!==false)&&<input className="media-caption" placeholder={c.kind==='file'?undefined:'Write a subtitle...'} ref={input=>{if(input&&pendingCaptionFocus.current===c.id){pendingCaptionFocus.current=null;input.focus();input.setSelectionRange(input.value.length,input.value.length);}}} aria-label="Media caption" readOnly={!writable} value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/>}</>
+    :['image','video','file'].includes(c.kind)?<><MediaCard card={c} assetBase={repository instanceof SharedRepository?`/api/viewer/${repository.linkId}/assets`:undefined} workspaceId={teamId} toolsTarget={selected.length===1&&selected[0]===c.id?toolsTarget:null} editable={writable} toggleCaption={()=>{const visible=c.captionVisible===false;if(visible){pendingCaptionFocus.current=c.id;setEditingCard(c.id);}changeCard(c.id,{captionVisible:visible,height:Math.min(10000,Math.max(100,cardHeight(c)+(visible?28:-28)))});}} onAspect={ratio=>{if(Number.isFinite(ratio)&&ratio>0)mediaAspects.current.set(c.id,ratio);}}/>{(c.kind==='file'||c.captionVisible!==false)&&<input className="media-caption" placeholder={c.kind==='file'?undefined:'Write a subtitle...'} ref={input=>{if(input&&pendingCaptionFocus.current===c.id){pendingCaptionFocus.current=null;input.focus();input.setSelectionRange(input.value.length,input.value.length);}}} aria-label="Media caption" readOnly={!writable} value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/>}</>
     :c.kind==='note'?<><div className="note-body"><RichNote toolsTarget={selected.length===1&&selected[0]===c.id?toolsTarget:null} text={c.text} document={c.richText} editable={writable} change={(text,richText)=>changeCard(c.id,{text,richText})}/></div><NoteLabels labels={c.labels} editable={false} change={labels=>changeCard(c.id,{labels})}/></>
     :c.kind==='checklist'?<Checklist toolsTarget={selected.length===1&&selected[0]===c.id?toolsTarget:null} card={c} editable={writable} change={patch=>changeCard(c.id,patch)}/>
     :<><div className="link-card-icon"><UrlIcon/></div><textarea readOnly={!writable} aria-label="Link address" value={c.text} onChange={e=>changeCard(c.id,{text:e.target.value})}/><VideoLink url={c.text}/></>}

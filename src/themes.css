@@ -40,3 +40,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .workspace-rename{display:grid;gap:8px;padding:10px 0;border-top:1px solid var(--border)}
 .workspace-rename label{display:grid;gap:6px;color:var(--ink);font-size:12px}
 .workspace-rename input{width:100%;min-width:0;padding:8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink)}
+.viewer-links .popover-content{width:340px;max-width:calc(100vw - 24px);right:0;max-height:75vh;overflow:auto}
+.viewer-links form{display:grid;gap:10px}
+.viewer-links label{display:grid;gap:5px;font-size:12px}
+.viewer-links input,.viewer-links select{width:100%;padding:7px;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:4px}
+.viewer-links li{font-size:12px;padding:8px 0;border-top:1px solid var(--border)}
+.viewer-link-result{overflow-wrap:anywhere;user-select:all;font-size:12px}
+.shared-workspace-name{max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+@media(max-width:800px){.viewer-links{font-size:11px}.viewer-links .popover-content{position:fixed;top:100px;left:12px;right:12px;width:auto}}

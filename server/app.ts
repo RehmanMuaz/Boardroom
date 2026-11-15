@@ -1,3 +1,4 @@
+import {publicViewerRouter,viewerLinkRouter} from './viewer-links';
 import express, {type Request, type Response, type NextFunction} from 'express';
 import session from 'express-session';
 import connectPg from 'connect-pg-simple';
@@ -36,9 +37,12 @@ export function createApp(pool:Pool, options:{secret:string; origin:string; secu
  app.use('/api/auth',authRateLimit(pool,options.rateNamespace??'auth',options.rateLimit??20));
  app.use('/api/auth',accountRouter(pool,{origin:options.origin,mailer:options.mailer,log,live}));
  app.post('/api/logout',async(req,res)=>{const sessionId=req.sessionID;await new Promise<void>((resolve,reject)=>req.session.destroy(e=>e?reject(e):resolve()));live()?.logout(sessionId);res.clearCookie('connect.sid');res.sendStatus(204);});
+ app.use('/api/viewer/open',authRateLimit(pool,(options.rateNamespace??'auth')+':viewer',30));
+ app.use('/api/viewer',publicViewerRouter(pool,options.assetRoot));
  app.use('/api',async(req,res,next)=>{if(!req.session.userId)return res.status(401).json({error:'Sign in required'});const account=(await pool.query('SELECT email_verified_at,session_version FROM accounts WHERE id=$1',[req.session.userId])).rows[0];if(!account||account.session_version!==(req.session.authVersion??0))return res.status(401).json({error:'Sign in required'});res.locals.emailVerified=Boolean(account.email_verified_at);next();});
  app.patch('/api/account/preferences',async(req,res)=>{const {theme}=z.object({theme:z.enum(['light','dark','system'])}).strict().parse(req.body);await pool.query('UPDATE accounts SET theme=$1 WHERE id=$2',[theme,req.session.userId]);res.json({theme});});
  app.use('/api',(_req,res,next)=>{if(options.requireVerification&&!res.locals.emailVerified)return res.status(403).json({error:'Verify your email before using team workspaces'});next();});
+ app.use('/api/workspaces/:id/viewer-links',viewerLinkRouter(pool,{origin:options.origin,mailer:options.mailer}));
  app.use('/api/workspaces/:id/assets',assetRouter(pool,{root:options.assetRoot,maxBytes:options.maxAssetBytes}));
  async function membership(db:Pool|PoolClient,req:Request,id:string,write=false,owner=false){uuid.parse(id);const result=await db.query('SELECT role FROM memberships WHERE workspace_id=$1 AND user_id=$2'+(db===pool?'':' FOR SHARE'),[id,req.session.userId]);const role=result.rows[0]?.role;if(!role)throw new HttpError(404,'Workspace not found');if((write&&role==='viewer')||(owner&&role!=='owner'))throw new HttpError(403,'Permission denied');return role as 'owner'|'editor'|'viewer';}
  app.get('/api/workspaces',async(req,res)=>{const result=await pool.query('SELECT w.id,w.name,m.role FROM team_workspaces w JOIN memberships m ON m.workspace_id=w.id WHERE m.user_id=$1 ORDER BY w.name',[req.session.userId]);res.json(result.rows);});

@@ -1,7 +1,8 @@
+import {type SharedRepository} from './sharedRepository';
 import {validWorkspace, seed, type Workspace} from './model';
 import {LiveRepository,type Role} from './liveRepository';
 export interface WorkspaceReader {load():Promise<Workspace>}
-export type WorkspaceRepository=LocalRepository|TeamRepository;
+export type WorkspaceRepository=LocalRepository|TeamRepository|SharedRepository;
 export class LocalRepository implements WorkspaceReader {
  async load(){try{const value:unknown=JSON.parse(localStorage.getItem('boardroom.v1')??'null');return validWorkspace(value)?value:seed;}catch{return seed;}}
  async save(snapshot:Workspace){localStorage.setItem('boardroom.v1',JSON.stringify(snapshot));}

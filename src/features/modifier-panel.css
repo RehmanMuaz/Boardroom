@@ -1,0 +1,24 @@
+.object-sidebar{position:relative}
+.object-sidebar h2{padding-right:34px}
+.modifier-panel{display:flex;flex-direction:column;gap:12px}
+.modifier-navigation{display:grid;gap:9px}
+.modifier-navigation input{width:100%;min-width:0;padding:8px;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:5px;font-size:12px}
+.modifier-tabs{display:flex;gap:3px;border:1px solid var(--border);border-radius:6px;padding:3px}
+.object-sidebar .modifier-tabs button{flex:1;text-align:center;padding:6px;min-height:30px}
+.modifier-tabs button[aria-selected=true]{background:var(--accent-soft);color:var(--accent)}
+.modifier-actions{position:absolute;top:66px;right:16px;z-index:10}
+.modifier-actions summary{cursor:pointer;list-style:none;padding:4px;border:1px solid var(--border);border-radius:4px}
+.modifier-action-menu{position:absolute;right:0;top:32px;min-width:175px;max-width:210px;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px var(--shadow);display:flex;flex-direction:column;gap:6px}
+.modifier-actions:not([open]) .modifier-action-menu{display:none}
+.object-sidebar .modifier-section[hidden],.object-sidebar .modifier-section-content[hidden]{display:none}
+.object-sidebar .modifier-section .modifier-section-toggle{display:flex;justify-content:space-between;align-items:center;border:0;background:transparent;width:100%;padding:0;min-height:24px;margin-bottom:9px;text-align:left}
+.object-sidebar .modifier-section-toggle h3{margin:0;font-size:11px}
+.object-sidebar .modifier-section-toggle span{font-size:15px;color:var(--muted)}
+@media(max-width:800px){.modifier-actions{top:60px;right:12px}}
+/* Frequent actions stay in one stable row on either modifier tab. */
+.object-sidebar .object-icon-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;flex-shrink:0;isolation:isolate}
+.object-sidebar .object-icon-actions.view-only-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+.object-sidebar .object-history.object-icon-actions button{display:grid;place-items:center;min-width:0;min-height:44px;padding:0;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--ink)}
+.object-sidebar .object-history.object-icon-actions button:hover:not(:disabled){background:var(--hover)}
+.object-sidebar .object-history.object-icon-actions button:disabled{opacity:.4;cursor:default}
+.object-icon-actions svg{display:block;pointer-events:none;flex-shrink:0}

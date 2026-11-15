@@ -128,3 +128,12 @@ Select a standalone text annotation and choose **Duplicate annotation** under Ac
 **Board appearance > Snap to grid** optionally aligns new items and dragged cards/columns to a 20 px grid. It is off by default, independent of the visible grid, and saved only for that workspace on your device. Hold Alt to bypass. Group offsets and column layout are preserved; freehand/annotation geometry and fine keyboard movement stay free-positioned. Toggling it never moves existing content.
 
 The note caret fix preserves rich bullet/empty-block round trips and selection during DOM updates, including live refreshes. Legacy snapshots need no conversion. Migration 009 only adds viewer-link metadata; it does not alter existing workspace snapshots, memberships, media or account invitations.
+
+
+## PDF export (development preview)
+
+Open Actions, choose PDF document under Export format, then select A4/Letter, portrait/landscape and Fit board to one page or Actual size across pages. Preview shows numbered boundaries; tiled pages read left to right, then top to bottom. Export includes only the current board, regardless of canvas zoom/search/selection. Fit can make a large board's text small; tiling preserves size but splits objects at page boundaries.
+
+PDFs contain rasterized pages with notes/formatting, labels, checklists, columns, links, annotations, shapes, connectors, board appearance and authorized images. Text is not selectable; video/files appear as labels and nested board content is not included. Preview images use placeholders; actual downloads embed their bytes. Image/source failures stop the download. Workspace/client-link access is checked before rendering and immediately before download. A downloaded copy cannot be revoked.
+
+Limits: 50 pages, 3,000 combined objects and 100 MB image inputs (10 MB per image). Guest workspaces with private image references must be opened in the original team workspace. Existing workspaces and JSON backup behavior are preserved. This feature is local on feature/styles-and-usability, not deployed. Shared workspace styles and named export regions remain planned.

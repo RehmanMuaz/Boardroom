@@ -118,3 +118,13 @@ IDEA-018 through IDEA-024 are implemented on `feature/backlog-editor-improvement
 Changes support local saves or authorized live team persistence, undo/redo and read-only viewers. The API script does not watch files: after updating the checkout, stop the running API with Ctrl+C and restart `npm.cmd run dev:api`, then refresh the browser. Vite's `npm.cmd run dev` server updates the frontend.
 
 Selected-object modifiers are organized into relevant Content/Tasks/Media, Labels, Size, Appearance, Placement, Layers and Actions sections. Text annotations separate Typography, Appearance and Border; shape outlines and fills have their own sections. Dimensions are in pixels; font/stroke sliders retain exact numeric inputs. Undo/Redo stay at the bottom, and Back to tools restores the unchanged creation rail.
+
+## Client review and canvas refinements
+
+Workspace owners can open **Actions > Client viewing links** to create or email account-free read-only access. Anyone holding or forwarding a link can view and download that entire workspace, including nested boards; default expiry is seven days, configurable to 1/7/14/30 days. Owners can revoke links in the same menu. Account invitations still work as before. Existing workspaces remain private unless an owner explicitly creates a viewing link. Shared views refresh every five seconds and recheck access on every document/media request.
+
+Select a standalone text annotation and choose **Duplicate annotation** under Actions, or use Ctrl/Cmd+D outside its text editor. Copies preserve styling and can be edited independently; undo/redo remains available.
+
+**Board appearance > Snap to grid** optionally aligns new items and dragged cards/columns to a 20 px grid. It is off by default, independent of the visible grid, and saved only for that workspace on your device. Hold Alt to bypass. Group offsets and column layout are preserved; freehand/annotation geometry and fine keyboard movement stay free-positioned. Toggling it never moves existing content.
+
+The note caret fix preserves rich bullet/empty-block round trips and selection during DOM updates, including live refreshes. Legacy snapshots need no conversion. Migration 009 only adds viewer-link metadata; it does not alter existing workspace snapshots, memberships, media or account invitations.

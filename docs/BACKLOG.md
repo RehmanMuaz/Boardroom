@@ -6,7 +6,60 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-IDEA-026 is implemented and approved. IDEA-027 is implemented locally and ready for review. IDEA-028 modifier-sidebar organization is implemented locally and ready for review; the main creation sidebar layout stays unchanged. IDEA-025 and IDEA-018 through IDEA-024 are implemented locally and awaiting user review. No deployment was performed.
+IDEA-029 through IDEA-032 are implemented with compatibility and regression coverage. Existing workspace data and account-based invitations remain compatible; client sharing requires owner opt-in. Earlier requests remain below for reference. Preserve the main creation sidebar layout.
+
+### IDEA-029: Fix note cursor jumping to the start while typing
+
+- Type: Bug
+- Priority: Now - first; blocks normal editing
+- Status: Implemented; covered by compatibility and regression tests
+- Reported behavior: Typing in a note repeatedly moves the text cursor back to the start.
+- Expected behavior: Typing, inserting in the middle, selecting/replacing text and using formatting preserve the caret and selection. Autosave, modifier-sidebar updates and live acknowledgements must not reset the editor while the user types.
+- Investigation: Reproduce with plain and formatted notes, then check focus changes, component remounts, controlled updates and rich-text DOM rendering. Do not assume the cause before reproducing it.
+- Constraints: Preserve undo/redo, IME/composition, paste, existing formatting and explicit concurrent-edit conflicts. Do not suppress legitimate remote updates to hide the issue.
+- Done when: Sustained typing and mid-text edits keep the caret stable through local saves and team acknowledgements; regression coverage includes the reproduced case and reload persistence.
+
+- Result: Rich-note parsing preserves bullet and empty-block semantics; DOM updates preserve selection rather than resetting it. Plain/rich typing and a focused live snapshot-refresh regression are covered. Stored legacy note formats remain unchanged until edited. Existing same-field conflicts remain; no character-level CRDT is claimed.
+
+### IDEA-030: Duplicate standalone text annotations
+
+- Type: Usability / Improvement
+- Priority: Now - second
+- Status: Implemented; covered by compatibility and regression tests
+- Reported behavior: Standalone Text has no Duplicate option, unlike other canvas items.
+- Expected behavior: Selecting text exposes Duplicate in the modifier sidebar Actions section. The copy retains text, typography, dimensions, colors, background and borders, receives a new ID, appears slightly offset and becomes selected. Include existing duplication keyboard behavior where applicable.
+- Constraints: Preserve permissions, undo/redo, persistence and live sharing. Keep the main creation sidebar layout unchanged. Coordinate later annotation clipboard/group duplication with IDEA-002 rather than requiring it for this fix.
+- Done when: A styled text annotation can be duplicated, the copy edits independently, duplication can be undone/redone, and both copies persist after reload and appear for authorized teammates. Viewers cannot duplicate.
+
+- Result: Actions includes Duplicate annotation for standalone text (also supported for other annotations); Ctrl/Cmd+D works when the annotation is selected outside text editing. Copies retain formatting, get a fresh ID and 20 px offset, appear above other items, and are independent, undoable and persistent.
+
+### IDEA-031: Account-free client viewing through emailed viewer links
+
+- Type: Feature / Sharing
+- Priority: Now - third
+- Status: Implemented; covered by compatibility and regression tests
+- What I want: Clients receiving a viewer link by email can open the shared workspace without creating an account or signing in.
+- Expected behavior: An owner can create and email a read-only viewing link for a specific workspace. The recipient can inspect shared boards and authorized media with no registration flow. Keep this distinct from browser-local guest mode, which does not grant access to team content.
+- Access design: Explicit owner-controlled link creation, expiry and revocation. Define whether links are transferable bearer links or require an email verification step; an emailed link alone does not prove the recipient's identity. Record the sharing choice clearly before implementation.
+- Constraints: Scope every document, nested-board and media request to the shared workspace and active link. No editing, uploads, invitations, member management or access to other workspaces. Preserve authenticated team permissions and original branding. Decide download availability explicitly. Do not expose existing workspaces automatically.
+- Done when: An emailed viewer link opens its intended workspace without an account, permits only read access to that workspace's content, and rejects expired/revoked links and cross-workspace access. Current member-invitation behavior remains available.
+- Related: IDEA-012 controlled sharing and board-specific access. This request prioritizes workspace viewing; board-only scope can follow.
+
+- Result: Owners use Actions > Client viewing links to email or manually copy a read-only bearer link. Default expiry is 7 days (choices 1/7/14/30), with owner revocation. Anyone holding/forwarding the link can view and download the entire workspace; the UI and email explicitly state this. Tokens are stored only as hashes, exchanged from the URL fragment into a scoped HttpOnly session grant; workspace and referenced-media reads revalidate expiry/revocation. No edit, upload, membership, invitation or private WebSocket authority is granted. Shared views refresh every 5 seconds. Old account invitations remain available; no existing workspace is automatically shared. Migration 009 only creates a new table.
+
+### IDEA-032: Optional snap-to-grid placement and movement
+
+- Type: Feature / Canvas usability
+- Priority: Now - fourth
+- Status: Implemented; covered by compatibility and regression tests
+- What I want: Snapping to a grid should be available as an option.
+- Expected behavior: A discoverable Snap to grid toggle enables consistent grid-aligned creation placement and object movement; disabled preserves free positioning. Choose and document grid spacing in canvas units so behavior stays consistent through zoom and pan. Treat grid visibility and snapping as separate options: a visible grid must not silently enable snapping.
+- Interaction design: Preserve relative positions when moving groups, provide an obvious preview of the final snapped position, and define a temporary bypass. Existing column layout/reordering takes precedence over free-canvas snapping. Define which annotation types participate before implementation; avoid snapping every freehand point.
+- Constraints: Preserve deliberate sidebar placement from IDEA-026, bounds, undo/redo, persistence, collaboration and viewer restrictions. Specify whether the toggle is personal or shared and how that preference is saved. Keep the main creation sidebar layout unchanged.
+- Done when: Enabled snapping produces predictable positions at different zoom/pan settings, can be switched off without moving existing content, and works with group movement and column drops without unexpected jumps.
+- Related: IDEA-015 snapping/alignment polish; this request prioritizes the optional grid behavior.
+
+- Result: Board appearance includes Snap to grid, off by default and personal to the workspace/device. New item placement and pointer movement use 20 px canvas units; Alt bypasses, group offsets are preserved and column layout takes precedence. Grid visibility remains independent. Freehand/annotation geometry and fine keyboard nudges remain unsnapped. The preference does not modify workspace snapshots or move existing items when toggled.
 
 ### IDEA-026: Drag new elements from the creation sidebar onto the canvas
 
@@ -339,7 +392,7 @@ IDEA-026 is implemented and approved. IDEA-027 is implemented locally and ready 
 
 ## Suggested delivery slices
 
-Implement IDEA-026, IDEA-027 and IDEA-028 next, as prioritized by the user. IDEA-018 through IDEA-025 have completed local implementation and validation and remain available for review. The older proposed sequence below follows these improvements. Pending requests remain ideas rather than implemented features.
+Prioritize IDEA-029, IDEA-030, IDEA-031 and IDEA-032 next, as requested by the user. IDEA-026 through IDEA-028 have been delivered. IDEA-018 through IDEA-025 have completed local implementation and validation and remain available for review. The older proposed sequence below follows these improvements. Pending requests remain ideas rather than implemented features.
 
 1. Clean up the header/navigation and media presentation (IDEA-005 and IDEA-001), and settle the placement of the separate annotation toolbar.
 2. Establish shared interface color tokens and account-persistent themes (IDEA-004).
@@ -359,7 +412,7 @@ Canvas polish (IDEA-015) can accompany the relevant editor slices. Collaboration
 ## Optional request template
 
 ```markdown
-### IDEA-029: Short title
+### IDEA-033: Short title
 
 - Type: Feature / Improvement / Bug / UI
 - Priority: Now / Soon / Later / Unsure

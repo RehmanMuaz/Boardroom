@@ -24,11 +24,12 @@ export async function validateAssetReferences(db:Pool|PoolClient,workspaceId:str
  const byId=new Map<string,string>(assets.rows.map(row=>[row.id,row.mime]));
  for(const card of cards){const mime=byId.get(card.assetId!);if(!mime||assetKind(mime)!==card.kind)throw new AssetError(400,'Media must reference an existing asset of the correct type in this workspace');}
 }
-export function assetRouter(pool:Pool,options:{root?:string;maxBytes?:number}={}){
+export function assetRouter(pool:Pool,options:{root?:string;maxBytes?:number;authorizeRead?:(req:Request)=>Promise<string>}={}){
  const root=resolve(options.root??process.env.ASSET_DIR??'data/assets');
  const maximum=options.maxBytes??50*1024*1024;
  const router=express.Router({mergeParams:true});
  async function authorize(db:Pool|PoolClient,req:Request,write=false){
+  if(!write&&options.authorizeRead)return options.authorizeRead(req);
   const id=z.string().uuid().parse(req.params.id);
   const result=await db.query('SELECT role FROM memberships WHERE workspace_id=$1 AND user_id=$2'+(db===pool?'':' FOR SHARE'),[id,req.session.userId]);
   if(!result.rowCount)throw new AssetError(404,'Workspace not found');if(write&&result.rows[0].role==='viewer')throw new AssetError(403,'Permission denied');return id;

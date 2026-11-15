@@ -115,3 +115,12 @@ The PDF is rasterized at two pixels per PDF point: text is not selectable, video
 The header and inline search now establish a stacking context above the transformed canvas and modifier sidebar. A regression reproduced the occlusion before the fix and verifies pointer hit testing/click selection for every search result at 1440, 900 and 390 px widths, including a high-layer canvas object and an open modifier sidebar. This does not change canvas data, sidebar layout or permissions.
 
 User authorized deployment of this usability/PDF batch after the fix. Release promotion follows feature/styles-and-usability -> develop -> main with required local and GitHub checks; main's existing workflow builds/publishes an immutable image, backs up and deploys through the configured VPS pipeline. Actual release status is recorded in GitHub Actions. Shared workspace styles, format painter, semantic roles, expanded mixed-property controls, frames and style-impact preview remain future work.
+
+
+## IDEA-043: Vector PDF upgrade
+
+Implemented on feature/vector-pdf-export, preserving the existing export section, current-board scope, paper/orientation and fit/tiled layouts. Downloads now contain PDF text and vector geometry rather than page screenshots. PNG/JPEG uploads retain original bytes/dimensions; WebP/GIF conversion preserves dimensions. Private/team/client checks and mid-render revocation remain enforced. No workspace document changes or migrations.
+
+Self-hosted licensed Noto fonts provide selectable/searchable Latin/Greek/Cyrillic/CJK text with explicit family/weight substitutions. CJK font blocks avoid a runtime subsetting defect verified by a visible-glyph rendering test. Fonts, provenance/checksums/licenses and a maintainer-only regeneration script are included. Unsupported glyphs fail without downloading a corrupt PDF. Complex scripts/emoji beyond bundled coverage and tagged PDF accessibility remain limited. Preview is approximate where substituted fonts reflow.
+
+Validation includes 52 passing core/backend checks (one existing Windows platform skip), real PDF text/vector resource inspection, visible CJK rendering, exact original JPEG bytes/dimensions, thick-stroke bounds and existing browser/private-media/revocation regression checks. Shared workspace styles remain the next feature. This vector upgrade is not deployed.

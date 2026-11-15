@@ -1,3 +1,4 @@
+import {toggleTeam} from './navigation';
 import {test,expect,type Page,type WebSocketRoute} from '@playwright/test';
 import {randomUUID} from 'node:crypto';
 import {Pool} from 'pg';
@@ -21,8 +22,8 @@ test('local canvas edits, zoom-aware dragging, nested navigation and backup roun
  await page.locator('.board-tile').dblclick();await expect(page.getByRole('heading',{name:'Brand film'})).toBeVisible();
  await page.getByRole('button',{name:'Creative studio',exact:true}).click();await expect(note).toHaveValue('Browser-tested idea');
  await expect(page.locator('.save')).toContainText('Saved locally');
- await page.getByLabel('Board actions',{exact:true}).click();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export',exact:true}).click();const backup=await download;const path=await backup.path();if(!path)throw Error('No backup file');
- await note.fill('Temporary change');await page.getByLabel('Board actions',{exact:true}).click();await page.locator('.import input[type=file]').setInputFiles(path);await expect(note).toHaveValue('Browser-tested idea');
+ await page.getByRole('button',{name:'Board actions',exact:true}).click();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export',exact:true}).click();const backup=await download;const path=await backup.path();if(!path)throw Error('No backup file');
+ await page.getByRole('button',{name:'Close Board actions',exact:true}).click();await note.fill('Temporary change');await page.getByRole('button',{name:'Board actions',exact:true}).click();await page.locator('.import input[type=file]').setInputFiles(path);await expect(note).toHaveValue('Browser-tested idea');
  await expect(page.locator('.save')).toContainText('Saved locally');await page.reload();await page.getByRole('button',{name:'Continue as guest'}).click();await expect(note).toHaveValue('Browser-tested idea');
  expect(errors).toEqual([]);
 });
@@ -42,8 +43,8 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
   await owner.getByLabel('New workspace').fill('Second team '+suffix);await owner.getByRole('button',{name:'Create workspace',exact:true}).click();await owner.getByRole('button',{name:'Second team '+suffix+' · owner',exact:true}).click();
   await owner.getByLabel('Board title').fill('Second team board');await expect(owner.locator('.save')).toContainText('Saved to team database');
   await owner.getByLabel('Switch workspace',{exact:true}).click();await owner.locator('.workspace-switcher').getByRole('button',{name:new RegExp('Browser team '+suffix)}).click();await expect(owner.getByLabel('Board title')).toHaveValue('Creative studio');
-  await owner.getByText('Manage team',{exact:true}).click();await owner.getByLabel('Invite email').fill(viewerEmail);await owner.getByLabel('Invite role').selectOption('viewer');await owner.getByRole('button',{name:'Invite',exact:true}).click();
-  const invitation=owner.locator('.team-members [role=status]');await expect(invitation).toContainText('Share this one-use token');const token=(await invitation.innerText()).match(/[a-f0-9]{64}/)?.[0];if(!token)throw Error('Missing invite');await owner.getByText('Manage team',{exact:true}).click();
+  await toggleTeam(owner);await owner.getByLabel('Invite email').fill(viewerEmail);await owner.getByLabel('Invite role').selectOption('viewer');await owner.getByRole('button',{name:'Invite',exact:true}).click();
+  const invitation=owner.locator('.team-members [role=status]');await expect(invitation).toContainText('Share this one-use token');const token=(await invitation.innerText()).match(/[a-f0-9]{64}/)?.[0];if(!token)throw Error('Missing invite');await toggleTeam(owner);
   await viewer.getByLabel('Invitation token').fill(token);await viewer.getByRole('button',{name:'Accept invitation'}).click();await viewer.getByRole('button',{name:'Browser team '+suffix+' · viewer',exact:true}).click();
   await expect(viewer.getByLabel('Note content').first()).toHaveAttribute('readonly','');await expect(viewer.getByRole('button',{name:'Note',exact:true})).toBeDisabled();
   await owner.getByLabel('Note content').first().fill('Shared durable browser edit');await expect(owner.locator('.save')).toContainText('Saved to team database');
@@ -72,8 +73,8 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
   await owner.mouse.move(handle.x+handle.width/2,handle.y+10);await owner.mouse.down();await owner.mouse.move(handle.x+handle.width/2+60,handle.y+40,{steps:5});await owner.mouse.up();
   await expect(viewer.locator('.card.note').first()).toHaveCSS('left','130px');await expect(viewer.locator('.card.note').first()).toHaveCSS('top','100px');
   // Role changes close the old subscription immediately; reopening loads the new role.
-  await owner.getByText('Manage team',{exact:true}).click();await owner.getByLabel('Role for '+viewerEmail).selectOption('editor');
-  await expect(viewer.locator('.save')).toContainText('access changed');await owner.getByText('Manage team',{exact:true}).click();
+  await toggleTeam(owner);await owner.getByLabel('Role for '+viewerEmail).selectOption('editor');
+  await expect(viewer.locator('.save')).toContainText('access changed');await toggleTeam(owner);
   await viewer.reload();await viewer.getByRole('button',{name:'Browser team '+suffix+' \u00b7 editor',exact:true}).click();await expect(viewer.locator('.save')).toContainText('Live');
   // An edit remains queued across a disconnect while a different field changes online.
   networkDown=true;await viewerRoute!.close();await viewerServer!.close();await expect(viewer.locator('.save')).toContainText('Offline');
@@ -88,7 +89,7 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
   await viewer.getByLabel('Note content').first().fill('Conflicting offline edit');await owner.getByLabel('Note content').first().fill('Winning online edit');await expect(owner.locator('.save')).toContainText('Saved to team database');
   networkDown=false;await expect(viewer.locator('.save')).toContainText('Conflict on',{timeout:15000});await expect(viewer.getByLabel('Note content').first()).toHaveValue('Conflicting offline edit');await expect(owner.getByLabel('Note content').first()).toHaveValue('Winning online edit');
   await viewer.reload();await viewer.getByRole('button',{name:'Browser team '+suffix+' \u00b7 editor',exact:true}).click();await expect(viewer.getByLabel('Note content').first()).toHaveValue('Winning online edit');
-  await owner.getByText('Manage team',{exact:true}).click();await owner.locator('.team-members div').filter({hasText:viewerEmail}).getByRole('button',{name:'Remove'}).click();
+  await toggleTeam(owner);await owner.locator('.team-members div').filter({hasText:viewerEmail}).getByRole('button',{name:'Remove'}).click();
   await expect(viewer.locator('.save')).toContainText('access changed');await expect(viewer.getByRole('button',{name:'Note',exact:true})).toBeDisabled();
 
  }finally{
@@ -103,7 +104,7 @@ test('board breadcrumbs, title editing and compact navigation remain usable',asy
  await page.getByRole('button',{name:'Board',exact:true}).click();await page.locator('.creation-placement').click({position:{x:900,y:300}});await page.locator('.board-tile').dblclick();
  const crumbs=page.getByRole('navigation',{name:'Board breadcrumbs'});await expect(crumbs.getByRole('button',{name:'Renamed project',exact:true})).toBeVisible();
  await crumbs.getByRole('button',{name:'Creative studio',exact:true}).click();await expect(page.locator('.board-tile')).toContainText('Renamed project');
- await page.setViewportSize({width:390,height:844});await expect(page.getByLabel('Board actions',{exact:true})).toBeVisible();await page.screenshot({path:'test-results/mobile-before-menu.png'});await page.getByLabel('Board actions',{exact:true}).click();await expect(page.getByRole('button',{name:'Export',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('.board-actions')).not.toHaveAttribute('open','');
+ await page.setViewportSize({width:390,height:844});await expect(page.getByRole('button',{name:'Board actions',exact:true})).toBeVisible();await page.screenshot({path:'test-results/mobile-before-menu.png'});await page.getByRole('button',{name:'Board actions',exact:true}).click();await expect(page.getByRole('button',{name:'Export',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name:'Board actions',exact:true})).not.toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);await page.screenshot({path:'test-results/navigation-mobile.png'});
  await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:'test-results/navigation-desktop.png'});
 });

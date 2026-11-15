@@ -6,7 +6,100 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-IDEA-029 through IDEA-032 are implemented with compatibility and regression coverage. Existing workspace data and account-based invitations remain compatible; client sharing requires owner opt-in. Earlier requests remain below for reference. Preserve the main creation sidebar layout.
+Current priority: IDEA-042 modifier-panel progressive disclosure first, then IDEA-033 through IDEA-041 as one usability development release. Implementation has started on feature/styles-and-usability: modifier navigation, header dialogs and command-search foundations are available for local review. PDF export is implemented locally; shared styles and their dependent features remain queued. IDEA-029 through IDEA-032 are implemented and deployed with compatibility coverage. Preserve existing workspaces and the main creation sidebar layout.
+
+### IDEA-042: Clean modifier panel with progressive disclosure
+
+- Priority: Now - first
+- Status: In progress; navigation/search/groups implemented locally, inheritance indicators depend on IDEA-035
+- What I want: Preserve all features while making controls easy to find. Keep the main creation sidebar unchanged.
+- Expected behavior: Selection header with object actions, stable Style/Arrange tabs, context-specific essentials, expandable detailed groups with clear current values, property search, persistent per-object preferences, mixed/inherited/custom indicators, and accessible Undo/Redo.
+- Done when: Features remain available without a long always-visible panel; search finds hidden properties, keyboard/mobile access works, and the main creation rail remains unchanged.
+
+### IDEA-033: Expand header options into organized dialog windows
+
+- Type: Improvement / UI
+- Priority: Now - first
+- Status: Implemented locally; dialog layout refinement added (sections, labeled forms, fixed headers, inline help); not deployed
+- What I want: Manage team, Actions and Account should open small in-app windows with room for in-depth options instead of cramped dropdowns. The structure should accommodate future settings without becoming confusing.
+- Expected behavior: Keep the existing header entry points and open a clearly titled dialog with organized sections or tabs. Manage team groups members, invitations and client viewing links; Actions groups exports/imports and board operations; Account groups personal settings and session actions. Keep owner-only functions permission-gated.
+- Interaction: One active dialog at a time, clear close/primary controls, sensible desktop sizing and a phone-friendly layout. Preserve keyboard navigation, focus containment/return, Escape behavior and accessible labels. Pending form changes must not disappear silently when closing or switching sections.
+- Constraints: Preserve the existing editor, public client viewing boundaries, current account/team functionality and native file/color pickers. This changes header options only; the main creation sidebar layout, icons and order stay unchanged.
+- Done when: The three header options use consistent, accessible dialogs with clearly grouped controls and space to expand, without losing existing actions or permissions.
+
+### IDEA-034: Export boards to PDF
+
+- Type: Feature / Export
+- Priority: Now - second
+- Status: Implemented locally; not deployed
+- What I want: Export to PDF as an option in Actions, suitable for sharing and reviewing boards outside Boardroom.
+- Expected behavior: Open an export dialog with a preview, explicit scope and page layout/scale settings. Start with the current board; choose sensible handling for large canvases so text remains readable and objects are not unexpectedly cropped. Include supported notes, annotations, shapes, connectors and images; represent video/files with understandable posters or labels/links. Define nested-board export separately rather than silently including all boards.
+- Constraints: Export only content/media the current account or active viewer link can read. Keep private resources authorized during rendering; reflect supported workspace/board styles. Preserve the existing JSON backup/export action. An exported PDF is a static copy; expired/revoked access cannot recall a downloaded file.
+- Done when: A PDF downloads with predictable scope, legible supported content, correct colors/layout and no editor controls, with useful progress/error feedback and tests covering private media and large-board behavior.
+- Related: Prioritizes the PDF portion of IDEA-014; PNG, text, media ZIP and presentation exports remain separate work.
+
+- Result: Actions > Export format > PDF exports the current board as an image-based document, with A4/Letter, portrait/landscape, fit or tiled actual size, page-boundary preview, progress/errors and private image embedding. Rechecks access before and after rendering. Video/files and nested boards use labels. Limits: 50 pages, 3,000 objects, 100 MB image inputs; selectable/vector text and named export frames remain separate work. Existing JSON backups and workspaces are unchanged.
+
+### IDEA-035: Shared workspace styles with inheritance, overrides and reset
+
+- Type: Feature / Design consistency
+- Priority: Now - third
+- Status: Queued
+- What I want: Set fonts, colors and board appearance once for the whole workspace so boards look thematically consistent, similar to Microsoft Word styles. Individual elements can be customized and reset back to the workspace style.
+- Expected behavior: A workspace style editor defines named roles such as heading, body text and label, plus a palette and default board background/pattern. Define a clear hierarchy: workspace style, optional board override, then element override. Inherited values follow later workspace style changes; explicitly overridden properties stay unchanged. Show whether a value is inherited or overridden and provide both per-property reset and Reset to workspace style.
+- Reset behavior: Clearing an override restores inheritance rather than copying today's default into the element. If a board override exists, property reset returns to the inherited board value; Reset to workspace style explicitly removes the applicable board/element overrides. Preview the effect and make reset scope clear.
+- Permissions and persistence: Workspace owners manage the shared style; editors retain allowed board/element overrides. Persist and sync style changes, validate inputs, preserve permission/conflict boundaries and make changes undoable where supported. Personal Light/Dark/System appearance stays separate from shared content styling.
+- Compatibility: Do not reformat existing workspaces or reflow old content automatically. Provide an opt-in adoption/migration with preview, preserving current explicit formatting as overrides. Define font availability/loading, text sizing/reflow, media handling and PDF fidelity before implementation. Main creation sidebar layout remains unchanged.
+- Done when: New boards/elements can inherit workspace styles; edits to shared defaults update inherited content consistently; local overrides survive; reset restores the intended inheritance; and existing workspace appearance stays intact until explicitly adopted.
+- Related: Builds on IDEA-003 board appearance and text styling; PDF export in IDEA-034 must use the resolved styles.
+
+### IDEA-036: Format painter
+
+- Type: Feature / Usability
+- Priority: Soon; coordinate with IDEA-035
+- Status: Queued
+- What I want: Copy formatting from one element and apply it to compatible elements without copying content.
+- Expected behavior: Explicit source/target mode, clear preview and Escape cancellation. Distinguish applying a named inherited style from copying explicit overrides. Preserve text, assets, position, permissions and undo.
+
+### IDEA-037: Named semantic style presets
+
+- Type: Feature / Usability
+- Priority: Soon; part of IDEA-035's style design
+- Status: Queued
+- What I want: Discoverable presets such as Heading, Body, Caption and Client feedback, with previews and clear current-style identification.
+- Constraints: Reuse the shared style system rather than introducing a second formatting model. Preserve individual overrides and existing content unless explicitly changed.
+
+### IDEA-038: Clear mixed values during multi-selection
+
+- Type: Improvement / Usability
+- Priority: Soon
+- Status: Queued
+- What I want: Clearly show Mixed when selected elements differ in font, size, color or other supported properties, while displaying shared values normally.
+- Expected behavior: Editing one control changes only that property on compatible selected items. Do not silently reset unrelated formatting. Extend the existing mixed-background indicator consistently; respect permissions and undo.
+
+### IDEA-039: Export regions and presentation frames
+
+- Type: Feature / Usability
+- Priority: Soon; coordinate with IDEA-034
+- Status: Queued
+- What I want: Define named regions or frames on a large board for predictable PDF pages and presentations.
+- Expected behavior: Visible export boundaries and a preview of page order, clipping and scaling, with selection of frames to export. Keep frame/export scope explicit and preserve free canvas organization and authorized-content boundaries.
+
+### IDEA-040: Searchable command menu
+
+- Type: Feature / Usability
+- Priority: Soon
+- Status: In progress; keyboard/search foundation implemented, future PDF/style commands await those features
+- What I want: Search actions such as Export PDF, Reset style, Duplicate and Share, with optional keyboard access.
+- Expected behavior: Context-aware results show useful labels, grouping and shortcuts. Permission-gated actions stay protected; unavailable actions explain why. This supplements discoverable UI controls and preserves the main creation rail.
+
+### IDEA-041: Preview workspace-wide style changes
+
+- Type: Improvement / Usability
+- Priority: Soon; part of IDEA-035
+- Status: Queued
+- What I want: Preview affected boards/elements before applying shared style changes, including which local overrides will be preserved.
+- Expected behavior: Clear scope/impact summary, Apply/Cancel, and opt-in adoption for legacy workspaces. Previews must not save or broadcast partial changes; final application respects authorization, conflicts and the supported undo strategy.
 
 ### IDEA-029: Fix note cursor jumping to the start while typing
 
@@ -392,7 +485,7 @@ IDEA-029 through IDEA-032 are implemented with compatibility and regression cove
 
 ## Suggested delivery slices
 
-Prioritize IDEA-029, IDEA-030, IDEA-031 and IDEA-032 next, as requested by the user. IDEA-026 through IDEA-028 have been delivered. IDEA-018 through IDEA-025 have completed local implementation and validation and remain available for review. The older proposed sequence below follows these improvements. Pending requests remain ideas rather than implemented features.
+Prioritize IDEA-033 dialog windows, IDEA-034 PDF export and IDEA-035 workspace styles next, as requested by the user. IDEA-029 through IDEA-032 have been delivered. IDEA-026 through IDEA-028 have been delivered. IDEA-018 through IDEA-025 have completed local implementation and validation and remain available for review. The older proposed sequence below follows these improvements. Pending requests remain ideas rather than implemented features.
 
 1. Clean up the header/navigation and media presentation (IDEA-005 and IDEA-001), and settle the placement of the separate annotation toolbar.
 2. Establish shared interface color tokens and account-persistent themes (IDEA-004).
@@ -412,7 +505,7 @@ Canvas polish (IDEA-015) can accompany the relevant editor slices. Collaboration
 ## Optional request template
 
 ```markdown
-### IDEA-033: Short title
+### IDEA-043: Short title
 
 - Type: Feature / Improvement / Bug / UI
 - Priority: Now / Soon / Later / Unsure

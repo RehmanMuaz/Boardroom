@@ -12,10 +12,10 @@ test('device appearance follows System, survives reload, preserves cards and fit
  await page.emulateMedia({colorScheme:'light'});await expect(page.locator('html')).toHaveAttribute('data-theme','light');
  await page.getByRole('button',{name:'Continue as guest'}).click();
  const card=page.locator('.card.note').first(),original=await card.evaluate(el=>getComputedStyle(el).backgroundColor);
- await page.getByLabel('Account',{exact:true}).click();await page.getByLabel('Appearance',{exact:true}).selectOption('dark');await page.getByLabel('Account',{exact:true}).click();
+ await page.getByRole('button',{name:'Account',exact:true}).click();await page.getByLabel('Appearance',{exact:true}).selectOption('dark');await page.getByRole('button',{name:'Close Account',exact:true}).click();
  await expect(page.locator('html')).toHaveAttribute('data-theme','dark');expect(await card.evaluate(el=>getComputedStyle(el).backgroundColor)).toBe(original);
  const result=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(result.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))).toEqual([]);
- await page.setViewportSize({width:390,height:844});await page.getByLabel('Account',{exact:true}).click();await expect(page.getByLabel('Appearance',{exact:true})).toBeVisible();
+ await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Account',exact:true}).click();await expect(page.getByLabel('Appearance',{exact:true})).toBeVisible();
 });
 
 test('account appearance survives sign out and a second browser without leaking into device mode',async({page,browser})=>{

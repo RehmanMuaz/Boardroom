@@ -6,7 +6,15 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: IDEA-042 modifier-panel progressive disclosure first, then IDEA-033 through IDEA-041 as one usability development release. Implementation has started on feature/styles-and-usability: modifier navigation, header dialogs and command-search foundations are available for local review. PDF export is implemented locally; shared styles and their dependent features remain queued. IDEA-029 through IDEA-032 are implemented and deployed with compatibility coverage. Preserve existing workspaces and the main creation sidebar layout.
+Current priority: IDEA-043 vector PDF upgrade, then IDEA-035 shared workspace styles and its related features. Implementation has started on feature/styles-and-usability: modifier navigation, header dialogs and command-search foundations are available for local review. PDF export is implemented locally; shared styles and their dependent features remain queued. IDEA-029 through IDEA-032 are implemented and deployed with compatibility coverage. Preserve existing workspaces and the main creation sidebar layout.
+
+### IDEA-043: Vector PDF export
+
+- Priority: Now - first
+- Status: Implemented on feature/vector-pdf-export; not deployed
+- What I want: Replace low-resolution page screenshots with PDF text and vector elements.
+- Result: Selectable/searchable text with embedded self-hosted fonts; vector shapes, strokes, borders, labels, checklists and connectors; original PNG/JPEG image bytes/dimensions; same export settings, page clipping and authorization checks. Unsupported glyphs fail clearly. Font substitutions can change wrapping slightly; complex scripts and tagged accessibility remain limitations.
+- Validation: PDF resource/text extraction, visible CJK rendering, original JPEG bytes, browser downloads, private-media/revocation and mobile regression checks. No existing workspace data changes.
 
 ### IDEA-042: Clean modifier panel with progressive disclosure
 
@@ -505,7 +513,7 @@ Canvas polish (IDEA-015) can accompany the relevant editor slices. Collaboration
 ## Optional request template
 
 ```markdown
-### IDEA-043: Short title
+### IDEA-044: Short title
 
 - Type: Feature / Improvement / Bug / UI
 - Priority: Now / Soon / Later / Unsure

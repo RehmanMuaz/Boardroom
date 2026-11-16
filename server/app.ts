@@ -1,3 +1,4 @@
+import {commentsRouter} from './comments';
 import {publicViewerRouter,viewerLinkRouter} from './viewer-links';
 import express, {type Request, type Response, type NextFunction} from 'express';
 import session from 'express-session';
@@ -43,6 +44,7 @@ export function createApp(pool:Pool, options:{secret:string; origin:string; secu
  app.patch('/api/account/preferences',async(req,res)=>{const {theme}=z.object({theme:z.enum(['light','dark','system'])}).strict().parse(req.body);await pool.query('UPDATE accounts SET theme=$1 WHERE id=$2',[theme,req.session.userId]);res.json({theme});});
  app.use('/api',(_req,res,next)=>{if(options.requireVerification&&!res.locals.emailVerified)return res.status(403).json({error:'Verify your email before using team workspaces'});next();});
  app.use('/api/workspaces/:id/viewer-links',viewerLinkRouter(pool,{origin:options.origin,mailer:options.mailer}));
+ app.use('/api/workspaces/:id/comments',commentsRouter(pool));
  app.use('/api/workspaces/:id/assets',assetRouter(pool,{root:options.assetRoot,maxBytes:options.maxAssetBytes}));
  async function membership(db:Pool|PoolClient,req:Request,id:string,write=false,owner=false){uuid.parse(id);const result=await db.query('SELECT role FROM memberships WHERE workspace_id=$1 AND user_id=$2'+(db===pool?'':' FOR SHARE'),[id,req.session.userId]);const role=result.rows[0]?.role;if(!role)throw new HttpError(404,'Workspace not found');if((write&&role==='viewer')||(owner&&role!=='owner'))throw new HttpError(403,'Permission denied');return role as 'owner'|'editor'|'viewer';}
  app.get('/api/workspaces',async(req,res)=>{const result=await pool.query('SELECT w.id,w.name,m.role FROM team_workspaces w JOIN memberships m ON m.workspace_id=w.id WHERE m.user_id=$1 ORDER BY w.name',[req.session.userId]);res.json(result.rows);});

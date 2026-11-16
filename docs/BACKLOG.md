@@ -6,7 +6,17 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: UI consistency and overflow fixes (IDEA-046), ahead of mobile functionality (IDEA-017), then workspace discovery (IDEA-008). Preserve the overall layout and existing canvas. Comments PR #22 is merged into develop after CI passed. No new deployment.
+Current priority: contextual element actions, immediate media sizing and visual cropping (IDEA-047). UI polish (IDEA-046) is merged into develop after PR #25 passed CI. Mobile interaction work (IDEA-017) and workspace discovery (IDEA-008) follow. No new deployment.
+
+### IDEA-047: Contextual element actions and visual media cropping
+
+- Type: Improvement / Bug fix
+- Priority: Now - first (latest user feedback)
+- Status: Implemented and locally validated on feature/contextual-media-tools; not deployed
+- What I want: Images/videos should fit their frames immediately on import. Selected elements should offer small nearby duplicate/color/crop/comment controls. Crop should be visual, and comments should attach directly to the selected element without manually choosing it.
+- Implementation: Local metadata sizes new uploads before the initial card operation, including proportional column placement. Floating contextual tools preserve existing sidebar tools and duplicate restrictions. Image crop uses draggable edges/corners, moving the selection and keyboard increments, with optional precise percentage fields. Saving crop/rotation fits the frame in one undoable operation; original asset bytes remain untouched. Direct comment composition focuses the input and attaches cards, text/drawing/shape annotations, connections and groups. Migration 012 adds nullable relational anchors; no workspace JSON migration.
+- Constraints preserved: Existing saved geometry is not resized on load; permission/revocation checks remain mandatory. Team viewers cannot post/edit; account-free client links do not expose team discussions. Missing anchors preserve historical feedback. Original creation/sidebar layout is unchanged.
+- Remaining: Optional crop aspect-ratio presets and freehand selection are future polish. Video trimming/cropping and a commenter role are separate features; whole nested-board duplication remains IDEA-009.
 
 ### IDEA-046: UI consistency, alignment and app identity
 

@@ -1,0 +1,20 @@
+import {useLayoutEffect,useState,type RefObject} from 'react';
+import {Icon} from '../Icon';
+import {normalizeHex} from '../content/ColorPicker';
+import './element-toolbar.css';
+export function ElementToolbar({bounds,viewport,zoom,duplicate,remove,comment,commentReason,crop,color,changeColor}:{bounds:{left:number;top:number;width:number;height:number};viewport:RefObject<HTMLDivElement|null>;zoom:number;duplicate?:()=>void;remove?:()=>void;comment?:()=>void;commentReason?:string;crop?:()=>void;color?:string;changeColor?:(color:string)=>void}){
+ const [view,setView]=useState({left:0,top:0,width:0,height:0,offset:160,obscured:0});
+ useLayoutEffect(()=>{const el=viewport.current;if(!el)return;const update=()=>setView({left:el.scrollLeft,top:el.scrollTop,width:el.clientWidth,height:el.clientHeight,offset:el.offsetTop,obscured:Math.max(0,(document.querySelector('.app.contextual-sidebar>aside')?.getBoundingClientRect().right??0)-el.getBoundingClientRect().left)});update();el.addEventListener('scroll',update);window.addEventListener('resize',update);const observer=new ResizeObserver(update);observer.observe(el);return()=>{el.removeEventListener('scroll',update);window.removeEventListener('resize',update);observer.disconnect();};},[viewport]);
+ const x=bounds.left*zoom-view.left,y=bounds.top*zoom-view.top,width=bounds.width*zoom,height=bounds.height*zoom;
+ if(x+width<view.obscured||y+height<0||x>view.width||y>view.height||view.width-view.obscured<52)return null;
+ const count=Number(!!duplicate)+Number(!!remove)+Number(!!comment)+Number(!!crop)+Number(!!changeColor),toolbarWidth=count*34+12;
+ if(!count)return null;
+ const left=Math.max(view.obscured+6,Math.min(view.width-toolbarWidth-6,x+(width-toolbarWidth)/2)),top=Math.max(6,Math.min(view.height-46,y+height+10));
+ return <div className="element-toolbar-layer" style={{top:view.offset,width:view.width,height:view.height}}><div role="toolbar" aria-label="Selection quick actions" className="element-toolbar" style={{left,top,maxWidth:Math.max(40,view.width-view.obscured-12)}} onPointerDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} onKeyDown={e=>{if(['Delete','Backspace',' '].includes(e.key))e.stopPropagation();if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();e.stopPropagation();const items=[...e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled)')],index=items.indexOf(document.activeElement as HTMLElement),next=e.key==='Home'?0:e.key==='End'?items.length-1:(index+(e.key==='ArrowLeft'?-1:1)+items.length)%items.length;items[next]?.focus();}}}>
+  {duplicate&&<button aria-label="Duplicate selection" title="Duplicate selection" onClick={duplicate}><Icon name="duplicate"/></button>}
+  {changeColor&&<label className="element-color" title="Note color"><span className="element-color-swatch" style={{background:normalizeHex(color??'')??'#ffffff'}} aria-hidden="true"/><input type="color" aria-label="Selected note color" value={normalizeHex(color??'')??'#ffffff'} onChange={e=>changeColor(e.target.value)}/></label>}
+  {crop&&<button aria-label="Crop image" title="Crop image" onClick={crop}><Icon name="crop"/></button>}
+  {comment&&<button aria-label="Comment on selection" title={commentReason??'Comment on this element'} disabled={!!commentReason} onClick={comment}><Icon name="comment"/></button>}
+  {remove&&<button aria-label="Delete selection" title="Delete selection" className="element-delete" onClick={remove}><Icon name="delete"/></button>}
+ </div></div>;
+}

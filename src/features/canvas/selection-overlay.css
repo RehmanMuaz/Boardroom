@@ -1,4 +1,4 @@
-.selection-overlay{position:absolute;inset:0;pointer-events:none;z-index:31;overflow:hidden}
+.selection-overlay{max-width:100%;position:absolute;inset:0;pointer-events:none;z-index:31;overflow:hidden}
 .selection-boundary{position:absolute;border:1px dashed var(--focus);border-radius:4px;pointer-events:none;box-sizing:border-box}
 .selection-boundary.is-group{border-style:solid}
 .selection-group-action{position:absolute;pointer-events:auto}

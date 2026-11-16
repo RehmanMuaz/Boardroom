@@ -1,5 +1,17 @@
 ﻿# Architecture
 
+## Local Flow workspace editing extension
+
+`server/flow-workspaces.ts` exposes opt-in workspace reads, non-persisting previews
+and edit-review staging for explicit `FLOW_WORKSPACE_IDS`. Current configured-account
+membership/verification applies on every request. Native approval is handled by
+`flow-edit-review.ts` and transactional `flow-edit-store.ts`; the integration bearer
+cannot approve. Migration 011 stores canonical-hashed, expiring edit intents. Approval
+rechecks session/version/permissions/revision, applies existing domain changes,
+writes the operation ledger and marks the intent applied in one transaction, then
+publishes through the realtime hook. See `FLOW_WORKSPACE_PREVIEWS.md` for tests and
+release boundaries. This extension exists in this isolated snapshot, not production.
+
 ## Live milestone 5 (locally validated)
 
 React + strict TypeScript + Vite preserve the existing canvas. An Express 5 Node/TypeScript API uses PostgreSQL for team data and sessions. Development services bind to loopback; the production API is private behind the configured TLS proxy. The API also hosts the live WebSocket gateway; private local filesystem assets are implemented; S3-compatible storage and hosting are planned.
@@ -160,6 +172,55 @@ Snap-to-grid is a device/workspace preference outside document JSON. Domain roun
 
 ## Client-side PDF export
 
-`src/features/export/pdf-layout.ts` is a pure current-board bounds/page planner shared by the preview and renderer. `ExportSection` owns format/paper/orientation/layout selection; `ExportScene` renders a separate read-only scene from a cloned board, so selection, zoom, search, editor tools and unsaved preview settings do not alter the document. Existing annotation/connector geometry and card layer logic are reused. `render-pdf.tsx` lazy-loads html-to-image and pdf-lib, rasterizes bounded per-page canvases at two pixels per PDF point and embeds them in a real PDF. Fonts use the browser's existing system fonts; arbitrary link/iframe content is not fetched.
+`src/features/export/pdf-layout.ts` is a pure current-board bounds/page planner shared by preview and export. `ExportSection` owns the existing format/paper/orientation/layout settings. `ExportScene` remains a lightweight approximate preview. `render-pdf.tsx` clones the board, authorizes reads, loads images and lazy-loads `vector-pdf.ts`; no full-page canvas screenshot is generated. The renderer emits PDF text/font resources, clipped vector rectangles/paths/strokes and native image resources, sorted using existing card/annotation layers. Existing connector endpoints and shape paths are reused. Pagination clips each page and each card without changing stored content. Dense board patterns reduce density when fitting a very large board.
 
-Images are fetched only through the active repository's same-origin asset route with credentials/no-store and validated MIME/byte limits, then embedded as data URLs. Team/shared workspace GET access is rechecked at start and after rendering; no new server endpoints or permission bypass are introduced. Native dialog close and workspace switches are blocked while exporting. The offscreen render root is inert and removed on success/failure. PDF layout/page-limit and browser download-content/private-media/revocation tests supplement existing asset permission tests. No database/document migration is required.
+`pdf-fonts.ts` loads self-hosted SIL-OFL Noto font variants as needed and embeds Latin fonts with runtime subsets. CJK uses pre-subset static Unicode blocks embedded without runtime subsetting because the PDF library's subset path produced invisible glyphs despite valid Unicode extraction. `scripts/prepare-pdf-fonts.py` regenerates assets from pinned official sources; checksums/licenses accompany them. Python is maintainer tooling only. Unsupported glyphs fail explicitly. Font-family/weight substitutions and limited complex-script coverage are documented in README.
+
+Images use the active repository's same-origin private/client asset route with credentials/no-store and MIME/byte limits. PNG/JPEG bytes are embedded directly with original pixel dimensions. Only WebP/GIF require a same-size browser conversion to PNG. Team/client access is checked at the start and before download; existing revocation and permission boundaries remain. No new API endpoints, persistence fields, migrations or third-party runtime requests.
+
+Tests parse emitted PDFs to prove text extraction and vector/font resources without full-page images, render CJK glyphs to catch invisible-font failures, check original JPEG bytes/pixel dimensions, and retain browser pagination/private-media/mid-render-revocation/mobile coverage. Tests use pdfjs-dist and a test-only canvas package; neither is in the runtime browser bundle.
+
+
+## Optional shared workspace styles
+
+`style-schema.ts` validates optional workspaceStyle, boardStyle/styleEnabled and per-element styleBinding fields. `workspaceStyles.ts` resolves workspace -> optional board role overrides -> element overrides without rewriting raw snapshots. Existing snapshots omit these fields; enabling a style leaves unlinked legacy elements/boards unchanged. Text-bearing cards/text annotations can opt into named roles; media/drawings remain custom. New text-bearing content links Body, while new nested boards explicitly enable inherited appearance. Existing raw fields remain compatible fallbacks.
+
+Workspace style changes use a root `$workspaceStyle` compare-and-swap operation; board/element bindings have their own fields. Both the HTTP snapshot transaction and live operation transaction reject root-style changes by nonowners, including removal through import. Editors retain board/element customization and viewers remain read-only. Styles are JSONB additions, not relational migrations. Scoped card CRUD accepts validated bindings through final document validation.
+
+WorkspaceStyles keeps draft/expected values locally, shows isolated previews and override impact, and disables Apply after competing shared changes. Preview changes do not enter history, persistence or live operations until Apply. Resolved values feed the existing editor and vector PDF export. Font/role overrides are separate from rich-text marks. Reset removes keys rather than copying defaults; workspace-scoped reset bypasses board role defaults for that element. Palette/theme behavior and reset scopes are documented in README.
+
+## Format Painter
+
+`src/formatPainter.ts` captures effective formatting only and applies compatible target deltas without changing content/geometry. `src/features/FormatPainter.tsx` owns an isolated preview and compares the latest formatting signature before Apply; target-only formatting conflicts require refresh. Fixed formatting freezes values in existing bindings; linked mode copies only role/scope. Legacy backgrounds and drawings use existing fields. Editor updates retain validated operation diffing, inverse-operation undo and backend authorization. No document conversion or schema migration.
+
+## Multi-card formatting
+
+`src/selectionStyles.ts` aggregates effective supported card properties, canonicalizes equivalent hex colors and patches/resets individual existing override fields. `src/features/styles/MultiSelectionStyle.tsx` presents mixed/shared values and inheritance status within searchable modifier sections. Controls state their compatible subset; unlinked cards never acquire a binding implicitly. Editor callbacks read the latest snapshot before constructing one validated undoable operation. No persistence format or authorization boundary changes; live conflicts retain existing styleBinding-field granularity.
+
+## Grouping and mixed selection
+
+`Board.groups?: ElementGroup[]` stores flat board-local member IDs for cards/annotations. Model validation rejects overlaps, unknown/cross-board members, nested groups, columns and contained cards. `groups` is a board operation field with existing transactional authorization/CAS; there is no SQL migration. `src/features/canvas/groups.ts` owns selection expansion, grouping, pruning, bounds, marquee hits and ID-remapped mixed copies. The existing domain movement/deletion helpers now handle annotations alongside cards, preserving one bounded movement delta and cleaning dangling memberships. Scoped HTTP card deletion reuses that cleanup.
+
+Editor keeps one selected-ID list across object kinds, using group-aware picking and latest-snapshot gesture diffs. AnnotationLayer delegates movement to the shared gesture path while retaining local resize/drawing previews. SelectionOverlay draws an unscaled viewport-relative boundary/icon outside export content; icons have accessible labels/tooltips and remain within the unobscured viewport. Double-click temporarily selects a member; Escape returns to the group. Existing card formatting stays scoped to supported cards, creation tools stay unchanged, and viewers retain selection without write controls.
+
+Browser regression setup waits for entry-session initialization before API registration. The dedicated Playwright server exposes its random rate namespace in test metadata so the additional group-account fixture can clean only that namespace; application authentication throttles stay unchanged.
+
+## Export frames
+
+`src/frame-schema.ts` validates optional `Board.frames` arrays (unique IDs, names, finite coordinates, 80-10,000 px dimensions, at most 50). `src/frames.ts` applies immutable create/save/reorder/delete changes without touching board objects. The existing `frames` board operation field retains transactional authorization and CAS; JSONB requires no SQL migration. `FrameSettings` keeps one isolated draft, guards dialog close/navigation and rejects stale target edits; remote changes to other frames survive. `FrameOverlay` supplies noninteractive canvas boundaries outside the PDF scene and main creation rail.
+
+`pdf-layout.ts` validates explicit frame selection and builds saved-order pages with per-page scales and exact crop rectangles. Vector PDF rendering clips to each region and preserves existing board-only output. `render-pdf.tsx` limits private image loading to intersecting frames while retaining access/revocation checks. ExportSection presents ordered crop previews and leaves whole-board/JSON choices available. Frame outlines and selection UI never enter exported scenes. Presentation playback and direct frame handles are not implemented.
+
+## Contextual commands
+
+`src/commands.ts` contains pure normalized token matching/ranking and stable category grouping. `CommandMenu` keeps keyboard selection by command ID, presents listbox groups and specific accessible disabled reasons, and never executes disabled results. Editor command definitions reuse current selection, role, history and tool state. Creation commands arm the existing placement flow; style reset delegates to `resetElementOverrides` and existing validated undo/live operations.
+
+SettingsDialog supports programmatic requests through its usual open/load path. `useRequestedSection` observes the native dialog open attribute before scrolling frame/style/export/help targets, avoiding timing assumptions. Members/account entry points accept requests while retaining their current guards and draft handling. No new API or document fields; server permissions remain authoritative.
+
+## Media inspection and image-edit metadata
+
+`src/image-edit.ts` defines/validates optional image-only ImageEdit data: quarter-turn rotation, an oriented normalized crop and bounded source-normalized pen/text marks. It also maps source/oriented points and recognizes JPEG Exif segments for PDF normalization. Model, scoped card input and WebSocket schema accept the existing authorized card-field operation; no SQL migration or replacement asset is introduced. Per-card metadata conflicts remain explicit; geometry/caption operations merge independently.
+
+MediaViewer uses a native modal and one isolated draft, with source-ID/baseline checks before Save, close/navigation guards and original downloads. Image loads use authorized no-store blobs with revocable URLs; checks repeat on timer/focus, and failure clears media/pauses playback. Videos use the existing private range endpoint. Viewers/client grants get inspection without edit controls. ImageArtwork renders the source, crop, rotation and attached marks consistently on canvas and in the viewer; normalized marks scale with the image. Existing media controls and creation layout remain intact.
+
+The vector PDF renderer clips an embedded source under image transforms and paints attached strokes/labels as vectors. Ordinary JPEG bytes remain embedded; browser decoding normalizes Exif orientation to PNG at oriented source resolution before rendering. Crops affect presentation, not redaction: the full embedded image remains recoverable. Source uploads/downloads are unchanged. Export previews continue using image placeholders where private pixels are not loaded.

@@ -17,13 +17,15 @@ export function resizeCard(card:Card,width:number,height:number,ratio?:number){
 export function moveSelection(state:Workspace,boardId:string,ids:string[],dx:number,dy:number):Workspace{
  const board=state.boards.find(b=>b.id===boardId);if(!board)return state;
  const selected=new Set(ids);for(const c of board.cards)if(c.columnId&&selected.has(c.columnId))selected.add(c.id);
- const moving=board.cards.filter(c=>selected.has(c.id));if(!moving.length)return state;
+ const moving=[...board.cards,...board.annotations??[]].filter(c=>selected.has(c.id));if(!moving.length)return state;
  const x=Math.min(Math.max(dx,-Math.min(...moving.map(c=>c.x))),100000-Math.max(...moving.map(c=>c.x))),y=Math.min(Math.max(dy,-Math.min(...moving.map(c=>c.y))),100000-Math.max(...moving.map(c=>c.y)));
- return {...state,boards:state.boards.map(b=>b.id!==boardId?b:{...b,cards:b.cards.map(c=>selected.has(c.id)?{...c,x:Math.min(100000,c.x+x),y:Math.min(100000,c.y+y)}:c)})};
+ return {...state,boards:state.boards.map(b=>b.id!==boardId?b:{...b,cards:b.cards.map(c=>selected.has(c.id)?{...c,x:c.x+x,y:c.y+y}:c),...(b.annotations?{annotations:b.annotations.map(a=>selected.has(a.id)?{...a,x:a.x+x,y:a.y+y}:a)}:{})})};
 }
 export function deleteSelection(state:Workspace,boardId:string,ids:string[]):Workspace{
  const selected=new Set(ids);
- return {...state,boards:state.boards.map(b=>b.id!==boardId?b:{...b,cards:b.cards.filter(c=>!selected.has(c.id)).map(c=>{if(!c.columnId||!selected.has(c.columnId))return c;const next={...c};delete next.columnId;return next;}),connectors:(b.connectors??[]).filter(line=>!selected.has(line.from)&&!selected.has(line.to))})};
+ return {...state,boards:state.boards.map(b=>{if(b.id!==boardId)return b;const next={...b,cards:b.cards.filter(c=>!selected.has(c.id)).map(c=>{if(!c.columnId||!selected.has(c.columnId))return c;const copy={...c};delete copy.columnId;return copy;}),connectors:(b.connectors??[]).filter(line=>!selected.has(line.from)&&!selected.has(line.to)),...(b.annotations?{annotations:b.annotations.filter(a=>!selected.has(a.id))}:{})};
+  if(b.groups){next.groups=b.groups.map(g=>({...g,members:g.members.filter(id=>!selected.has(id))})).filter(g=>g.members.length>=2);if(!next.groups.length)delete next.groups;}return next;
+ })};
 }
 export function putInColumn(state:Workspace,boardId:string,ids:string[],columnId:string):Workspace{
  const board=state.boards.find(b=>b.id===boardId),column=board?.cards.find(c=>c.id===columnId&&c.kind==='column');if(!board||!column)return state;
@@ -40,5 +42,5 @@ export function duplicateCards(board:Board,ids:string[],offset=32){
  const connectors=(board.connectors??[]).filter(line=>map.has(line.from)&&map.has(line.to)&&idsIncluded.has(map.get(line.from)!)&&idsIncluded.has(map.get(line.to)!)).map(line=>({...line,id:crypto.randomUUID(),from:map.get(line.from)!,to:map.get(line.to)!}));
  return {cards,connectors};
 }
-export function canvasExtent(board:Board){return {width:Math.max(2400,...board.cards.map(c=>c.x+cardWidth(c)+300),...(board.annotations??[]).map(a=>a.x+a.width+300)),height:Math.max(1800,...board.cards.map(c=>c.y+cardHeight(c)+300),...(board.annotations??[]).map(a=>a.y+a.height+300))};}
+export function canvasExtent(board:Board){return {width:Math.max(2400,...(board.frames??[]).map(f=>f.x+f.width+100),...board.cards.map(c=>c.x+cardWidth(c)+300),...(board.annotations??[]).map(a=>a.x+a.width+300)),height:Math.max(1800,...(board.frames??[]).map(f=>f.y+f.height+100),...board.cards.map(c=>c.y+cardHeight(c)+300),...(board.annotations??[]).map(a=>a.y+a.height+300))};}
 export const screenDelta=(dx:number,dy:number,zoom:number)=>({x:dx/zoom,y:dy/zoom});

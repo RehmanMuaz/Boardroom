@@ -1,13 +1,13 @@
 import {createHash} from 'node:crypto';
 import {type Pool} from 'pg';
 import {z} from 'zod';
-import {applyChanges,OperationConflict} from '../src/operations';
+import {applyChanges,OperationConflict,same} from '../src/operations';
 import {type Workspace} from '../src/model';
 import {validateAssetReferences} from './assets';
 import {HttpError} from './workspace-store';
 
 const value=z.json();
-export const operationSchema=z.object({id:z.string().uuid(),baseRevision:z.number().int().nonnegative(),changes:z.array(z.object({boardId:z.string().min(1).max(128),cardId:z.string().min(1).max(128).optional(),annotationId:z.string().min(1).max(128).optional(),field:z.enum(['$board','$card','$annotation','$boardOrder','$cardOrder','$annotationOrder','title','parent','kind','x','y','text','color','target','width','height','assetId','columnId','captionVisible','richText','connectors','points','thickness','style','shape','fill','background','pattern','labels','layer']),before:value,after:value}).strict()).min(1).max(10000)}).strict();
+export const operationSchema=z.object({id:z.string().uuid(),baseRevision:z.number().int().nonnegative(),changes:z.array(z.object({boardId:z.string().min(1).max(128),cardId:z.string().min(1).max(128).optional(),annotationId:z.string().min(1).max(128).optional(),field:z.enum(['imageEdit','frames','groups','$workspaceStyle','styleBinding','boardStyle','styleEnabled','$board','$card','$annotation','$boardOrder','$cardOrder','$annotationOrder','title','parent','kind','x','y','text','color','target','width','height','assetId','columnId','captionVisible','richText','connectors','points','thickness','style','shape','fill','background','pattern','labels','layer']),before:value,after:value}).strict()).min(1).max(10000)}).strict();
 export async function persistOperation(pool:Pool,workspaceId:string,userId:string,input:unknown){
  const operation=operationSchema.parse(input);
  const payloadHash=createHash('sha256').update(JSON.stringify(operation)).digest('hex');
@@ -26,6 +26,7 @@ export async function persistOperation(pool:Pool,workspaceId:string,userId:strin
   if(operation.baseRevision>workspace.rows[0].revision)throw new HttpError(409,'Revision ahead of server');
   let snapshot:Workspace;
   try{snapshot=applyChanges(workspace.rows[0].snapshot,operation.changes);}catch(e){if(e instanceof OperationConflict)throw new HttpError(409,e.message);throw new HttpError(400,e instanceof Error?e.message:'Invalid operation');}
+  if(membership.rows[0].role!=='owner'&&!same(snapshot.workspaceStyle,workspace.rows[0].snapshot.workspaceStyle))throw new HttpError(403,'Only owners can manage workspace styles');
   await validateAssetReferences(db,workspaceId,snapshot);
   const revision=workspace.rows[0].revision+1;
   await db.query('UPDATE team_workspaces SET snapshot=$1,revision=$2 WHERE id=$3',[JSON.stringify(snapshot),revision,workspaceId]);

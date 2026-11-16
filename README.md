@@ -38,6 +38,18 @@ Choose **Continue as guest** at the top of the entry screen for the original loc
 - Browser-local saves remain debounced. Undo uses inverse operations and preserves unrelated remote edits.
 - Workspace-scoped board/card CRUD and a transactionally tracked MVP migration.
 
+Format Painter (develop feature work, not deployed): select a compatible source, choose **Copy formatting**, select a target, preview and **Apply formatting**. Choose fixed appearance or a linked named role; Escape cancels. Legacy cards copy background only. Content, rich-text marks, position and media stay unchanged.
+
+Multi-card formatting (develop feature work, not deployed): selected style-linked cards show shared or **Mixed** typography, text color and border values. Editing or resetting one property preserves all other formatting. Compatible counts identify excluded legacy/media cards; existing legacy backgrounds remain editable without enabling shared styles.
+
+Grouping (develop feature work, not deployed): drag-select cards and annotations together, then use the floating **Group** icon; complete groups offer **Ungroup**. Shift-click toggles selection. Ctrl/Cmd+G groups; Ctrl/Cmd+Shift+G ungroups. Double-click a member to edit it and Escape to reselect its group. Groups are flat and board-local; columns and cards inside columns must stay separate. Existing boards remain unchanged until explicitly grouped.
+
+Named PDF regions (develop feature work, not deployed): open **Actions > Export frames**, create a frame around selected items or in view, then edit its name/bounds and page order. Choose **Export > PDF > Named frames** to select pages and inspect crop/scale previews. Each frame fits one page. Drafts require Save; personal outlines can be hidden. Existing whole-board exports and workspace content remain unchanged.
+
+Contextual command search (develop feature work, not deployed): press **Ctrl/Cmd+K** or use the centered search bar. Search labels or keywords such as `page crop`, `font defaults`, `client link` or `add note`. Results are grouped, show unavailable-action reasons and support arrow/Enter/Escape navigation. Creation commands still wait for a canvas position; style resets remain undoable.
+
+Media inspection (develop feature work, not deployed): double-click an image/video or choose its Inspect control for zoom, fullscreen, navigation and original downloads. Editors can draft image crop/rotation and attached pen/text labels, then Save or Cancel. Reset restores the original appearance; uploaded bytes and existing card geometry remain unchanged. Viewers/client links stay read-only. PDF crops are visual and retain full embedded image data.
+
 ## Validation
 
 Start PostgreSQL and configure `.env`, then run:
@@ -130,10 +142,23 @@ Select a standalone text annotation and choose **Duplicate annotation** under Ac
 The note caret fix preserves rich bullet/empty-block round trips and selection during DOM updates, including live refreshes. Legacy snapshots need no conversion. Migration 009 only adds viewer-link metadata; it does not alter existing workspace snapshots, memberships, media or account invitations.
 
 
-## PDF export (development preview)
+## PDF export
 
 Open Actions, choose PDF document under Export format, then select A4/Letter, portrait/landscape and Fit board to one page or Actual size across pages. Preview shows numbered boundaries; tiled pages read left to right, then top to bottom. Export includes only the current board, regardless of canvas zoom/search/selection. Fit can make a large board's text small; tiling preserves size but splits objects at page boundaries.
 
-PDFs contain rasterized pages with notes/formatting, labels, checklists, columns, links, annotations, shapes, connectors, board appearance and authorized images. Text is not selectable; video/files appear as labels and nested board content is not included. Preview images use placeholders; actual downloads embed their bytes. Image/source failures stop the download. Workspace/client-link access is checked before rendering and immediately before download. A downloaded copy cannot be revoked.
+The vector PDF development version draws selectable/searchable text, backgrounds, labels, checklists, shapes, strokes and connectors directly into the PDF. PNG/JPEG images retain original bytes and dimensions; WebP/GIF images are converted losslessly to PNG at their original size (GIF uses its first frame). Embedded Noto fonts replace browser system fonts, so wrapping can differ slightly. Text with unsupported glyphs stops export with a clear error instead of dropping characters. Video/files appear as labels and nested board content is not included. Preview images use placeholders; actual downloads embed their bytes. Image/source failures stop the download. Workspace/client-link access is checked before rendering and immediately before download. A downloaded copy cannot be revoked.
 
-Limits: 50 pages, 3,000 combined objects and 100 MB image inputs (10 MB per image). Guest workspaces with private image references must be opened in the original team workspace. Existing workspaces and JSON backup behavior are preserved. This feature is included in the usability/PDF release; GitHub Actions records deployment status. Shared workspace styles and named export regions remain planned.
+Limits: 50 pages, 3,000 combined objects, 2 million text characters and 100 MB image inputs (10 MB per image). Guest workspaces with private image references must be opened in the original team workspace. Existing workspaces and JSON backup behavior are preserved. The original image-based export is deployed. The vector upgrade is on feature/vector-pdf-export for local review and has not been deployed. Shared workspace styles and named export regions remain planned.
+
+PDF fonts are self-hosted, loaded only as needed and licensed under SIL OFL. Sans/rounded, serif and mono map to Noto Sans/Serif/Sans Mono; 600-800 map to bold and 400-500 to regular. CJK uses a regular fallback. Other scripts/emoji are limited to available glyph coverage; complex-script/bidirectional typography and tagged PDF accessibility are not claimed. See public/fonts/pdf/README.md and manifest.json for provenance. Python/fonttools is only needed to regenerate committed font assets, not to build or run the app.
+
+
+## Shared workspace styles (development preview)
+
+In Actions, expand Workspace styles. Owners (and browser-local guests) can enable/edit a named style, palette, default board background/pattern, and Heading, Body, Caption and Client feedback roles. Draft changes show a role sample, current-board preview, affected-element count and preserved override count; Apply saves once, Cancel does not save. Closing a draft requires explicit discard. Editors/viewers can inspect defaults; only owners can replace shared defaults or import backups that change them.
+
+Enabling styles does not restyle existing boards or objects. New text-bearing cards/text annotations inherit Body; new nested boards inherit workspace appearance. Select an existing text-bearing element and choose a role in its Style section to opt in. Existing rich-text marks remain. Images/videos/files and drawings stay custom. Fonts use the existing sans/serif/mono/rounded choices; app Light/Dark/System preferences remain personal.
+
+Current board defaults provide optional role overrides and an explicit workspace-appearance toggle. Element overrides take precedence over board and workspace defaults. Custom properties identify local overrides and can be reset individually; Reset overrides restores the inherited board/workspace value. Reset to workspace style clears element overrides and bypasses board role overrides for that element. Custom freezes the current effective values as explicit overrides. Reset board to workspace style clears board default overrides/background/pattern; it preserves element overrides and unlinked objects.
+
+Changes persist/sync through existing conflict-aware operations and support undo/redo. Editing the same style/binding field conflicts explicitly; unrelated content/geometry remains independent. JSON exports retain style definitions and bindings; PDF exports use resolved appearance. Older workspaces require no migration and retain their appearance until linked. The feature is on feature/workspace-styles, not deployed. Format painter, multi-selection typography and export frames remain separate work.

@@ -15,3 +15,7 @@ test('PDF layout bounds empty boards and excessive pages/objects and rejects uns
  assert.throws(()=>planPdf({...empty,cards:Array.from({length:3001},(_,i)=>({id:String(i),kind:'note' as const,x:0,y:0,text:'',color:'#fff'}))},defaultPdfOptions),/3,000/);
  assert.throws(()=>planPdf(empty,{...defaultPdfOptions,paper:'bad' as 'a4'}),/Invalid/);
 });
+
+test('PDF bounds include thick vector stroke edges',()=>{
+ const board:Board={id:'b',title:'Thick outline',cards:[],annotations:[{id:'outline',kind:'shape',shape:'rectangle',x:100,y:100,width:100,height:80,thickness:60,fill:'transparent',color:'#000',points:[[0,0],[100,80]]}]};const bounds=boardBounds(board);assert.ok(bounds.x<=70);assert.ok(bounds.y<=70);assert.ok(bounds.x+bounds.width>=230);assert.ok(bounds.y+bounds.height>=210);
+});

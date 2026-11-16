@@ -1,13 +1,17 @@
+import {validImageEdit,type ImageEdit} from './image-edit';
+import {validFrames,type ExportFrame} from './frame-schema';
+import {validBinding,validBoardStyle,validWorkspaceStyle,type StyleBinding,type BoardStyle,type WorkspaceStyle} from './style-schema';
 import {validBoardBackground,validBoardPattern,type BoardPattern} from './boardAppearance';
 import {validAnnotation,type Annotation} from './annotations';
 export type Kind = 'note' | 'checklist' | 'link' | 'board' | 'image' | 'video' | 'file' | 'column';
 export type RichRun={text:string;bold?:boolean;italic?:boolean;underline?:boolean;href?:string};
 export type RichDocument={blocks:{type:'paragraph'|'heading'|'bullet'|'quote';runs:RichRun[]}[]};
 export type NoteLabel={id:string;text:string;color:string};
-export type Card = {id:string; kind:Kind; x:number; y:number; text:string; color:string; title?:string; labels?:NoteLabel[]; layer?:number; target?:string; width?:number; height?:number; assetId?:string; columnId?:string; captionVisible?:boolean; richText?:RichDocument};
+export type Card = {imageEdit?:ImageEdit;styleBinding?:StyleBinding;id:string; kind:Kind; x:number; y:number; text:string; color:string; title?:string; labels?:NoteLabel[]; layer?:number; target?:string; width?:number; height?:number; assetId?:string; columnId?:string; captionVisible?:boolean; richText?:RichDocument};
 export type Connector={id:string;from:string;to:string;color:string};
-export type Board = {id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[];background?:string;pattern?:BoardPattern};
-export type Workspace = {version:1; boards:Board[]};
+export type ElementGroup={id:string;members:string[]};
+export type Board = {frames?:ExportFrame[];groups?:ElementGroup[];boardStyle?:BoardStyle;styleEnabled?:boolean;id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[];background?:string;pattern?:BoardPattern};
+export type Workspace = {workspaceStyle?:WorkspaceStyle;version:1; boards:Board[]};
 export const seed:Workspace = {version:1,boards:[{id:'home',title:'Creative studio',cards:[
 {id:'welcome',kind:'note',x:70,y:70,text:'A space for your next big idea\n\nCollect references, map out the story, and bring your team into the process.',color:'#fff'},
 {id:'brief',kind:'note',x:355,y:70,text:'THE BRIEF\n\nCreate a cinematic brand film that feels human. Natural light. Quiet moments. A story worth telling.',color:'#fff4c9'},
@@ -18,12 +22,15 @@ export function moveCard(state:Workspace,boardId:string,id:string,x:number,y:num
 export function validWorkspace(value:unknown): value is Workspace {
  if(!value || typeof value!=='object')return false;
  const w=value as Workspace;
+ if(w.workspaceStyle!==undefined&&!validWorkspaceStyle(w.workspaceStyle))return false;
  if(w.version!==1||!Array.isArray(w.boards)||!w.boards.length||w.boards.length>1000)return false;
  const boards=new Set<string>(),cards=new Set<string>(),annotations=new Set<string>();let points=0;
  const id=(v:unknown):v is string=>typeof v==='string'&&v.length>0&&v.length<=128;
  for(const b of w.boards){
   if(!b||!id(b.id)||boards.has(b.id)||typeof b.title!=='string'||b.title.length>500||!Array.isArray(b.cards)||b.cards.length>10000)return false;
+  if(b.frames!==undefined&&!validFrames(b.frames))return false;
   if(b.background!==undefined&&!validBoardBackground(b.background)||b.pattern!==undefined&&!validBoardPattern(b.pattern))return false;
+  if(b.styleEnabled!==undefined&&typeof b.styleEnabled!=='boolean'||b.boardStyle!==undefined&&!validBoardStyle(b.boardStyle))return false;
   boards.add(b.id);
   if(b.annotations!==undefined){if(!Array.isArray(b.annotations)||b.annotations.length>2000)return false;for(const a of b.annotations){if(!validAnnotation(a)||annotations.has(a.id))return false;annotations.add(a.id);if(a.kind!=='text'&&(points+=a.points.length)>100000)return false;}}
   for(const c of b.cards){
@@ -37,9 +44,18 @@ export function validWorkspace(value:unknown): value is Workspace {
    if(c.title!==undefined&&(c.kind!=='checklist'||typeof c.title!=='string'||c.title.length>500))return false;
    if(c.layer!==undefined&&(!Number.isInteger(c.layer)||c.layer<0||c.layer>20000))return false;
    if(c.labels!==undefined&&(c.kind!=='note'||!Array.isArray(c.labels)||c.labels.length>20||new Set(c.labels.map(l=>l?.id)).size!==c.labels.length||c.labels.some(l=>!l||!id(l.id)||typeof l.text!=='string'||!l.text.trim()||l.text.length>80||typeof l.color!=='string'||!/^#[a-fA-F0-9]{6}$/.test(l.color))))return false;
+   if(c.imageEdit!==undefined&&(c.kind!=='image'||!validImageEdit(c.imageEdit)))return false;
+   if(c.styleBinding!==undefined&&(!validBinding(c.styleBinding)||['image','video','file'].includes(c.kind)))return false;
    cards.add(c.id);
   }
   for(const c of b.cards)if(c.columnId&&!b.cards.some(column=>column.id===c.columnId&&column.kind==='column'))return false;
+  if(b.groups!==undefined){
+   if(!Array.isArray(b.groups)||b.groups.length>6000)return false;
+   const objects=new Map([...b.cards,...b.annotations??[]].map(o=>[o.id,o])),groupIds=new Set<string>(),members=new Set<string>();
+   for(const g of b.groups){if(!g||typeof g!=='object'||Object.keys(g).some(k=>!['id','members'].includes(k))||!id(g.id)||groupIds.has(g.id)||objects.has(g.id)||!Array.isArray(g.members)||g.members.length<2||g.members.length>12000)return false;groupIds.add(g.id);
+    for(const member of g.members){if(!id(member)||members.has(member))return false;const object=objects.get(member);if(!object||object.kind==='column'||'columnId' in object&&object.columnId)return false;members.add(member);}
+   }
+  }
   if(b.connectors!==undefined){if(!Array.isArray(b.connectors)||b.connectors.length>10000)return false;const ids=new Set<string>();for(const line of b.connectors){if(!line||!id(line.id)||ids.has(line.id)||line.from===line.to||!b.cards.some(c=>c.id===line.from)||!b.cards.some(c=>c.id===line.to)||typeof line.color!=='string'||!/^#[a-fA-F0-9]{3}([a-fA-F0-9]{3})?$/.test(line.color))return false;ids.add(line.id);}}
  }
  for(const annotation of annotations)if(cards.has(annotation))return false;

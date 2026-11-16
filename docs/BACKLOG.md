@@ -6,12 +6,30 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: IDEA-042 modifier-panel progressive disclosure first, then IDEA-033 through IDEA-041 as one usability development release. Implementation has started on feature/styles-and-usability: modifier navigation, header dialogs and command-search foundations are available for local review. PDF export is implemented locally; shared styles and their dependent features remain queued. IDEA-029 through IDEA-032 are implemented and deployed with compatibility coverage. Preserve existing workspaces and the main creation sidebar layout.
+Current priority: media inspection and reversible editing (IDEA-006), following command-search PR #20 into develop after CI passed. Preserve original uploads, private-media permissions, existing workspaces and the creation sidebar. Comments/feedback (IDEA-007) and workspace discovery (IDEA-008) remain queued. Nothing newly deployed.
+
+### IDEA-045: Grouping and mixed-element selection
+
+- Priority: Now - first (requested ahead of export frames)
+- Status: Implemented locally on feature/grouping-selection; not deployed
+- What I want: Drag-select cards, text annotations, shapes and drawings together, move them as a selection, and create persistent groups. An icon-only floating Group action appears beside multiple selected objects; Ungroup appears for complete selected groups.
+- Behavior: Shift-click toggles elements/groups; clicking a group member selects the whole group, double-click enters a member, and Escape returns to group selection. Ctrl/Cmd+G groups and Ctrl/Cmd+Shift+G ungroups. Subtle selection bounds, accessible tooltips/labels, fixed-size floating icons, keyboard movement, snapping, undo/redo and live permissions remain supported.
+- Compatibility: Optional board-local groups; no migration or automatic grouping. Flat groups only. Columns and cards inside columns cannot be grouped; move those cards onto the canvas first. Group/mixed-annotation drops retain free-canvas arrangement rather than entering column layout. Connectors follow their cards and are not group members. Existing columns continue carrying children once.
+- Copies/deletion: Mixed selections and complete groups duplicate/copy with remapped IDs and group membership. Private media copy restrictions remain. Nested board tiles retain their existing duplication restriction. Deleting members prunes groups below two members; grouping/ungrouping preserve content and geometry. Member-level edits remain independent.
+- Remaining: Nested groups, group scaling/rotation, grouping within columns and dedicated touch marquee controls are separate follow-ups. Existing annotation typography controls remain single-object; mixed card formatting applies only to supported cards in mixed selections.
+
+### IDEA-043: Vector PDF export
+
+- Priority: Now - first
+- Status: Implemented; PR #14 merged into develop after CI passed; not deployed
+- What I want: Replace low-resolution page screenshots with PDF text and vector elements.
+- Result: Selectable/searchable text with embedded self-hosted fonts; vector shapes, strokes, borders, labels, checklists and connectors; original PNG/JPEG image bytes/dimensions; same export settings, page clipping and authorization checks. Unsupported glyphs fail clearly. Font substitutions can change wrapping slightly; complex scripts and tagged accessibility remain limitations.
+- Validation: PDF resource/text extraction, visible CJK rendering, original JPEG bytes, browser downloads, private-media/revocation and mobile regression checks. No existing workspace data changes.
 
 ### IDEA-042: Clean modifier panel with progressive disclosure
 
 - Priority: Now - first
-- Status: In progress; navigation/search/groups implemented locally, inheritance indicators depend on IDEA-035
+- Status: In progress; navigation/search/groups and inherited/custom indicators implemented locally; mixed-property controls for current multi-card selection are implemented in IDEA-038
 - What I want: Preserve all features while making controls easy to find. Keep the main creation sidebar unchanged.
 - Expected behavior: Selection header with object actions, stable Style/Arrange tabs, context-specific essentials, expandable detailed groups with clear current values, property search, persistent per-object preferences, mixed/inherited/custom indicators, and accessible Undo/Redo.
 - Done when: Features remain available without a long always-visible panel; search finds hidden properties, keyboard/mobile access works, and the main creation rail remains unchanged.
@@ -44,7 +62,7 @@ Current priority: IDEA-042 modifier-panel progressive disclosure first, then IDE
 
 - Type: Feature / Design consistency
 - Priority: Now - third
-- Status: Queued
+- Status: Implemented locally on feature/workspace-styles; not deployed
 - What I want: Set fonts, colors and board appearance once for the whole workspace so boards look thematically consistent, similar to Microsoft Word styles. Individual elements can be customized and reset back to the workspace style.
 - Expected behavior: A workspace style editor defines named roles such as heading, body text and label, plus a palette and default board background/pattern. Define a clear hierarchy: workspace style, optional board override, then element override. Inherited values follow later workspace style changes; explicitly overridden properties stay unchanged. Show whether a value is inherited or overridden and provide both per-property reset and Reset to workspace style.
 - Reset behavior: Clearing an override restores inheritance rather than copying today's default into the element. If a board override exists, property reset returns to the inherited board value; Reset to workspace style explicitly removes the applicable board/element overrides. Preview the effect and make reset scope clear.
@@ -57,15 +75,17 @@ Current priority: IDEA-042 modifier-panel progressive disclosure first, then IDE
 
 - Type: Feature / Usability
 - Priority: Soon; coordinate with IDEA-035
-- Status: Queued
+- Status: Implemented locally on feature/format-painter; not deployed
 - What I want: Copy formatting from one element and apply it to compatible elements without copying content.
 - Expected behavior: Explicit source/target mode, clear preview and Escape cancellation. Distinguish applying a named inherited style from copying explicit overrides. Preserve text, assets, position, permissions and undo.
+
+- Implementation: Copy formatting in the modifier panel, select a compatible target, preview, then Apply. Fixed appearance and linked named roles are separate choices. Escape cancels; live target-format changes require Refresh preview. Background-only copying preserves legacy typography; drawings copy stroke/fill without geometry. Single-step undo, existing permissions and document validation remain in use. Media, connectors and mixed selections are excluded. Per-word rich-text marks remain target-owned.
 
 ### IDEA-037: Named semantic style presets
 
 - Type: Feature / Usability
 - Priority: Soon; part of IDEA-035's style design
-- Status: Queued
+- Status: Implemented locally on feature/workspace-styles; not deployed
 - What I want: Discoverable presets such as Heading, Body, Caption and Client feedback, with previews and clear current-style identification.
 - Constraints: Reuse the shared style system rather than introducing a second formatting model. Preserve individual overrides and existing content unless explicitly changed.
 
@@ -73,31 +93,40 @@ Current priority: IDEA-042 modifier-panel progressive disclosure first, then IDE
 
 - Type: Improvement / Usability
 - Priority: Soon
-- Status: Queued
+- Status: Implemented locally on feature/mixed-selection-formatting; not deployed
 - What I want: Clearly show Mixed when selected elements differ in font, size, color or other supported properties, while displaying shared values normally.
 - Expected behavior: Editing one control changes only that property on compatible selected items. Do not silently reset unrelated formatting. Extend the existing mixed-background indicator consistently; respect permissions and undo.
+
+- Implementation: Existing multi-card selection now aggregates effective fonts, size, weight, italic/underline, alignment, text/background colors and borders. Mixed values and mixed inheritance are distinct; resets remove only the selected property override. Typography/borders apply only to style-linked text-bearing cards, with explicit compatible counts; legacy backgrounds remain editable without enabling styles. Native indeterminate checkboxes and labeled sliders/numbers support keyboard/mobile use. Annotations retain their current single-selection workflow; adding cross-type annotation multi-selection is separate work.
 
 ### IDEA-039: Export regions and presentation frames
 
 - Type: Feature / Usability
 - Priority: Soon; coordinate with IDEA-034
-- Status: Queued
+- Status: Implemented locally for named PDF regions on feature/export-frames; not deployed
 - What I want: Define named regions or frames on a large board for predictable PDF pages and presentations.
 - Expected behavior: Visible export boundaries and a preview of page order, clipping and scaling, with selection of frames to export. Keep frame/export scope explicit and preserve free canvas organization and authorized-content boundaries.
+
+- Result: Board actions manages named rectangular frames, created around the current selection or in view. Saved bounds, names and page order are shared; draft edits require Save and protect against remote conflicts. Personal canvas outlines can be hidden. Export > PDF offers Whole current board or Named frames, a selectable page list and per-frame crop/scale previews. Each selected frame fits one PDF page in saved order, with exact boundary clipping and authorized in-scope image loading. Up to 50 frames per board, 80-10,000 px per dimension; oversized selection frames fail explicitly.
+- Remaining: Direct canvas frame dragging/resizing, per-frame paper/orientation, frame tiling and an interactive presentation/slideshow mode remain separate follow-ups. Existing whole-board Fit/Actual exports and JSON backups remain intact.
 
 ### IDEA-040: Searchable command menu
 
 - Type: Feature / Usability
 - Priority: Soon
-- Status: In progress; keyboard/search foundation implemented, future PDF/style commands await those features
+- Status: Implemented locally on feature/contextual-commands; not deployed
 - What I want: Search actions such as Export PDF, Reset style, Duplicate and Share, with optional keyboard access.
 - Expected behavior: Context-aware results show useful labels, grouping and shortcuts. Permission-gated actions stay protected; unavailable actions explain why. This supplements discoverable UI controls and preserves the main creation rail.
+
+- Result: Grouped Export, Style, Selection, Create, Sharing, Navigation and View results; normalized multiword/keyword search; stable keyboard selection, result counts and specific disabled explanations. Commands reach PDF/frame/style/help/account/sharing sections, reset selected custom style overrides with undo, start Format Painter and arm existing creation/annotation tools. Owner sharing loads members through the same dialog/API path. Viewer/client/local restrictions remain explicit; disabled actions do not run, including when live context changes while the menu is open.
+- Preserved: Search stays top-center, Account stays right, creation icons/order stay unchanged, placement still waits for a canvas position, and modal focus/draft protections remain. No document schema or backend endpoint changes.
+- Follow-ups: Future features can add their own command definitions; fuzzy typo correction and user-customizable shortcuts remain optional.
 
 ### IDEA-041: Preview workspace-wide style changes
 
 - Type: Improvement / Usability
 - Priority: Soon; part of IDEA-035
-- Status: Queued
+- Status: Implemented locally on feature/workspace-styles; not deployed
 - What I want: Preview affected boards/elements before applying shared style changes, including which local overrides will be preserved.
 - Expected behavior: Clear scope/impact summary, Apply/Cancel, and opt-in adoption for legacy workspaces. Previews must not save or broadcast partial changes; final application respects authorization, conflicts and the supported undo strategy.
 
@@ -355,12 +384,16 @@ Current priority: IDEA-042 modifier-panel progressive disclosure first, then IDE
 
 - Type: Feature / Improvement
 - Priority: Soon
-- Status: Idea
+- Status: Implemented locally on feature/media-inspection; not deployed
 - What I want: Fullscreen image/video viewing, optional captions, image crop/rotate and image-attached annotations.
 - Expected behavior or example: Open media in a focused viewer; image annotations move and resize with their image. Keep the uncluttered canvas presentation from IDEA-001.
 - Constraints or things to preserve: Private authorized media access, original downloads, aspect ratio, playback controls and accessible keyboard navigation. Define whether image edits are reversible transformations or new assets before implementation.
 - Reference links or screenshot paths: https://help.milanote.com/en/articles/359381-images
 - Done when: Authorized users can inspect media and use the delivered editing tools without losing originals; shared changes persist and respect permissions.
+
+- Result: Image/video surfaces offer focused inspection through double-click, an unobtrusive surface icon, modifier tools and command search. The modal supports image zoom, fullscreen, previous/next navigation, captions when enabled, original downloads and native video playback. Editors draft quarter-turn rotation, percentage crop and attached pen/text-label annotations, then Save one undoable metadata change. Reset to original removes visual edits; uploads are never overwritten. Draft close/navigation guards, stale-source checks and read-only client/viewer controls preserve boundaries.
+- Export behavior: Canvas, viewer and vector PDF apply the same image coordinates; marks remain attached through movement/resizing/crop/rotation. Ordinary JPEG resources stay original in PDF; camera Exif orientation and unsupported encodings normalize to full-resolution PNG. Crops are visual, and PDF retains full embedded image data (shown in export UI).
+- Remaining: Direct drag-crop handles, arbitrary-angle rotation, richer attached shapes/font styles, individual mark selection/history, pressure-sensitive drawing and video trimming remain follow-ups. Cropped pixels are not redacted from PDF.
 
 ### IDEA-007: Comments, mentions and team feedback
 
@@ -505,7 +538,7 @@ Canvas polish (IDEA-015) can accompany the relevant editor slices. Collaboration
 ## Optional request template
 
 ```markdown
-### IDEA-043: Short title
+### IDEA-044: Short title
 
 - Type: Feature / Improvement / Bug / UI
 - Priority: Now / Soon / Later / Unsure

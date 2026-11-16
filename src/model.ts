@@ -1,3 +1,4 @@
+import {validFrames,type ExportFrame} from './frame-schema';
 import {validBinding,validBoardStyle,validWorkspaceStyle,type StyleBinding,type BoardStyle,type WorkspaceStyle} from './style-schema';
 import {validBoardBackground,validBoardPattern,type BoardPattern} from './boardAppearance';
 import {validAnnotation,type Annotation} from './annotations';
@@ -8,7 +9,7 @@ export type NoteLabel={id:string;text:string;color:string};
 export type Card = {styleBinding?:StyleBinding;id:string; kind:Kind; x:number; y:number; text:string; color:string; title?:string; labels?:NoteLabel[]; layer?:number; target?:string; width?:number; height?:number; assetId?:string; columnId?:string; captionVisible?:boolean; richText?:RichDocument};
 export type Connector={id:string;from:string;to:string;color:string};
 export type ElementGroup={id:string;members:string[]};
-export type Board = {groups?:ElementGroup[];boardStyle?:BoardStyle;styleEnabled?:boolean;id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[];background?:string;pattern?:BoardPattern};
+export type Board = {frames?:ExportFrame[];groups?:ElementGroup[];boardStyle?:BoardStyle;styleEnabled?:boolean;id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[];background?:string;pattern?:BoardPattern};
 export type Workspace = {workspaceStyle?:WorkspaceStyle;version:1; boards:Board[]};
 export const seed:Workspace = {version:1,boards:[{id:'home',title:'Creative studio',cards:[
 {id:'welcome',kind:'note',x:70,y:70,text:'A space for your next big idea\n\nCollect references, map out the story, and bring your team into the process.',color:'#fff'},
@@ -26,6 +27,7 @@ export function validWorkspace(value:unknown): value is Workspace {
  const id=(v:unknown):v is string=>typeof v==='string'&&v.length>0&&v.length<=128;
  for(const b of w.boards){
   if(!b||!id(b.id)||boards.has(b.id)||typeof b.title!=='string'||b.title.length>500||!Array.isArray(b.cards)||b.cards.length>10000)return false;
+  if(b.frames!==undefined&&!validFrames(b.frames))return false;
   if(b.background!==undefined&&!validBoardBackground(b.background)||b.pattern!==undefined&&!validBoardPattern(b.pattern))return false;
   if(b.styleEnabled!==undefined&&typeof b.styleEnabled!=='boolean'||b.boardStyle!==undefined&&!validBoardStyle(b.boardStyle))return false;
   boards.add(b.id);

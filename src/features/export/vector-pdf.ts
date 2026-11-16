@@ -12,13 +12,13 @@ export type PdfImageSource={bytes:Uint8Array;mime:string};
 type StyledRun=RichRun&FontStyle&{strike?:boolean};
 type Piece={text:string;font:PDFFont;width:number;underline?:boolean;strike?:boolean;skew?:boolean};
 export const pdfColor=(hex:string)=>{let value=hex.replace('#','');if(value.length===3)value=[...value].map(c=>c+c).join('');return rgb(parseInt(value.slice(0,2),16)/255,parseInt(value.slice(2,4),16)/255,parseInt(value.slice(4,6),16)/255);};
-const intersects=(a:Rect,b:Rect)=>a.x+a.width>=b.x&&a.x<=b.x+b.width&&a.y+a.height>=b.y&&a.y<=b.y+b.height;
+const intersects=(a:Rect,b:Rect)=>a.x+a.width>b.x&&a.x<b.x+b.width&&a.y+a.height>b.y&&a.y<b.y+b.height;
 
 export async function createVectorPdf(board:Board,options:PdfOptions,images:Record<string,PdfImageSource>,loadFont:FontLoader,progress:(message:string)=>void,theme={background:'#f3f3ef',ink:'#393c3b',grid:'#d7d9d2'}){
  const plan=planPdf(board,options),pdf=await PDFDocument.create();pdf.registerFontkit(fontkit);pdf.setTitle(board.title);pdf.setCreator('Boardroom vector export');const fonts=new PdfFonts(pdf,loadFont),embedded=new Map<string,PDFImage>();
  for(const [id,source] of Object.entries(images))embedded.set(id,source.mime==='image/jpeg'?await pdf.embedJpg(source.bytes):await pdf.embedPng(source.bytes));
  for(const [index,region] of plan.pages.entries()){
-  progress(`Drawing page ${index+1} of ${plan.pages.length}...`);await new Promise<void>(resolve=>setTimeout(resolve,0));const page=pdf.addPage([plan.width,plan.height]),s=plan.scale;
+  progress(`Drawing page ${index+1} of ${plan.pages.length}...`);await new Promise<void>(resolve=>setTimeout(resolve,0));const page=pdf.addPage([plan.width,plan.height]),s=region.scale??plan.scale;
   const X=(x:number)=>plan.margin+(x-region.x)*s,Y=(y:number)=>plan.height-plan.margin-(y-region.y)*s;
   const rect=(x:number,y:number,w:number,h:number,fill?:string,border?:string,borderWidth=0,dash?:number[])=>{if(!fill&&!(border&&borderWidth))return;page.drawRectangle({x:X(x),y:Y(y+h),width:w*s,height:h*s,color:fill?pdfColor(fill):undefined,borderColor:border?pdfColor(border):undefined,borderWidth:borderWidth*s,borderDashArray:dash?.map(v=>v*s)});};
   const line=(x:number,y:number,x2:number,y2:number,color:string,width=1)=>page.drawLine({start:{x:X(x),y:Y(y)},end:{x:X(x2),y:Y(y2)},color:pdfColor(color),thickness:width*s,lineCap:LineCapStyle.Round});
@@ -52,7 +52,7 @@ export async function createVectorPdf(board:Board,options:PdfOptions,images:Reco
     for(const p of joined){page.drawText(p.text,{x:X(x),y:Y(y),size:size*s,font:p.font,color:pdfColor(color),xSkew:p.skew?degrees(12):undefined});if(p.strike)line(x,y-size*.35,x+p.width,y-size*.35,color,Math.max(.7,size/18));if(p.underline)line(x,y+2,x+p.width,y+2,color,Math.max(.7,size/18));x+=p.width;}
    }});return lines.length*lineHeight;
   }
-  page.pushOperators(pushGraphicsState(),rectangle(plan.margin,plan.margin,plan.contentWidth,plan.contentHeight),clip(),endPath());
+  page.pushOperators(pushGraphicsState(),rectangle(plan.margin,plan.height-plan.margin-region.height*s,region.width*s,region.height*s),clip(),endPath());
   const background=board.background??theme.background;rect(region.x,region.y,region.width,region.height,background);
   if(board.pattern!=='plain'){
    const step=20;const grid=board.background?(automaticTextColor(background)==='#242b27'?'#bbbbbb':'#555555'):theme.grid;
@@ -76,7 +76,7 @@ export async function createVectorPdf(board:Board,options:PdfOptions,images:Reco
     else if(c.kind==='link')await text([{text:c.text,underline:true}],body,14,ink);
     else {await text([{text:c.kind==='board'?'Board':c.kind==='video'?'Video':'File',bold:true}],{...body,height:28},16,ink);await text([{text:c.text}],{...body,y:body.y+40,height:Math.max(0,body.height-80)},14,ink);await text([{text:c.kind==='board'?'Nested board content is not included.':`Open the workspace to ${c.kind==='video'?'play':'download'} this ${c.kind}.`}],{...body,y:c.y+h-52,height:36},11,ink);}
     page.pushOperators(popGraphicsState());
-   }else if(object.annotation){const a=object.annotation;if(!intersects(a,region))continue;
+   }else if(object.annotation){const a=object.annotation,pad=a.kind==='text'?a.style.borderWidth/2:a.thickness/2;if(!intersects({x:a.x-pad,y:a.y-pad,width:a.width+pad*2,height:a.height+pad*2},region))continue;
     if(a.kind==='text'){const style=a.style;rect(a.x,a.y,a.width,a.height,style.background==='transparent'?undefined:style.background,style.borderWidth?style.borderColor:undefined,style.borderWidth,style.borderStyle==='dashed'?[6,4]:style.borderStyle==='dotted'?[1,3]:undefined);const color=a.color==='auto'?automaticTextColor(style.background==='transparent'?background:style.background):a.color;await text([{text:a.text,family:style.fontFamily,bold:style.fontWeight>=600,italic:style.italic,underline:style.underline}],{x:a.x+8+style.borderWidth,y:a.y+8+style.borderWidth,width:Math.max(0,a.width-16-style.borderWidth*2),height:Math.max(0,a.height-16-style.borderWidth*2)},style.fontSize,color,style.align,style.fontSize*1.3);}
     else page.drawSvgPath(a.kind==='shape'?shapePath(a):strokePath(a.points),{x:X(a.x),y:Y(a.y),scale:s,borderColor:pdfColor(a.color),borderWidth:a.thickness,borderLineCap:LineCapStyle.Round,color:a.kind==='shape'&&['rectangle','circle'].includes(a.shape)&&a.fill!=='transparent'?pdfColor(a.fill):undefined,opacity:a.kind==='highlighter'?.35:1,borderOpacity:a.kind==='highlighter'?.35:1});
    }

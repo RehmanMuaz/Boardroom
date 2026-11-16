@@ -1,0 +1,23 @@
+.frame-settings summary{cursor:pointer;font-weight:650;padding:8px 0}
+.frame-settings label.frame-toggle{display:flex;flex-direction:row;align-items:center;gap:8px;margin:12px 0}
+.frame-toggle input{width:auto}
+.frame-list{padding-left:22px;margin:14px 0}
+.frame-list li{padding:10px 0;border-bottom:1px solid var(--border);overflow-wrap:anywhere}
+.frame-list small{display:block;margin-top:4px}
+.frame-row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.frame-row-actions button{padding:7px 10px;border:1px solid var(--border);border-radius:5px}
+.frame-editor{min-width:0;border:1px solid var(--border);padding:14px;border-radius:8px;margin:14px 0}
+.frame-editor label{display:grid;gap:5px;margin:10px 0}
+.frame-dimensions{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:0}
+.frame-dimensions input,.frame-editor input{min-width:0;width:100%}
+.export-frame-layer{position:absolute;inset:0;z-index:1;pointer-events:none}
+.export-frame-outline{position:absolute;border:1.5px dashed #8067ad;border-radius:2px;pointer-events:none}
+.export-frame-outline>span{position:absolute;left:0;top:0;max-width:100%;padding:3px 6px;background:var(--surface);color:var(--ink);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
+.pdf-frame-choices{display:grid;gap:8px;margin:12px 0;max-height:200px;overflow:auto}
+.pdf-frame-choices label{display:flex;flex-direction:row;align-items:center;gap:8px;overflow-wrap:anywhere}
+.pdf-frame-choices input{width:auto;flex-shrink:0}
+.pdf-frame-previews{display:grid;gap:14px;margin:14px 0}
+.pdf-frame-preview{margin:0;border:1px solid var(--border);padding:10px;border-radius:6px;overflow:hidden;min-width:0}
+.pdf-frame-preview figcaption{font-size:12px;margin-bottom:8px;overflow-wrap:anywhere}
+.pdf-frame-crop{position:relative;max-width:100%;overflow:hidden;background:var(--canvas);pointer-events:none}
+@media(max-width:500px){.frame-dimensions{grid-template-columns:1fr}}

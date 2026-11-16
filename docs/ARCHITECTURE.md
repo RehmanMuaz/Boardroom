@@ -1,5 +1,17 @@
 ﻿# Architecture
 
+## Local Flow workspace editing extension
+
+`server/flow-workspaces.ts` exposes opt-in workspace reads, non-persisting previews
+and edit-review staging for explicit `FLOW_WORKSPACE_IDS`. Current configured-account
+membership/verification applies on every request. Native approval is handled by
+`flow-edit-review.ts` and transactional `flow-edit-store.ts`; the integration bearer
+cannot approve. Migration 011 stores canonical-hashed, expiring edit intents. Approval
+rechecks session/version/permissions/revision, applies existing domain changes,
+writes the operation ledger and marks the intent applied in one transaction, then
+publishes through the realtime hook. See `FLOW_WORKSPACE_PREVIEWS.md` for tests and
+release boundaries. This extension exists in this isolated snapshot, not production.
+
 ## Live milestone 5 (locally validated)
 
 React + strict TypeScript + Vite preserve the existing canvas. An Express 5 Node/TypeScript API uses PostgreSQL for team data and sessions. Development services bind to loopback; the production API is private behind the configured TLS proxy. The API also hosts the live WebSocket gateway; private local filesystem assets are implemented; S3-compatible storage and hosting are planned.

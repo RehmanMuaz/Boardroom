@@ -7,7 +7,8 @@ export type RichDocument={blocks:{type:'paragraph'|'heading'|'bullet'|'quote';ru
 export type NoteLabel={id:string;text:string;color:string};
 export type Card = {styleBinding?:StyleBinding;id:string; kind:Kind; x:number; y:number; text:string; color:string; title?:string; labels?:NoteLabel[]; layer?:number; target?:string; width?:number; height?:number; assetId?:string; columnId?:string; captionVisible?:boolean; richText?:RichDocument};
 export type Connector={id:string;from:string;to:string;color:string};
-export type Board = {boardStyle?:BoardStyle;styleEnabled?:boolean;id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[];background?:string;pattern?:BoardPattern};
+export type ElementGroup={id:string;members:string[]};
+export type Board = {groups?:ElementGroup[];boardStyle?:BoardStyle;styleEnabled?:boolean;id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[];background?:string;pattern?:BoardPattern};
 export type Workspace = {workspaceStyle?:WorkspaceStyle;version:1; boards:Board[]};
 export const seed:Workspace = {version:1,boards:[{id:'home',title:'Creative studio',cards:[
 {id:'welcome',kind:'note',x:70,y:70,text:'A space for your next big idea\n\nCollect references, map out the story, and bring your team into the process.',color:'#fff'},
@@ -44,6 +45,13 @@ export function validWorkspace(value:unknown): value is Workspace {
    cards.add(c.id);
   }
   for(const c of b.cards)if(c.columnId&&!b.cards.some(column=>column.id===c.columnId&&column.kind==='column'))return false;
+  if(b.groups!==undefined){
+   if(!Array.isArray(b.groups)||b.groups.length>6000)return false;
+   const objects=new Map([...b.cards,...b.annotations??[]].map(o=>[o.id,o])),groupIds=new Set<string>(),members=new Set<string>();
+   for(const g of b.groups){if(!g||typeof g!=='object'||Object.keys(g).some(k=>!['id','members'].includes(k))||!id(g.id)||groupIds.has(g.id)||objects.has(g.id)||!Array.isArray(g.members)||g.members.length<2||g.members.length>12000)return false;groupIds.add(g.id);
+    for(const member of g.members){if(!id(member)||members.has(member))return false;const object=objects.get(member);if(!object||object.kind==='column'||'columnId' in object&&object.columnId)return false;members.add(member);}
+   }
+  }
   if(b.connectors!==undefined){if(!Array.isArray(b.connectors)||b.connectors.length>10000)return false;const ids=new Set<string>();for(const line of b.connectors){if(!line||!id(line.id)||ids.has(line.id)||line.from===line.to||!b.cards.some(c=>c.id===line.from)||!b.cards.some(c=>c.id===line.to)||typeof line.color!=='string'||!/^#[a-fA-F0-9]{3}([a-fA-F0-9]{3})?$/.test(line.color))return false;ids.add(line.id);}}
  }
  for(const annotation of annotations)if(cards.has(annotation))return false;

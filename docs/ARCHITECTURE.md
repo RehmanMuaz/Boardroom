@@ -184,3 +184,11 @@ WorkspaceStyles keeps draft/expected values locally, shows isolated previews and
 ## Multi-card formatting
 
 `src/selectionStyles.ts` aggregates effective supported card properties, canonicalizes equivalent hex colors and patches/resets individual existing override fields. `src/features/styles/MultiSelectionStyle.tsx` presents mixed/shared values and inheritance status within searchable modifier sections. Controls state their compatible subset; unlinked cards never acquire a binding implicitly. Editor callbacks read the latest snapshot before constructing one validated undoable operation. No persistence format or authorization boundary changes; live conflicts retain existing styleBinding-field granularity.
+
+## Grouping and mixed selection
+
+`Board.groups?: ElementGroup[]` stores flat board-local member IDs for cards/annotations. Model validation rejects overlaps, unknown/cross-board members, nested groups, columns and contained cards. `groups` is a board operation field with existing transactional authorization/CAS; there is no SQL migration. `src/features/canvas/groups.ts` owns selection expansion, grouping, pruning, bounds, marquee hits and ID-remapped mixed copies. The existing domain movement/deletion helpers now handle annotations alongside cards, preserving one bounded movement delta and cleaning dangling memberships. Scoped HTTP card deletion reuses that cleanup.
+
+Editor keeps one selected-ID list across object kinds, using group-aware picking and latest-snapshot gesture diffs. AnnotationLayer delegates movement to the shared gesture path while retaining local resize/drawing previews. SelectionOverlay draws an unscaled viewport-relative boundary/icon outside export content; icons have accessible labels/tooltips and remain within the unobscured viewport. Double-click temporarily selects a member; Escape returns to the group. Existing card formatting stays scoped to supported cards, creation tools stay unchanged, and viewers retain selection without write controls.
+
+Browser regression setup waits for entry-session initialization before API registration. The dedicated Playwright server exposes its random rate namespace in test metadata so the additional group-account fixture can clean only that namespace; application authentication throttles stay unchanged.

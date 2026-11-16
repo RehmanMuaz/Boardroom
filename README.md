@@ -42,6 +42,8 @@ Format Painter (develop feature work, not deployed): select a compatible source,
 
 Multi-card formatting (develop feature work, not deployed): selected style-linked cards show shared or **Mixed** typography, text color and border values. Editing or resetting one property preserves all other formatting. Compatible counts identify excluded legacy/media cards; existing legacy backgrounds remain editable without enabling shared styles.
 
+Grouping (develop feature work, not deployed): drag-select cards and annotations together, then use the floating **Group** icon; complete groups offer **Ungroup**. Shift-click toggles selection. Ctrl/Cmd+G groups; Ctrl/Cmd+Shift+G ungroups. Double-click a member to edit it and Escape to reselect its group. Groups are flat and board-local; columns and cards inside columns must stay separate. Existing boards remain unchanged until explicitly grouped.
+
 ## Validation
 
 Start PostgreSQL and configure `.env`, then run:

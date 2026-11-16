@@ -6,7 +6,17 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: shared workspace styles (IDEA-035), semantic roles (IDEA-037) and impact preview (IDEA-041) are implemented for review on feature/workspace-styles. The vector PDF upgrade passed CI and merged into develop; production retains the previous release. Format painter, expanded mixed-property editing and named export frames remain next. Preserve legacy workspace appearance and the main creation sidebar layout.
+Current priority: grouping and mixed-element drag-selection (IDEA-045), ahead of named export frames. Preserve legacy workspaces and the main creation sidebar. Shared styles, Format Painter and mixed-card property controls have passed CI into develop; these newer features are not yet deployed.
+
+### IDEA-045: Grouping and mixed-element selection
+
+- Priority: Now - first (requested ahead of export frames)
+- Status: Implemented locally on feature/grouping-selection; not deployed
+- What I want: Drag-select cards, text annotations, shapes and drawings together, move them as a selection, and create persistent groups. An icon-only floating Group action appears beside multiple selected objects; Ungroup appears for complete selected groups.
+- Behavior: Shift-click toggles elements/groups; clicking a group member selects the whole group, double-click enters a member, and Escape returns to group selection. Ctrl/Cmd+G groups and Ctrl/Cmd+Shift+G ungroups. Subtle selection bounds, accessible tooltips/labels, fixed-size floating icons, keyboard movement, snapping, undo/redo and live permissions remain supported.
+- Compatibility: Optional board-local groups; no migration or automatic grouping. Flat groups only. Columns and cards inside columns cannot be grouped; move those cards onto the canvas first. Group/mixed-annotation drops retain free-canvas arrangement rather than entering column layout. Connectors follow their cards and are not group members. Existing columns continue carrying children once.
+- Copies/deletion: Mixed selections and complete groups duplicate/copy with remapped IDs and group membership. Private media copy restrictions remain. Nested board tiles retain their existing duplication restriction. Deleting members prunes groups below two members; grouping/ungrouping preserve content and geometry. Member-level edits remain independent.
+- Remaining: Nested groups, group scaling/rotation, grouping within columns and dedicated touch marquee controls are separate follow-ups. Existing annotation typography controls remain single-object; mixed card formatting applies only to supported cards in mixed selections.
 
 ### IDEA-043: Vector PDF export
 

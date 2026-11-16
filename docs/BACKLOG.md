@@ -19,7 +19,7 @@ Current priority: shared workspace styles (IDEA-035), semantic roles (IDEA-037) 
 ### IDEA-042: Clean modifier panel with progressive disclosure
 
 - Priority: Now - first
-- Status: In progress; navigation/search/groups and inherited/custom indicators implemented locally; broader mixed-property controls remain IDEA-038
+- Status: In progress; navigation/search/groups and inherited/custom indicators implemented locally; mixed-property controls for current multi-card selection are implemented in IDEA-038
 - What I want: Preserve all features while making controls easy to find. Keep the main creation sidebar unchanged.
 - Expected behavior: Selection header with object actions, stable Style/Arrange tabs, context-specific essentials, expandable detailed groups with clear current values, property search, persistent per-object preferences, mixed/inherited/custom indicators, and accessible Undo/Redo.
 - Done when: Features remain available without a long always-visible panel; search finds hidden properties, keyboard/mobile access works, and the main creation rail remains unchanged.
@@ -83,9 +83,11 @@ Current priority: shared workspace styles (IDEA-035), semantic roles (IDEA-037) 
 
 - Type: Improvement / Usability
 - Priority: Soon
-- Status: Queued
+- Status: Implemented locally on feature/mixed-selection-formatting; not deployed
 - What I want: Clearly show Mixed when selected elements differ in font, size, color or other supported properties, while displaying shared values normally.
 - Expected behavior: Editing one control changes only that property on compatible selected items. Do not silently reset unrelated formatting. Extend the existing mixed-background indicator consistently; respect permissions and undo.
+
+- Implementation: Existing multi-card selection now aggregates effective fonts, size, weight, italic/underline, alignment, text/background colors and borders. Mixed values and mixed inheritance are distinct; resets remove only the selected property override. Typography/borders apply only to style-linked text-bearing cards, with explicit compatible counts; legacy backgrounds remain editable without enabling styles. Native indeterminate checkboxes and labeled sliders/numbers support keyboard/mobile use. Annotations retain their current single-selection workflow; adding cross-type annotation multi-selection is separate work.
 
 ### IDEA-039: Export regions and presentation frames
 

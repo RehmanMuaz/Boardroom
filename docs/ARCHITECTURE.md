@@ -180,3 +180,7 @@ WorkspaceStyles keeps draft/expected values locally, shows isolated previews and
 ## Format Painter
 
 `src/formatPainter.ts` captures effective formatting only and applies compatible target deltas without changing content/geometry. `src/features/FormatPainter.tsx` owns an isolated preview and compares the latest formatting signature before Apply; target-only formatting conflicts require refresh. Fixed formatting freezes values in existing bindings; linked mode copies only role/scope. Legacy backgrounds and drawings use existing fields. Editor updates retain validated operation diffing, inverse-operation undo and backend authorization. No document conversion or schema migration.
+
+## Multi-card formatting
+
+`src/selectionStyles.ts` aggregates effective supported card properties, canonicalizes equivalent hex colors and patches/resets individual existing override fields. `src/features/styles/MultiSelectionStyle.tsx` presents mixed/shared values and inheritance status within searchable modifier sections. Controls state their compatible subset; unlinked cards never acquire a binding implicitly. Editor callbacks read the latest snapshot before constructing one validated undoable operation. No persistence format or authorization boundary changes; live conflicts retain existing styleBinding-field granularity.

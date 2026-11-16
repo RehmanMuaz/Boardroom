@@ -6,7 +6,7 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: media inspection and reversible editing (IDEA-006), following command-search PR #20 into develop after CI passed. Preserve original uploads, private-media permissions, existing workspaces and the creation sidebar. Comments/feedback (IDEA-007) and workspace discovery (IDEA-008) remain queued. Nothing newly deployed.
+Current priority: comments, mentions and team feedback (IDEA-007), following media-inspection PR #21 into develop after CI passed. Work is on feature/team-comments; existing canvas data and the creation sidebar stay intact. Workspace discovery (IDEA-008) is next. Nothing newly deployed.
 
 ### IDEA-045: Grouping and mixed-element selection
 
@@ -399,13 +399,15 @@ Current priority: media inspection and reversible editing (IDEA-006), following 
 
 - Type: Feature
 - Priority: Soon
-- Status: Idea
+- Status: Implemented and locally validated on feature/team-comments; not deployed
 - What I want: Board/card comment threads, replies, @mentions, unread notifications and resolved feedback.
 - Why it matters: Teams can discuss work in context instead of using an external chat to explain which item they mean.
 - Delivery stages: Persisted threads and replies first; mentions and in-app notifications next; optional email notifications and reactions later.
 - Constraints or things to preserve: Check access for comments and notification recipients; revoked users must lose access. Existing viewers remain read-only unless an explicit commenter permission is introduced in IDEA-012.
 - Reference links or screenshot paths: https://help.milanote.com/en/articles/425042-collaborating-in-real-time
 - Done when: Authorized teammates can discuss and resolve feedback, receive mentions and find unread threads after reload.
+
+- Implementation: Private board/card threads, replies, resolve/reopen with version conflicts, exact member @mentions, durable unread/mention counts, all-boards discovery, mobile dialog and draft guards. Owners/editors write; team viewers read and mark seen; client links cannot access discussions. Five-second open / 15-second closed polling. Canvas JSON/revision/history remain unchanged; full database backups include comments. Email, reactions, message editing/deletion, canvas pins and commenter permissions remain follow-ups.
 
 ### IDEA-008: Workspace search and board discovery
 

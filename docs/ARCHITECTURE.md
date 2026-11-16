@@ -167,3 +167,12 @@ Snap-to-grid is a device/workspace preference outside document JSON. Domain roun
 Images use the active repository's same-origin private/client asset route with credentials/no-store and MIME/byte limits. PNG/JPEG bytes are embedded directly with original pixel dimensions. Only WebP/GIF require a same-size browser conversion to PNG. Team/client access is checked at the start and before download; existing revocation and permission boundaries remain. No new API endpoints, persistence fields, migrations or third-party runtime requests.
 
 Tests parse emitted PDFs to prove text extraction and vector/font resources without full-page images, render CJK glyphs to catch invisible-font failures, check original JPEG bytes/pixel dimensions, and retain browser pagination/private-media/mid-render-revocation/mobile coverage. Tests use pdfjs-dist and a test-only canvas package; neither is in the runtime browser bundle.
+
+
+## Optional shared workspace styles
+
+`style-schema.ts` validates optional workspaceStyle, boardStyle/styleEnabled and per-element styleBinding fields. `workspaceStyles.ts` resolves workspace -> optional board role overrides -> element overrides without rewriting raw snapshots. Existing snapshots omit these fields; enabling a style leaves unlinked legacy elements/boards unchanged. Text-bearing cards/text annotations can opt into named roles; media/drawings remain custom. New text-bearing content links Body, while new nested boards explicitly enable inherited appearance. Existing raw fields remain compatible fallbacks.
+
+Workspace style changes use a root `$workspaceStyle` compare-and-swap operation; board/element bindings have their own fields. Both the HTTP snapshot transaction and live operation transaction reject root-style changes by nonowners, including removal through import. Editors retain board/element customization and viewers remain read-only. Styles are JSONB additions, not relational migrations. Scoped card CRUD accepts validated bindings through final document validation.
+
+WorkspaceStyles keeps draft/expected values locally, shows isolated previews and override impact, and disables Apply after competing shared changes. Preview changes do not enter history, persistence or live operations until Apply. Resolved values feed the existing editor and vector PDF export. Font/role overrides are separate from rich-text marks. Reset removes keys rather than copying defaults; workspace-scoped reset bypasses board role defaults for that element. Palette/theme behavior and reset scopes are documented in README.

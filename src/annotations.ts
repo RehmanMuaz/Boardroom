@@ -1,8 +1,9 @@
+import {validBinding,type StyleBinding} from './style-schema';
 export type Point=[number,number];
 export type TextStyle={fontFamily:'sans'|'serif'|'mono'|'rounded';fontSize:number;fontWeight:400|500|600|700|800;italic:boolean;underline:boolean;align:'left'|'center'|'right';background:string;borderColor:string;borderWidth:number;borderStyle:'solid'|'dashed'|'dotted'};
 type Base={id:string;x:number;y:number;width:number;height:number;color:string;layer?:number};
 export type StrokeAnnotation=Base&{kind:'pen'|'highlighter';thickness:number;points:Point[]};
-export type TextAnnotation=Base&{kind:'text';text:string;style:TextStyle};
+export type TextAnnotation=Base&{kind:'text';text:string;style:TextStyle;styleBinding?:StyleBinding};
 export type ShapeKind='line'|'arrow'|'rectangle'|'circle';
 export type ShapeAnnotation=Base&{kind:'shape';shape:ShapeKind;thickness:number;fill:string;points:[Point,Point]};
 export type Annotation=StrokeAnnotation|TextAnnotation|ShapeAnnotation;
@@ -16,7 +17,8 @@ export function validAnnotation(value:unknown):value is Annotation{
  if(a.layer!==undefined&&(!Number.isInteger(a.layer)||a.layer<0||a.layer>20000))return false;
  const base=['id','kind','x','y','width','height','color','layer'];
  if(a.kind==='text'){
-  if(Object.keys(a).some(k=>![...base,'text','style'].includes(k))||a.width<80||a.width>4000||a.height<32||typeof a.text!=='string'||a.text.length>10000||!(hex(a.color)||a.color==='auto'))return false;
+  if(Object.keys(a).some(k=>![...base,'text','style','styleBinding'].includes(k))||a.width<80||a.width>4000||a.height<32||typeof a.text!=='string'||a.text.length>10000||!(hex(a.color)||a.color==='auto'))return false;
+  if(a.styleBinding!==undefined&&!validBinding(a.styleBinding))return false;
   const s=a.style;if(!s||typeof s!=='object'||Object.keys(s).sort().join(',')!==Object.keys(defaultTextStyle).sort().join(','))return false;
   return ['sans','serif','mono','rounded'].includes(s.fontFamily)&&number(s.fontSize,12,120)&&[400,500,600,700,800].includes(s.fontWeight)&&typeof s.italic==='boolean'&&typeof s.underline==='boolean'&&['left','center','right'].includes(s.align)&&(s.background==='transparent'||hex(s.background))&&hex(s.borderColor)&&number(s.borderWidth,0,8)&&Number.isInteger(s.borderWidth)&&['solid','dashed','dotted'].includes(s.borderStyle);
  }

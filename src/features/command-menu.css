@@ -1,0 +1,8 @@
+.command-suggestions .command-list-title{display:flex;justify-content:space-between;gap:8px}
+.header-command-search .command-suggestions [role=listbox]{max-height:min(360px,calc(100dvh - 160px))}
+.command-group-title{font-size:10px;font-weight:650;text-transform:uppercase;letter-spacing:.06em;padding:12px 8px 5px;color:var(--muted);border-top:1px solid var(--border)}
+.command-suggestions [role=group]:first-child .command-group-title{border-top:0;padding-top:4px}
+.command-option{overflow-wrap:anywhere;min-width:0}
+.command-option small{line-height:1.5}
+
+.header-command-search .command-option[aria-disabled=true]{opacity:1;color:var(--muted)}

@@ -1,0 +1,15 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {searchCommands,groupCommands,type CanvasCommand} from '../src/commands';
+import {seed} from '../src/model';
+import {defaultWorkspaceStyle} from '../src/style-schema';
+import {defaultTextStyle} from '../src/annotations';
+import {resetElementOverrides} from '../src/workspaceStyles';
+import {applyChanges,diffWorkspace,OperationConflict} from '../src/operations';
+test('commands match normalized multiword keywords, rank label matches and retain stable categorized disabled results without running actions',()=>{
+ let calls=0;const commands:CanvasCommand[]=[{id:'frames',label:'Manage export frames',group:'Export',keywords:['crop','page','presentation'],run:()=>calls++},{id:'style',label:'Workspace style settings',group:'Style',keywords:['font','defaults','palette'],run:()=>calls++},{id:'reset',label:'Reset style',group:'Style',disabled:true,disabledReason:'Select an element.',run:()=>calls++},{id:'resume',label:'Résumé',run:()=>calls++}];const original=commands.map(c=>({...c}));assert.deepEqual(searchCommands(commands,'  PAGE crop ').map(c=>c.id),['frames']);assert.deepEqual(searchCommands(commands,'font defaults').map(c=>c.id),['style']);assert.equal(searchCommands(commands,'resume')[0].id,'resume');assert.deepEqual(searchCommands(commands,'style').map(c=>c.id),['style','reset']);assert.equal(searchCommands(commands,'reset')[0].disabledReason,'Select an element.');assert.deepEqual(searchCommands(commands,'unknown'),[]);assert.deepEqual(groupCommands(searchCommands(commands,'' )).map(g=>[g.name,g.commands.map(c=>c.id)]),[['Export',['frames']],['Style',['style','reset']],['Other actions',['resume']]]);assert.equal(calls,0);assert.deepEqual(commands,original);
+});
+test('command style resets preserve content/geometry/roles and unlinked objects; undo retains remote edits and protects conflicts',()=>{
+ const w=structuredClone(seed);w.workspaceStyle=structuredClone(defaultWorkspaceStyle);w.boards[0].cards[0].styleBinding={role:'heading',scope:'workspace',overrides:{fontSize:44,cardColor:'#123456'}};w.boards[0].annotations=[{id:'a',kind:'text',x:20,y:40,width:200,height:100,text:'Keep text',color:'#abcdef',style:{...defaultTextStyle},styleBinding:{role:'caption',overrides:{italic:true}}}];const original=structuredClone(w),next=resetElementOverrides(w,'home',['welcome','brief','a']);assert.deepEqual(w,original);assert.deepEqual(next.boards[0].cards[0],{...w.boards[0].cards[0],styleBinding:{role:'heading',scope:'workspace'}});assert.deepEqual(next.boards[0].cards[1],w.boards[0].cards[1]);assert.deepEqual(next.boards[0].annotations![0],{...w.boards[0].annotations![0],styleBinding:{role:'caption'}});assert.deepEqual(next.workspaceStyle,w.workspaceStyle);assert.deepEqual(resetElementOverrides(seed,'home',['welcome']),seed);
+ const remote=structuredClone(next);remote.boards[0].cards[0].text='Remote text';assert.equal(applyChanges(remote,diffWorkspace(next,w)).boards[0].cards[0].text,'Remote text');remote.boards[0].cards[0].styleBinding={role:'body'};assert.throws(()=>applyChanges(remote,diffWorkspace(next,w)),OperationConflict);
+});

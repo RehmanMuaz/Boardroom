@@ -46,6 +46,8 @@ Grouping (develop feature work, not deployed): drag-select cards and annotations
 
 Named PDF regions (develop feature work, not deployed): open **Actions > Export frames**, create a frame around selected items or in view, then edit its name/bounds and page order. Choose **Export > PDF > Named frames** to select pages and inspect crop/scale previews. Each frame fits one page. Drafts require Save; personal outlines can be hidden. Existing whole-board exports and workspace content remain unchanged.
 
+Contextual command search (develop feature work, not deployed): press **Ctrl/Cmd+K** or use the centered search bar. Search labels or keywords such as `page crop`, `font defaults`, `client link` or `add note`. Results are grouped, show unavailable-action reasons and support arrow/Enter/Escape navigation. Creation commands still wait for a canvas position; style resets remain undoable.
+
 ## Validation
 
 Start PostgreSQL and configure `.env`, then run:

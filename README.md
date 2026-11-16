@@ -40,6 +40,8 @@ Choose **Continue as guest** at the top of the entry screen for the original loc
 
 Format Painter (develop feature work, not deployed): select a compatible source, choose **Copy formatting**, select a target, preview and **Apply formatting**. Choose fixed appearance or a linked named role; Escape cancels. Legacy cards copy background only. Content, rich-text marks, position and media stay unchanged.
 
+Multi-card formatting (develop feature work, not deployed): selected style-linked cards show shared or **Mixed** typography, text color and border values. Editing or resetting one property preserves all other formatting. Compatible counts identify excluded legacy/media cards; existing legacy backgrounds remain editable without enabling shared styles.
+
 ## Validation
 
 Start PostgreSQL and configure `.env`, then run:

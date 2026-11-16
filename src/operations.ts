@@ -1,7 +1,7 @@
 import {type Workspace,type Board,type Card,validWorkspace} from './model';
 import {type Annotation} from './annotations';
 
-export type Field='frames'|'groups'|'$workspaceStyle'|'styleBinding'|'boardStyle'|'styleEnabled'|'$board'|'$card'|'$annotation'|'$boardOrder'|'$cardOrder'|'$annotationOrder'|'title'|'parent'|'kind'|'x'|'y'|'text'|'color'|'target'|'width'|'height'|'assetId'|'columnId'|'captionVisible'|'richText'|'connectors'|'points'|'thickness'|'style'|'shape'|'fill'|'background'|'pattern'|'labels'|'layer';
+export type Field='imageEdit'|'frames'|'groups'|'$workspaceStyle'|'styleBinding'|'boardStyle'|'styleEnabled'|'$board'|'$card'|'$annotation'|'$boardOrder'|'$cardOrder'|'$annotationOrder'|'title'|'parent'|'kind'|'x'|'y'|'text'|'color'|'target'|'width'|'height'|'assetId'|'columnId'|'captionVisible'|'richText'|'connectors'|'points'|'thickness'|'style'|'shape'|'fill'|'background'|'pattern'|'labels'|'layer';
 export type Change={boardId:string;cardId?:string;annotationId?:string;field:Field;before:unknown;after:unknown};
 const annotationFields=['kind','x','y','width','height','color','text','points','thickness','style','shape','fill','layer','styleBinding'] as const;
 export type Operation={id:string;baseRevision:number;changes:Change[]};
@@ -26,7 +26,7 @@ export function diffWorkspace(before:Workspace,after:Workspace):Change[]{
   for(const card of board.cards){
    const previous=old.cards.find(c=>c.id===card.id);
    if(!previous){changes.push({boardId:board.id,cardId:card.id,field:'$card',before:null,after:card});continue;}
-   for(const field of ['kind','x','y','text','color','target','width','height','assetId','columnId','captionVisible','richText','title','labels','layer','styleBinding'] as const)if(!same(previous[field],card[field]))changes.push({boardId:board.id,cardId:card.id,field,before:previous[field]??null,after:card[field]??null});
+   for(const field of ['imageEdit','kind','x','y','text','color','target','width','height','assetId','columnId','captionVisible','richText','title','labels','layer','styleBinding'] as const)if(!same(previous[field],card[field]))changes.push({boardId:board.id,cardId:card.id,field,before:previous[field]??null,after:card[field]??null});
   }
   const natural=old.cards.filter(c=>board.cards.some(next=>next.id===c.id)).map(c=>c.id).concat(board.cards.filter(c=>!old.cards.some(previous=>previous.id===c.id)).map(c=>c.id));
   const order=board.cards.map(c=>c.id);if(!same(natural,order))changes.push({boardId:board.id,field:'$cardOrder',before:natural,after:order});

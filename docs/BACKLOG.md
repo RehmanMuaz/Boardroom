@@ -6,7 +6,7 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: completing contextual command search (IDEA-040) after export-frame PR #19 passed CI and merged into develop. The centered search bar and main creation sidebar remain unchanged. Media inspection/editing (IDEA-006), comments (IDEA-007) and workspace discovery (IDEA-008) remain queued. Nothing newly deployed.
+Current priority: media inspection and reversible editing (IDEA-006), following command-search PR #20 into develop after CI passed. Preserve original uploads, private-media permissions, existing workspaces and the creation sidebar. Comments/feedback (IDEA-007) and workspace discovery (IDEA-008) remain queued. Nothing newly deployed.
 
 ### IDEA-045: Grouping and mixed-element selection
 
@@ -384,12 +384,16 @@ Current priority: completing contextual command search (IDEA-040) after export-f
 
 - Type: Feature / Improvement
 - Priority: Soon
-- Status: Idea
+- Status: Implemented locally on feature/media-inspection; not deployed
 - What I want: Fullscreen image/video viewing, optional captions, image crop/rotate and image-attached annotations.
 - Expected behavior or example: Open media in a focused viewer; image annotations move and resize with their image. Keep the uncluttered canvas presentation from IDEA-001.
 - Constraints or things to preserve: Private authorized media access, original downloads, aspect ratio, playback controls and accessible keyboard navigation. Define whether image edits are reversible transformations or new assets before implementation.
 - Reference links or screenshot paths: https://help.milanote.com/en/articles/359381-images
 - Done when: Authorized users can inspect media and use the delivered editing tools without losing originals; shared changes persist and respect permissions.
+
+- Result: Image/video surfaces offer focused inspection through double-click, an unobtrusive surface icon, modifier tools and command search. The modal supports image zoom, fullscreen, previous/next navigation, captions when enabled, original downloads and native video playback. Editors draft quarter-turn rotation, percentage crop and attached pen/text-label annotations, then Save one undoable metadata change. Reset to original removes visual edits; uploads are never overwritten. Draft close/navigation guards, stale-source checks and read-only client/viewer controls preserve boundaries.
+- Export behavior: Canvas, viewer and vector PDF apply the same image coordinates; marks remain attached through movement/resizing/crop/rotation. Ordinary JPEG resources stay original in PDF; camera Exif orientation and unsupported encodings normalize to full-resolution PNG. Crops are visual, and PDF retains full embedded image data (shown in export UI).
+- Remaining: Direct drag-crop handles, arbitrary-angle rotation, richer attached shapes/font styles, individual mark selection/history, pressure-sensitive drawing and video trimming remain follow-ups. Cropped pixels are not redacted from PDF.
 
 ### IDEA-007: Comments, mentions and team feedback
 

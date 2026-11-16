@@ -62,7 +62,7 @@ test('authorized real-time operations persist, merge, replay safely, reconnect a
   const downgraded=await connect(editor);await downgraded.wait(m=>m.type==='snapshot');downgraded.send({type:'operation',operation:colorOperation});assert.equal((await downgraded.wait(m=>m.type==='error')).status,403);
   const viewerLive=await connect(viewer);await viewerLive.wait(m=>m.type==='snapshot');await owner.agent.delete(`/api/workspaces/${workspaceId}/members/${viewer.userId}`).set('Origin',origin).set('x-csrf-token',owner.csrf).expect(204);await viewerLive.wait(m=>m.type==='revoked');
   const removed=await connect(viewer);assert.equal((await removed.wait(m=>m.type==='error')).status,404);
-  const expired=await connect(editor);await expired.wait(m=>m.type==='snapshot');await pool.query("UPDATE session SET expire=$1 WHERE sess->>'userId'=$2",[new Date(0),editor.userId]);expired.send({type:'presence',boardId:'home'});assert.equal((await expired.wait(m=>m.type==='error')).status,401);
+  const expired=await connect(editor);await expired.wait(m=>m.type==='snapshot');await pool.query("UPDATE session SET expire=$1 WHERE sess->>'userId'=$2",[new Date(0),editor.userId]);expired.send({type:'presence',boardId:'home'});const expiry=await expired.wait(m=>m.type==='error'||m.type==='revoked');if(expiry.type==='error')assert.equal(expiry.status,401); // Presence rechecks may revoke the expired session before its message is handled.
   await post(owner,'/api/logout',{}).expect(204);await reconnected.wait(m=>m.type==='revoked');
  }finally{
   clients.forEach(client=>client.socket.terminate());await realtime.close();await new Promise<void>(resolve=>server.close(()=>resolve()));

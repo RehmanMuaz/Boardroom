@@ -48,6 +48,8 @@ Named PDF regions (develop feature work, not deployed): open **Actions > Export 
 
 Contextual command search (develop feature work, not deployed): press **Ctrl/Cmd+K** or use the centered search bar. Search labels or keywords such as `page crop`, `font defaults`, `client link` or `add note`. Results are grouped, show unavailable-action reasons and support arrow/Enter/Escape navigation. Creation commands still wait for a canvas position; style resets remain undoable.
 
+Media inspection (develop feature work, not deployed): double-click an image/video or choose its Inspect control for zoom, fullscreen, navigation and original downloads. Editors can draft image crop/rotation and attached pen/text labels, then Save or Cancel. Reset restores the original appearance; uploaded bytes and existing card geometry remain unchanged. Viewers/client links stay read-only. PDF crops are visual and retain full embedded image data.
+
 ## Validation
 
 Start PostgreSQL and configure `.env`, then run:

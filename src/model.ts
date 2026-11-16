@@ -1,3 +1,4 @@
+import {validImageEdit,type ImageEdit} from './image-edit';
 import {validFrames,type ExportFrame} from './frame-schema';
 import {validBinding,validBoardStyle,validWorkspaceStyle,type StyleBinding,type BoardStyle,type WorkspaceStyle} from './style-schema';
 import {validBoardBackground,validBoardPattern,type BoardPattern} from './boardAppearance';
@@ -6,7 +7,7 @@ export type Kind = 'note' | 'checklist' | 'link' | 'board' | 'image' | 'video' |
 export type RichRun={text:string;bold?:boolean;italic?:boolean;underline?:boolean;href?:string};
 export type RichDocument={blocks:{type:'paragraph'|'heading'|'bullet'|'quote';runs:RichRun[]}[]};
 export type NoteLabel={id:string;text:string;color:string};
-export type Card = {styleBinding?:StyleBinding;id:string; kind:Kind; x:number; y:number; text:string; color:string; title?:string; labels?:NoteLabel[]; layer?:number; target?:string; width?:number; height?:number; assetId?:string; columnId?:string; captionVisible?:boolean; richText?:RichDocument};
+export type Card = {imageEdit?:ImageEdit;styleBinding?:StyleBinding;id:string; kind:Kind; x:number; y:number; text:string; color:string; title?:string; labels?:NoteLabel[]; layer?:number; target?:string; width?:number; height?:number; assetId?:string; columnId?:string; captionVisible?:boolean; richText?:RichDocument};
 export type Connector={id:string;from:string;to:string;color:string};
 export type ElementGroup={id:string;members:string[]};
 export type Board = {frames?:ExportFrame[];groups?:ElementGroup[];boardStyle?:BoardStyle;styleEnabled?:boolean;id:string; title:string; parent?:string; cards:Card[];connectors?:Connector[];annotations?:Annotation[];background?:string;pattern?:BoardPattern};
@@ -43,6 +44,7 @@ export function validWorkspace(value:unknown): value is Workspace {
    if(c.title!==undefined&&(c.kind!=='checklist'||typeof c.title!=='string'||c.title.length>500))return false;
    if(c.layer!==undefined&&(!Number.isInteger(c.layer)||c.layer<0||c.layer>20000))return false;
    if(c.labels!==undefined&&(c.kind!=='note'||!Array.isArray(c.labels)||c.labels.length>20||new Set(c.labels.map(l=>l?.id)).size!==c.labels.length||c.labels.some(l=>!l||!id(l.id)||typeof l.text!=='string'||!l.text.trim()||l.text.length>80||typeof l.color!=='string'||!/^#[a-fA-F0-9]{6}$/.test(l.color))))return false;
+   if(c.imageEdit!==undefined&&(c.kind!=='image'||!validImageEdit(c.imageEdit)))return false;
    if(c.styleBinding!==undefined&&(!validBinding(c.styleBinding)||['image','video','file'].includes(c.kind)))return false;
    cards.add(c.id);
   }

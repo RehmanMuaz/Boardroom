@@ -1,3 +1,4 @@
+import {hasExifMetadata} from '../../image-edit';
 import {cardWidth,cardHeight} from '../canvas/domain';
 ﻿import {type Board} from '../../model';
 import {planPdf,selectedPdfFrames,intersectsRect,type PdfOptions} from './pdf-layout';
@@ -12,9 +13,9 @@ export async function loadPdfImages(board:Board,access:PdfAccess,options?:PdfOpt
   if(!response.ok)throw Error('An image is unavailable or access has expired. No PDF was downloaded.');
   let mime=(response.headers.get('Content-Type')??'').split(';')[0].trim().toLowerCase();if(!/^image\/(png|jpeg|webp|gif)$/.test(mime))throw Error('Unexpected image format in PDF export.');
   let blob=await response.blob();total+=blob.size;if(blob.size>10*1024*1024||total>100*1024*1024)throw Error('The images exceed the supported PDF export size.');
-  if(mime!=='image/png'&&mime!=='image/jpeg'){
-   // Only unsupported PDF image encodings are converted, at their original pixel dimensions.
-   const bitmap=await createImageBitmap(blob),canvas=document.createElement('canvas');
+  if(mime!=='image/png'&&mime!=='image/jpeg'||mime==='image/jpeg'&&hasExifMetadata(new Uint8Array(await blob.arrayBuffer()))){
+   // Normalize unsupported encodings and Exif orientation without reducing pixel dimensions.
+   const bitmap=await createImageBitmap(blob,{imageOrientation:'from-image'}),canvas=document.createElement('canvas');
    try{canvas.width=bitmap.width;canvas.height=bitmap.height;const context=canvas.getContext('2d');if(!context)throw Error('Image conversion is unavailable.');context.drawImage(bitmap,0,0);blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(result=>result?resolve(result):reject(Error('Image conversion failed.')),'image/png'));mime='image/png';}
    finally{bitmap.close();canvas.width=0;canvas.height=0;}
   }

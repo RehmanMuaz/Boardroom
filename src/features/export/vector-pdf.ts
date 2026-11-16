@@ -1,3 +1,4 @@
+import {imageGeometry,markPoint} from '../../image-edit';
 import {validStyleValues,type StyleValues} from '../../style-schema';
 import {PDFDocument,rgb,pushGraphicsState,popGraphicsState,rectangle,clip,endPath,LineCapStyle,degrees,type PDFFont,type PDFImage} from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
@@ -66,7 +67,19 @@ export async function createVectorPdf(board:Board,options:PdfOptions,images:Reco
   for(const object of objects){
    activeCardStyle=undefined;
    if(object.card){const c=object.card,w=cardWidth(c),h=cardHeight(c),box={x:c.x,y:c.y,width:w,height:h};if(!intersects(box,region))continue;activeCardStyle=validStyleValues(c.styleBinding?.overrides)?c.styleBinding.overrides:undefined;const ink=activeCardStyle?.textColor&&activeCardStyle.textColor!=='auto'?activeCardStyle.textColor:automaticTextColor(c.color);rect(c.x,c.y,w,h,c.color,activeCardStyle?.borderColor??'#d9dad5',activeCardStyle?.borderWidth??1,activeCardStyle?.borderStyle==='dashed'?[6,4]:activeCardStyle?.borderStyle==='dotted'?[1,3]:undefined);page.pushOperators(pushGraphicsState(),rectangle(X(c.x),Y(c.y+h),w*s,h*s),clip(),endPath());const body={x:c.x+16,y:c.y+16,width:w-32,height:h-32};
-    if(c.kind==='image'){const image=embedded.get(c.assetId!);if(!image)throw Error('An image could not be embedded.');const mh=h-mediaFooterHeight(c),ratio=Math.min(w/image.width,mh/image.height),iw=image.width*ratio,ih=image.height*ratio;page.drawImage(image,{x:X(c.x+(w-iw)/2),y:Y(c.y+(mh+ih)/2),width:iw*s,height:ih*s});if(c.captionVisible!==false)await text([{text:c.text}],{x:c.x+10,y:c.y+mh+4,width:w-20,height:24},12,ink);}
+    if(c.kind==='image'){
+     const image=embedded.get(c.assetId!);if(!image)throw Error('An image could not be embedded.');const mh=h-mediaFooterHeight(c);
+     if(!c.imageEdit){const ratio=Math.min(w/image.width,mh/image.height),iw=image.width*ratio,ih=image.height*ratio;page.drawImage(image,{x:X(c.x+(w-iw)/2),y:Y(c.y+(mh+ih)/2),width:iw*s,height:ih*s});}
+     else{
+      const edit=c.imageEdit,g=imageGeometry(image.width,image.height,edit),fit=Math.min(w/g.cropWidth,mh/g.cropHeight),tx=c.x+(w-g.cropWidth*fit)/2,ty=c.y+(mh-g.cropHeight*fit)/2,origin=markPoint([0,1],image.width,image.height,edit.rotation);
+      page.pushOperators(pushGraphicsState(),rectangle(X(tx),Y(ty+g.cropHeight*fit),g.cropWidth*fit*s,g.cropHeight*fit*s),clip(),endPath());
+      page.drawImage(image,{x:X(tx+(origin.x-g.x)*fit),y:Y(ty+(origin.y-g.y)*fit),width:image.width*fit*s,height:image.height*fit*s,rotate:degrees(-edit.rotation)});
+      for(const mark of edit.marks){const factor=Math.min(image.width,image.height)/1000*fit;if(mark.kind==='pen'){const path=mark.points.map((p,i)=>{const q=markPoint(p,image.width,image.height,edit.rotation);return `${i?'L':'M'}${(q.x-g.x)*fit} ${(q.y-g.y)*fit}`;}).join(' ');page.drawSvgPath(path,{x:X(tx),y:Y(ty),scale:s,borderColor:pdfColor(mark.color),borderWidth:mark.size*factor,borderLineCap:LineCapStyle.Round});}
+       else{const p=markPoint(mark.point,image.width,image.height,edit.rotation),size=mark.size*factor;await text([{text:mark.text}],{x:tx+(p.x-g.x)*fit,y:ty+(p.y-g.y)*fit,width:100000,height:size*2},size,mark.color,'left',size*1.2,false);}
+      }page.pushOperators(popGraphicsState());
+     }
+     if(c.captionVisible!==false)await text([{text:c.text}],{x:c.x+10,y:c.y+mh+4,width:w-20,height:24},12,ink);
+    }
     else if(c.kind==='note'){
      let y=body.y;if(c.labels?.length){let x=body.x;for(const label of c.labels){const labelText=label.text.replace(/\s+/g,' ');const width=Math.min(body.width,await fonts.measure(labelText,10,{bold:true})+14);if(x+width>body.x+body.width){x=body.x;y+=24;}rect(x,y,width,20,label.color);await text([{text:labelText,bold:true}],{x:x+7,y:y+3,width:width-14,height:17},10,automaticTextColor(label.color),'left',16.5,false);x+=width+5;}y+=28;}
      if(c.richText){for(const block of c.richText.blocks){const size=block.type==='heading'?18:14,pad=block.type==='bullet'||block.type==='quote'?16:0;if(block.type==='bullet')page.drawCircle({x:X(body.x+4),y:Y(y+11),size:2*s,color:pdfColor(ink)});if(block.type==='quote')line(body.x+2,y,body.x+2,y+22,'#96aa9a',3);y+=await text(block.runs.map(run=>({...run,bold:run.bold||block.type==='heading'})),{x:body.x+pad,y,width:body.width-pad,height:Math.max(0,c.y+h-y-12)},size,ink);y+=8;}}

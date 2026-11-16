@@ -38,7 +38,7 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
  try{
   await register(owner,ownerEmail);await register(viewer,viewerEmail);
   await owner.getByLabel('New workspace').fill('Browser team '+suffix);await owner.getByRole('button',{name:'Create workspace',exact:true}).click();await owner.getByRole('button',{name:'Browser team '+suffix+' · owner',exact:true}).click();
-  await expect(owner.getByLabel('Switch workspace',{exact:true})).toHaveText('Browser team '+suffix+'⌄');
+  await expect(owner.getByLabel('Switch workspace',{exact:true})).toHaveText('Browser team '+suffix);
   await owner.getByLabel('Switch workspace',{exact:true}).click();await owner.getByRole('button',{name:'All workspaces',exact:true}).click();
   await owner.getByLabel('New workspace').fill('Second team '+suffix);await owner.getByRole('button',{name:'Create workspace',exact:true}).click();await owner.getByRole('button',{name:'Second team '+suffix+' · owner',exact:true}).click();
   await owner.getByLabel('Board title').fill('Second team board');await expect(owner.locator('.save')).toContainText('Saved to team database');

@@ -52,6 +52,8 @@ Media inspection (develop feature work, not deployed): double-click an image/vid
 
 Team feedback (develop feature work, not deployed): choose **Comments** beside the board controls or search for **Open team comments**. Owners/editors create board/card threads, reply, mention current teammates with `@email`, and resolve/reopen feedback. Team viewers can read and track unread threads; account-free client links cannot access team discussions. In-app unread/mention counts persist across sessions, with workspace-wide discovery and five-second refresh while open (15 seconds when closed). Comments live separately from canvas history and JSON exports; complete database backups include them.
 
+UI consistency (development work, not deployed): aligned SVG controls, a centered workspace chevron, responsive dialog fields, clearer accent primary actions and a coherent Vertex app-icon family. Existing canvas data and sidebar layout are preserved. See [UI audit](docs/UI_AUDIT.md) and [app icons](docs/APP_ICONS.md).
+
 ## Validation
 
 Start PostgreSQL and configure `.env`, then run:

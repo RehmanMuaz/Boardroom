@@ -1,3 +1,4 @@
+import {Icon} from './Icon';
 import {useEffect,useId,useRef,useState} from 'react';
 import {searchCommands,groupCommands,type CanvasCommand} from '../commands';
 export type {CanvasCommand} from '../commands';

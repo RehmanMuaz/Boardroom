@@ -22,6 +22,6 @@ export function ExportScene({board,region,scale,width,height,images={}}:{board:B
     c.kind==='board'?<div className="pdf-media-label"><strong>Board</strong><span>{c.text}</span><small>Nested board content is not included.</small></div>:<div style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{c.text}</div>}
   </article>)}
   <ConnectorLayer board={board} width={canvasWidth} height={canvasHeight} selected={null} select={nothing} interactive={false}/>
-  <AnnotationLayer annotations={board.annotations??[]} canvasBackground={board.background} shape="arrow" tool="select" writable={false} selectedId={null} onSelect={nothing} add={nothing} change={nothing} point={()=>({x:0,y:0})} panActive={()=>false} width={canvasWidth} height={canvasHeight} color="#000000" thickness={3} focusId={null} focused={nothing}/>
+  <AnnotationLayer annotations={board.annotations??[]} canvasBackground={board.background} shape="arrow" tool="select" writable={false} selectedId={null} selectedIds={[]} onEnter={()=>{}} startMove={()=>{}} onSelect={nothing} add={nothing} change={nothing} point={()=>({x:0,y:0})} panActive={()=>false} width={canvasWidth} height={canvasHeight} color="#000000" thickness={3} focusId={null} focused={nothing}/>
  </div></div>;
 }

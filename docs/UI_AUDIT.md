@@ -25,3 +25,5 @@ Validation covers layout at desktop/laptop/tablet/phone widths, long names, owne
 This is UI polish. Mobile touch navigation/pinch zoom, native apps, offline editing and new feature development remain separate backlog work. No schema/document migration, provider action or deployment is part of these fixes.
 
 Final local checks: Boardroom 92 core/backend/PDF passes plus 54 browser passes and production build; one existing Windows platform skip. Studio production build plus five API/domain passes and visual identity checks. Hub two offline identity/access checks, four domain checks and source syntax checks. Private frontend/readiness/icon-gallery checks return 200.
+
+Modifier-label follow-up: inherited h3 bottom margins and generic property-button borders still affected collapsible headings. Scoped grid/reset rules now align labels and fixed-size SVG plus/minus indicators without changing panel layout. The indicator also reflects search-forced expansion. Geometry checks cover open/collapsed/search states at desktop and phone widths; all eight focused browser regressions, 92 core checks (one existing skip) and production build pass.

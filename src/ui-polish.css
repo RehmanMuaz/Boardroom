@@ -43,3 +43,9 @@ button:disabled{box-shadow:none}button:focus-visible,summary:focus-visible{outli
 @media(min-width:801px){.app.contextual-sidebar .board-heading{padding-left:184px}}
 
 .settings-dialog-header>div{min-width:0;overflow-wrap:anywhere}.workspace-switcher .popover-content{max-height:min(480px,calc(100dvh - 100px));overflow-y:auto;overflow-wrap:anywhere}
+
+/* Section toggles must win over generic property buttons and heading margins. */
+.object-sidebar .modifier-panel .modifier-section>.modifier-section-toggle{display:grid;grid-template-columns:minmax(0,1fr) 16px;align-items:center;gap:8px;width:100%;min-height:32px;margin:0 0 10px;padding:0;border:0;border-radius:0;background:transparent;text-align:left}
+.object-sidebar .modifier-panel .modifier-section-toggle>h3{min-width:0;margin:0;padding:0;line-height:16px;text-align:left;overflow-wrap:anywhere}
+.object-sidebar .modifier-panel .modifier-section-toggle>.modifier-section-indicator{display:grid;place-items:center;width:16px;height:16px;margin:0;padding:0;line-height:1;color:var(--muted)}
+.object-sidebar .modifier-panel .modifier-section>.modifier-section-toggle:hover{background:var(--hover)}

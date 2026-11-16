@@ -1,5 +1,7 @@
 import {type ReactNode} from 'react';
 const paths:Record<string,ReactNode>={
+ plus:<path d="M5 12h14M12 5v14"/>,
+ minus:<path d="M5 12h14"/>,
  chevron:<path d="m6 9 6 6 6-6"/>,
  note:<><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></>,
  link:<><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 7h14M5 17h14"/></>,

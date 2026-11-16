@@ -1,5 +1,23 @@
 import {test,expect} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+
+test('modifier section labels align with indicators when expanded, collapsed and revealed by search',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).click();await page.locator('[data-card-id=welcome]').click({position:{x:200,y:8}});
+ const tools=page.getByRole('region',{name:'Object tools'});
+ for(const viewport of [{width:1440,height:1000},{width:390,height:844}]){
+  await page.setViewportSize(viewport);
+  for(const state of ['open','closed','search']){
+   const appearance=tools.getByRole('button',{name:'Appearance',exact:true});
+   if(state==='open'&&await appearance.getAttribute('aria-expanded')!=='true')await appearance.click();
+   if(state==='closed'&&await appearance.getAttribute('aria-expanded')!=='false')await appearance.click();
+   if(state==='search')await tools.getByLabel('Find a property').fill('Appearance');
+   const geometry=await tools.locator('.modifier-section-toggle:visible').evaluateAll(buttons=>buttons.map(button=>{const label=button.querySelector('h3')!,icon=button.querySelector('svg')!,b=button.getBoundingClientRect(),l=label.getBoundingClientRect(),i=icon.getBoundingClientRect();return {offset:Math.abs(l.y+l.height/2-i.y-i.height/2),left:Math.abs(l.x-b.x),margin:getComputedStyle(label).marginBottom,border:getComputedStyle(button).borderTopWidth};}));
+   expect(geometry.length).toBeGreaterThan(0);for(const row of geometry){expect(row.offset).toBeLessThan(1);expect(row.left).toBeLessThan(1);expect(row.margin).toBe('0px');expect(row.border).toBe('0px');}
+   if(state==='search'){await expect(appearance).toHaveAttribute('aria-expanded','true');await expect(appearance.locator('svg path')).toHaveAttribute('d','M5 12h14');await tools.getByLabel('Find a property').fill('');}
+  }
+  await page.screenshot({path:`test-results/modifier-label-alignment-${viewport.width}.png`});
+ }
+});
 test('modifier sections stay relevant, text/shape size edits persist, and creation rail returns unchanged on desktop and mobile',async({page})=>{
  await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).click();const initial=await page.locator('.tools button').evaluateAll(nodes=>nodes.map(n=>({label:n.getAttribute('aria-label'),html:n.innerHTML}))),rail=await page.locator('aside').boundingBox();
  await page.locator('[data-card-id=welcome]').click({position:{x:200,y:8}});const tools=page.getByRole('region',{name:'Object tools'});expect(await tools.locator('h3').allTextContents()).toEqual(['Content','Labels','Size','Appearance','Layers']);await expect(tools.getByRole('region',{name:'Size',exact:true})).not.toBeVisible();await tools.getByRole('tab',{name:'Arrange',exact:true}).click();await expect(tools.getByLabel('Item width')).toBeVisible();await tools.getByRole('tab',{name:'Style',exact:true}).click();await expect(tools.getByRole('region',{name:'Appearance',exact:true}).getByLabel('Item background color hex')).toBeVisible();

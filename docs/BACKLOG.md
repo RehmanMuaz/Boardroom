@@ -6,7 +6,7 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: grouping and mixed-element drag-selection (IDEA-045), ahead of named export frames. Preserve legacy workspaces and the main creation sidebar. Shared styles, Format Painter and mixed-card property controls have passed CI into develop; these newer features are not yet deployed.
+Current priority: named export regions (IDEA-039), following grouping PR #18 into develop after its CI save-timing fix passed. Preserve legacy workspaces, whole-board export and the main creation sidebar. No newer develop features have been deployed.
 
 ### IDEA-045: Grouping and mixed-element selection
 
@@ -103,9 +103,12 @@ Current priority: grouping and mixed-element drag-selection (IDEA-045), ahead of
 
 - Type: Feature / Usability
 - Priority: Soon; coordinate with IDEA-034
-- Status: Queued
+- Status: Implemented locally for named PDF regions on feature/export-frames; not deployed
 - What I want: Define named regions or frames on a large board for predictable PDF pages and presentations.
 - Expected behavior: Visible export boundaries and a preview of page order, clipping and scaling, with selection of frames to export. Keep frame/export scope explicit and preserve free canvas organization and authorized-content boundaries.
+
+- Result: Board actions manages named rectangular frames, created around the current selection or in view. Saved bounds, names and page order are shared; draft edits require Save and protect against remote conflicts. Personal canvas outlines can be hidden. Export > PDF offers Whole current board or Named frames, a selectable page list and per-frame crop/scale previews. Each selected frame fits one PDF page in saved order, with exact boundary clipping and authorized in-scope image loading. Up to 50 frames per board, 80-10,000 px per dimension; oversized selection frames fail explicitly.
+- Remaining: Direct canvas frame dragging/resizing, per-frame paper/orientation, frame tiling and an interactive presentation/slideshow mode remain separate follow-ups. Existing whole-board Fit/Actual exports and JSON backups remain intact.
 
 ### IDEA-040: Searchable command menu
 

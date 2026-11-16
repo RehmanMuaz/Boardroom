@@ -44,6 +44,8 @@ Multi-card formatting (develop feature work, not deployed): selected style-linke
 
 Grouping (develop feature work, not deployed): drag-select cards and annotations together, then use the floating **Group** icon; complete groups offer **Ungroup**. Shift-click toggles selection. Ctrl/Cmd+G groups; Ctrl/Cmd+Shift+G ungroups. Double-click a member to edit it and Escape to reselect its group. Groups are flat and board-local; columns and cards inside columns must stay separate. Existing boards remain unchanged until explicitly grouped.
 
+Named PDF regions (develop feature work, not deployed): open **Actions > Export frames**, create a frame around selected items or in view, then edit its name/bounds and page order. Choose **Export > PDF > Named frames** to select pages and inspect crop/scale previews. Each frame fits one page. Drafts require Save; personal outlines can be hidden. Existing whole-board exports and workspace content remain unchanged.
+
 ## Validation
 
 Start PostgreSQL and configure `.env`, then run:

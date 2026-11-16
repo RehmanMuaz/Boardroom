@@ -1,0 +1,10 @@
+.format-painter{border:1px solid var(--border,#d9dad5);border-radius:10px;padding:10px;margin:8px 0;min-width:0;font-size:12px;overflow-wrap:anywhere}
+.format-painter p{margin:6px 0;line-height:1.4}
+.format-painter label{display:grid;gap:4px;font-weight:600}
+.format-painter select{width:100%;min-width:0}
+.format-actions{display:flex;flex-wrap:wrap;gap:6px}
+.format-actions button{flex:1;padding:7px;min-width:0}
+.format-preview{padding:8px;border-radius:6px;background:var(--surface,#fff)}
+.format-preview>span{display:block;padding:6px;border-radius:4px;max-width:100%;overflow:hidden}
+.format-copy{margin:4px 0 8px;width:100%}
+.format-hint{position:absolute;bottom:78px;left:50%;transform:translateX(-50%);z-index:30;max-width:min(420px,80%);padding:10px;border:1px solid var(--border,#d9dad5);border-radius:8px;background:var(--surface,#fff);box-shadow:0 4px 16px #0002;font-size:13px}

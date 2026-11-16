@@ -1,3 +1,5 @@
+import {FormatPainter} from './FormatPainter';
+import {captureFormatting,type CapturedFormat,type PaintTarget} from '../formatPainter';
 import {WorkspaceStyles} from './styles/WorkspaceStyles';
 import {ElementStyle} from './styles/ElementStyle';
 import {resolveStyledBoard,patchStyledCard,patchStyledAnnotation,cardStyleCss} from '../workspaceStyles';
@@ -79,6 +81,11 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  const styleOwner=!(repository instanceof SharedRepository)&&(!(repository instanceof TeamRepository)||(live?.role??repository.role)==='owner');
  const teamId=repository instanceof TeamRepository||repository instanceof SharedRepository?repository.id:undefined;
  const activeAnnotation=board.annotations?.find(a=>a.id===selectedAnnotation);
+ const [paintSource,setPaintSource]=useState<CapturedFormat|null>(null);
+ const paintTarget:PaintTarget|undefined=activeCard?{kind:'card',id:activeCard.id}:activeAnnotation?{kind:'annotation',id:activeAnnotation.id}:undefined;
+ const copyable=writable&&paintTarget?captureFormatting(state,board.id,paintTarget):null;
+ useEffect(()=>{setPaintSource(null);},[board.id,writable]);
+
  const coloredCards=displayBoard.cards.filter(c=>selected.includes(c.id)&&!['image','video'].includes(c.kind));
  useEffect(()=>{if(!(repository instanceof SharedRepository))return;let active=true,busy=false;const refresh=async()=>{if(busy)return;busy=true;try{const next=await repository.load();if(active){stateRef.current=next;setState(next);}}catch{if(active)exit();}finally{busy=false;}};const timer=setInterval(()=>void refresh(),5000);return()=>{active=false;clearInterval(timer);};},[repository]);
  useEffect(()=>{if(selected.length||connection)setSelectedAnnotation(null);},[selected,connection]);
@@ -145,7 +152,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
  }
  function pickFiles(accept:string,point=location()){uploadPlacement.current={point,boardId:board.id};fileAccept.current=accept;if(uploadInput.current){uploadInput.current.accept=accept;uploadInput.current.click();}}
  function contentPoint(x:number,y:number){const view=viewport.current,rect=view?.getBoundingClientRect();return {x:(x-(rect?.left??0)+(view?.scrollLeft??0))/zoom,y:(y-(rect?.top??0)+(view?.scrollTop??0))/zoom};}
- const creation=useCreationPlacement({viewport,point:(x,y)=>snapPoint(contentPoint(x,y),snap&&!alt.current),enabled:writable&&!uploading,place:(kind,point)=>{if(['image','video','file'].includes(kind))pickFiles(kind==='image'?'image/png,image/jpeg,image/webp,image/gif':kind==='video'?'video/mp4,video/webm':'.pdf,.zip,.txt',point);else add(kind,undefined,point);},onArm:()=>{backToTools();setConnectorTool(false);setConnectorSource(null);}});
+ const creation=useCreationPlacement({viewport,point:(x,y)=>snapPoint(contentPoint(x,y),snap&&!alt.current),enabled:writable&&!uploading,place:(kind,point)=>{if(['image','video','file'].includes(kind))pickFiles(kind==='image'?'image/png,image/jpeg,image/webp,image/gif':kind==='video'?'video/mp4,video/webm':'.pdf,.zip,.txt',point);else add(kind,undefined,point);},onArm:()=>{setPaintSource(null);backToTools();setConnectorTool(false);setConnectorSource(null);}});
  useEffect(()=>{creation.cancel();uploadPlacement.current=null;},[board.id]);
  function startDrag(e:ReactPointerEvent<HTMLElement>,card:Card){
   if(!writable||connectorTool||annotationTool!=='select'||e.button!==0||space.current||e.shiftKey)return;
@@ -197,6 +204,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
    const modifier=e.metaKey||e.ctrlKey;
    if(modifier&&e.key.toLowerCase()==='z'){e.preventDefault();history(e.shiftKey?'redo':'undo');return;}
    if(modifier&&e.key.toLowerCase()==='y'){e.preventDefault();history('redo');return;}
+   if(e.key==='Escape'&&paintSource){setPaintSource(null);return;}
    if(e.key==='Escape'){setEditingCard(null);setSelected([]);setSelectedAnnotation(null);finishGesture(true);setAnnotationTool('select');setConnectorTool(false);setConnectorSource(null);setConnection(null);setNotice('');(document.activeElement as HTMLElement|null)?.blur();return;}
    if(editing(e.target))return;
    if(creation.tool&&e.key==='Enter'){e.preventDefault();const rect=viewport.current?.getBoundingClientRect();if(rect)creation.commit(rect.left+rect.width/2,rect.top+rect.height/2);return;}
@@ -239,6 +247,7 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
   <button className="back-tools" aria-label="Back to tools" onClick={backToTools}><span aria-hidden="true">←</span> Back to tools</button>
   <h2>{connection?'Connection':selectedAnnotation?(activeAnnotation?.kind==='shape'?activeAnnotation.shape:activeAnnotation?.kind==='text'?'Text annotation':activeAnnotation?.kind??'Annotation'):selected.length>1?`${selected.length} items`:activeCard?.kind==='checklist'?'List':activeCard?.kind??'Item'}</h2>
   {!writable&&<p className="view-only">View only</p>}
+  {writable&&(paintSource?<FormatPainter key={paintTarget?.kind+':'+paintTarget?.id} workspace={state} boardId={board.id} target={paintTarget} source={paintSource} current={()=>stateRef.current} apply={update} cancel={()=>setPaintSource(null)}/>:copyable&&<button className="format-copy" onClick={()=>setPaintSource(copyable)}>Copy formatting</button>)}
   <ModifierPanel key={activeCard?.kind??activeAnnotation?.kind??(connection?'connection':'selection')} kind={activeCard?.kind??activeAnnotation?.kind??(connection?'connection':'selection')}>
   {state.workspaceStyle&&(activeCard&&!['image','video','file'].includes(activeCard.kind)||activeAnnotation?.kind==='text')&&<ModifierSection title="Style"><ElementStyle workspace={state} board={board} id={activeCard?.id??activeAnnotation!.id} binding={activeCard?.styleBinding??(activeAnnotation?.kind==='text'?activeAnnotation.styleBinding:undefined)} card={!!activeCard} writable={writable} change={update}/></ModifierSection>}
   {activeCard&&(writable||['link','board','image','video','file'].includes(activeCard.kind))&&<ModifierSection title={activeCard.kind==='checklist'?'Tasks':['image','video','file'].includes(activeCard.kind)?'Media':'Content'}>
@@ -287,12 +296,14 @@ export function Editor({repository,initial,exit,open}:{open:(repository:Workspac
     }
    </article>)}
    <ConnectorLayer board={board} width={extent.width} height={extent.height} selected={connection} interactive={annotationTool==='select'&&!connectorTool} select={id=>{setConnection(id);setSelected([]);setSelectedAnnotation(null);}}/>
-   {creation.tool&&<div className="creation-placement" aria-hidden="true" style={{width:extent.width,height:extent.height}} onPointerMove={e=>creation.move(e.clientX,e.clientY)} onPointerLeave={()=>creation.move(-1,-1)} onPointerDown={e=>{if(e.button===1||space.current)return;if(e.button!==0)return;e.preventDefault();e.stopPropagation();creation.commit(e.clientX,e.clientY);}}/>}
+   {paintSource&&!selected.length&&!selectedAnnotation&&!connection&&<div className="format-hint" role="status">Format Painter: select a compatible target. <button onClick={()=>setPaintSource(null)}>Cancel</button></div>}
+  {creation.tool&&<div className="creation-placement" aria-hidden="true" style={{width:extent.width,height:extent.height}} onPointerMove={e=>creation.move(e.clientX,e.clientY)} onPointerLeave={()=>creation.move(-1,-1)} onPointerDown={e=>{if(e.button===1||space.current)return;if(e.button!==0)return;e.preventDefault();e.stopPropagation();creation.commit(e.clientX,e.clientY);}}/>}
    {creation.preview&&<div className="creation-preview" aria-hidden="true" style={{left:creation.preview.x,top:creation.preview.y,width:['image','video','file','column'].includes(creation.preview.tool)?320:240,height:creation.preview.tool==='column'?520:['image','video'].includes(creation.preview.tool)?300:180}}>{creation.preview.tool}</div>}
    <AnnotationLayer canvasBackground={displayBoard.background} key={board.id} shape={annotationShape} annotations={displayBoard.annotations??[]} tool={annotationTool} writable={writable} selectedId={selectedAnnotation} onSelect={selectAnnotation} add={addAnnotation} change={changeAnnotation} point={contentPoint} panActive={()=>space.current} width={extent.width} height={extent.height} color={annotationColor} thickness={annotationThickness} focusId={annotationFocus} focused={()=>setAnnotationFocus(null)}/>
   </div>{rectangle&&<div className="marquee" style={rectangle}/>}</div>{board.cards.length===0&&<div className="empty">A fresh board.<br/><small>Add a note or drop an image to start.</small></div>}</div>
 
 
+  {paintSource&&!selected.length&&!selectedAnnotation&&!connection&&<div className="format-hint" role="status">Format Painter: select a compatible target. <button onClick={()=>setPaintSource(null)}>Cancel</button></div>}
   {creation.tool&&<div className="creation-instructions" role="status">Place {creation.tool}: click or tap the canvas, or press Enter to place in view. Escape cancels.</div>}
   <AnnotationToolbar shape={annotationShape} setShape={setAnnotationShape} tool={annotationTool} setTool={tool=>{setConnectorTool(false);setConnectorSource(null);creation.cancel();setAnnotationTool(tool);setSelected([]);setConnection(null);setSelectedAnnotation(null);if(tool==='highlighter'){setAnnotationColor('#f5c542');setAnnotationThickness(18);}else if(tool==='pen'||tool==='shape'){setAnnotationColor('#d95d39');setAnnotationThickness(3);}}} writable={writable} color={annotationColor} setColor={setAnnotationColor} thickness={annotationThickness} setThickness={setAnnotationThickness} change={changeAnnotation} remove={remove}/>
   {connectorTool&&<div className="connector-hint" role="status">{connectorSource?'Choose the destination item':'Choose the first item to connect'}<button onClick={()=>{creation.cancel();setConnectorTool(false);setConnectorSource(null);setSelected([]);}}>Cancel</button></div>}

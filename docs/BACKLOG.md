@@ -65,9 +65,11 @@ Current priority: shared workspace styles (IDEA-035), semantic roles (IDEA-037) 
 
 - Type: Feature / Usability
 - Priority: Soon; coordinate with IDEA-035
-- Status: Queued
+- Status: Implemented locally on feature/format-painter; not deployed
 - What I want: Copy formatting from one element and apply it to compatible elements without copying content.
 - Expected behavior: Explicit source/target mode, clear preview and Escape cancellation. Distinguish applying a named inherited style from copying explicit overrides. Preserve text, assets, position, permissions and undo.
+
+- Implementation: Copy formatting in the modifier panel, select a compatible target, preview, then Apply. Fixed appearance and linked named roles are separate choices. Escape cancels; live target-format changes require Refresh preview. Background-only copying preserves legacy typography; drawings copy stroke/fill without geometry. Single-step undo, existing permissions and document validation remain in use. Media, connectors and mixed selections are excluded. Per-word rich-text marks remain target-owned.
 
 ### IDEA-037: Named semantic style presets
 

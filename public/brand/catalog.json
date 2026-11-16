@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "family": "Vertex apps",
+  "apps": [
+    {
+      "id": "hub",
+      "name": "Vertex Hub",
+      "icon": "hub.svg",
+      "color": "#384a67"
+    },
+    {
+      "id": "flow",
+      "name": "Vertex Flow",
+      "icon": "flow.svg",
+      "color": "#56446b"
+    },
+    {
+      "id": "boardroom",
+      "name": "Vertex Boardroom",
+      "icon": "boardroom.svg",
+      "color": "#365e44"
+    },
+    {
+      "id": "canvas",
+      "name": "Vertex Canvas",
+      "icon": "canvas.svg",
+      "color": "#8a4b32"
+    },
+    {
+      "id": "studio",
+      "name": "Vertex Studio",
+      "icon": "studio.svg",
+      "color": "#2a6265"
+    }
+  ]
+}

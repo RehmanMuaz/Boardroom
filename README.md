@@ -1,5 +1,7 @@
 ﻿# Boardroom
 
+Production: **https://note.vertexfilms.ca**. Release `0291f8e` (November 16, 2026) includes team feedback, UI polish, contextual actions, proportional media import and visual cropping. See the [verified release record](docs/releases/2026-11-16-contextual-media.md).
+
 A self-hosted visual workspace for a small creative team. Original branding and a Milanote-inspired canvas. The existing editor supports browser-local storage and durable team storage. Exact visual parity needs reference screenshots/workflows.
 
 Development uses feature/fix branches from `develop`, with pull requests back into `develop`. CI runs on `develop` without deployment. A release pull request from `develop` into `main` promotes tested changes to production; successful `main` builds deploy automatically when `AUTO_DEPLOY=true`. See [deployment setup](docs/DEPLOYMENT.md) for branch protection recommendations.
@@ -13,7 +15,7 @@ Requires Node.js 22.12+ and a running Docker daemon. On PowerShell, use npm.cmd 
 3. Run `docker compose up -d postgres`.
 4. Run `npm run dev:api`.
 5. In another terminal, run `npm run dev`.
-6. Open **http://localhost:5173**. Use that exact origin, or change APP_ORIGIN. API, frontend and database bind to loopback. Nothing has been deployed.
+6. Open **http://localhost:5173**. Use that exact origin, or change APP_ORIGIN. API, frontend and database bind to loopback. Local setup does not deploy.
 
 Create an account, then create a workspace. Registration grants no access to existing workspaces. Owners use **Manage team** to invite an email as editor/viewer, change roles or remove members. Share the returned one-use token privately. The recipient signs into the matching email account and pastes the token into **Invitation token**. Tokens expire after 48 hours. SMTP delivery is available when configured; the owner sees sent/failed/manual status. Owners cannot be demoted or removed through these controls.
 
@@ -38,23 +40,23 @@ Choose **Continue as guest** at the top of the entry screen for the original loc
 - Browser-local saves remain debounced. Undo uses inverse operations and preserves unrelated remote edits.
 - Workspace-scoped board/card CRUD and a transactionally tracked MVP migration.
 
-Format Painter (develop feature work, not deployed): select a compatible source, choose **Copy formatting**, select a target, preview and **Apply formatting**. Choose fixed appearance or a linked named role; Escape cancels. Legacy cards copy background only. Content, rich-text marks, position and media stay unchanged.
+Format Painter (released): select a compatible source, choose **Copy formatting**, select a target, preview and **Apply formatting**. Choose fixed appearance or a linked named role; Escape cancels. Legacy cards copy background only. Content, rich-text marks, position and media stay unchanged.
 
-Multi-card formatting (develop feature work, not deployed): selected style-linked cards show shared or **Mixed** typography, text color and border values. Editing or resetting one property preserves all other formatting. Compatible counts identify excluded legacy/media cards; existing legacy backgrounds remain editable without enabling shared styles.
+Multi-card formatting (released): selected style-linked cards show shared or **Mixed** typography, text color and border values. Editing or resetting one property preserves all other formatting. Compatible counts identify excluded legacy/media cards; existing legacy backgrounds remain editable without enabling shared styles.
 
-Grouping (develop feature work, not deployed): drag-select cards and annotations together, then use the floating **Group** icon; complete groups offer **Ungroup**. Shift-click toggles selection. Ctrl/Cmd+G groups; Ctrl/Cmd+Shift+G ungroups. Double-click a member to edit it and Escape to reselect its group. Groups are flat and board-local; columns and cards inside columns must stay separate. Existing boards remain unchanged until explicitly grouped.
+Grouping (released): drag-select cards and annotations together, then use the floating **Group** icon; complete groups offer **Ungroup**. Shift-click toggles selection. Ctrl/Cmd+G groups; Ctrl/Cmd+Shift+G ungroups. Double-click a member to edit it and Escape to reselect its group. Groups are flat and board-local; columns and cards inside columns must stay separate. Existing boards remain unchanged until explicitly grouped.
 
-Named PDF regions (develop feature work, not deployed): open **Actions > Export frames**, create a frame around selected items or in view, then edit its name/bounds and page order. Choose **Export > PDF > Named frames** to select pages and inspect crop/scale previews. Each frame fits one page. Drafts require Save; personal outlines can be hidden. Existing whole-board exports and workspace content remain unchanged.
+Named PDF regions (released): open **Actions > Export frames**, create a frame around selected items or in view, then edit its name/bounds and page order. Choose **Export > PDF > Named frames** to select pages and inspect crop/scale previews. Each frame fits one page. Drafts require Save; personal outlines can be hidden. Existing whole-board exports and workspace content remain unchanged.
 
-Contextual command search (develop feature work, not deployed): press **Ctrl/Cmd+K** or use the centered search bar. Search labels or keywords such as `page crop`, `font defaults`, `client link` or `add note`. Results are grouped, show unavailable-action reasons and support arrow/Enter/Escape navigation. Creation commands still wait for a canvas position; style resets remain undoable.
+Contextual command search (released): press **Ctrl/Cmd+K** or use the centered search bar. Search labels or keywords such as `page crop`, `font defaults`, `client link` or `add note`. Results are grouped, show unavailable-action reasons and support arrow/Enter/Escape navigation. Creation commands still wait for a canvas position; style resets remain undoable.
 
-Media inspection (develop feature work, not deployed): double-click an image/video or choose its Inspect control for zoom, fullscreen, navigation and original downloads. Editors can draft image crop/rotation and attached pen/text labels, then Save or Cancel. Original uploaded bytes stay unchanged. Saving crop/rotation fits the image frame to its visible aspect in the same undoable change; opening existing boards never resizes their content. Viewers/client links stay read-only. PDF crops are visual and retain full embedded image data.
+Media inspection (released): double-click an image/video or choose its Inspect control for zoom, fullscreen, navigation and original downloads. Editors can draft image crop/rotation and attached pen/text labels, then Save or Cancel. Original uploaded bytes stay unchanged. Saving crop/rotation fits the image frame to its visible aspect in the same undoable change; opening existing boards never resizes their content. Viewers/client links stay read-only. PDF crops are visual and retain full embedded image data.
 
-Team feedback (develop feature work, not deployed): choose **Comments** beside the board controls or search for **Open team comments**. Owners/editors create board/card threads, reply, mention current teammates with `@email`, and resolve/reopen feedback. Team viewers can read and track unread threads; account-free client links cannot access team discussions. In-app unread/mention counts persist across sessions, with workspace-wide discovery and five-second refresh while open (15 seconds when closed). Comments live separately from canvas history and JSON exports; complete database backups include them.
+Team feedback (released): choose **Comments** beside the board controls or search for **Open team comments**. Owners/editors create board/card threads, reply, mention current teammates with `@email`, and resolve/reopen feedback. Team viewers can read and track unread threads; account-free client links cannot access team discussions. In-app unread/mention counts persist across sessions, with workspace-wide discovery and five-second refresh while open (15 seconds when closed). Comments live separately from canvas history and JSON exports; complete database backups include them.
 
-UI consistency (development work, not deployed): aligned SVG controls, a centered workspace chevron, responsive dialog fields, clearer accent primary actions and a coherent Vertex app-icon family. Existing canvas data and sidebar layout are preserved. See [UI audit](docs/UI_AUDIT.md) and [app icons](docs/APP_ICONS.md).
+UI consistency (released): aligned SVG controls, a centered workspace chevron, responsive dialog fields, clearer accent primary actions and a coherent Vertex app-icon family. Existing canvas data and sidebar layout are preserved. See [UI audit](docs/UI_AUDIT.md) and [app icons](docs/APP_ICONS.md).
 
-Contextual media tools (development work, not deployed): new image/video uploads read local metadata before placement, so their frames fit immediately. Select an element for compact duplicate/delete controls, a note color picker, image crop and direct comments. The crop editor offers draggable edges/corners, moving the crop area and keyboard adjustment alongside precise percentages. Direct comments preselect cards, annotations, connections or groups; existing viewer/client permissions remain.
+Contextual media tools (released): new image/video uploads read local metadata before placement, so their frames fit immediately. Select an element for compact duplicate/delete controls, a note color picker, image crop and direct comments. The crop editor offers draggable edges/corners, moving the crop area and keyboard adjustment alongside precise percentages. Direct comments preselect cards, annotations, connections or groups; existing viewer/client permissions remain.
 
 ## Validation
 

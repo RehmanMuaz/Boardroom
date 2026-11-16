@@ -6,13 +6,13 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: contextual element actions, immediate media sizing and visual cropping (IDEA-047). UI polish (IDEA-046) is merged into develop after PR #25 passed CI. Mobile interaction work (IDEA-017) and workspace discovery (IDEA-008) follow. No new deployment.
+Current priority: review the released contextual media/UI improvements, then mobile interaction work (IDEA-017), followed by workspace discovery (IDEA-008). IDEA-047, IDEA-046 and team comments (IDEA-007) are live in release 0291f8e. See the verified release record in docs/releases/2026-11-16-contextual-media.md.
 
 ### IDEA-047: Contextual element actions and visual media cropping
 
 - Type: Improvement / Bug fix
 - Priority: Now - first (latest user feedback)
-- Status: Implemented and locally validated on feature/contextual-media-tools; not deployed
+- Status: Released to production in main 0291f8e (November 16, 2026)
 - What I want: Images/videos should fit their frames immediately on import. Selected elements should offer small nearby duplicate/color/crop/comment controls. Crop should be visual, and comments should attach directly to the selected element without manually choosing it.
 - Implementation: Local metadata sizes new uploads before the initial card operation, including proportional column placement. Floating contextual tools preserve existing sidebar tools and duplicate restrictions. Image crop uses draggable edges/corners, moving the selection and keyboard increments, with optional precise percentage fields. Saving crop/rotation fits the frame in one undoable operation; original asset bytes remain untouched. Direct comment composition focuses the input and attaches cards, text/drawing/shape annotations, connections and groups. Migration 012 adds nullable relational anchors; no workspace JSON migration.
 - Constraints preserved: Existing saved geometry is not resized on load; permission/revocation checks remain mandatory. Team viewers cannot post/edit; account-free client links do not expose team discussions. Missing anchors preserve historical feedback. Original creation/sidebar layout is unchanged.
@@ -22,7 +22,7 @@ Current priority: contextual element actions, immediate media sizing and visual 
 
 - Type: Improvement / Bug fix
 - Priority: Now - first, requested before other features and mobile work
-- Status: Implemented and locally validated on fix/ui-polish; not deployed
+- Status: Released to production in main 0291f8e (November 16, 2026)
 - What I want: Audit small UI problems throughout the app: workspace arrow spacing, misaligned icons/fields/buttons, clipped dialogs and unclear action hierarchy. Give Vertex apps cohesive, identifiable product icons.
 - Implementation: Aligned SVG controls and a centered workspace chevron; proper app/header/favicon/bookmark icons; scoped dialog min-width and control sizing; compact checkboxes/ranges; aligned team forms and wrapping member rows; visible board heading behind modifier panels; scrollable creation tools in short windows; explicit accent primary actions, neutral secondary controls and distinguished destructive actions. Existing sidebar positions/order and canvas data remain unchanged.
 - Validation: Desktop/tablet/phone audit at 1440, 1280, 1024, 768, 390 and 320 px, long workspace/member names, light/dark themes, child-overflow and header overlap assertions, focus/accessibility checks and existing editor regressions. See UI_AUDIT.md for findings and scope.
@@ -419,7 +419,7 @@ Current priority: contextual element actions, immediate media sizing and visual 
 
 - Type: Feature
 - Priority: Soon
-- Status: Implemented and locally validated on feature/team-comments; not deployed
+- Status: Released to production in main 0291f8e (November 16, 2026)
 - What I want: Board/card comment threads, replies, @mentions, unread notifications and resolved feedback.
 - Why it matters: Teams can discuss work in context instead of using an external chat to explain which item they mean.
 - Delivery stages: Persisted threads and replies first; mentions and in-app notifications next; optional email notifications and reactions later.

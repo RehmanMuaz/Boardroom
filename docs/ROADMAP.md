@@ -226,3 +226,10 @@ Visual crop offers draggable edges/corners, moving the crop area, thirds guides 
 Remaining: optional crop ratio presets, draw-new crop rectangle, richer touch gestures, video trimming/cropping, commenter role and full nested-board duplication. No deployment requested or performed.
 
 Contextual-media validation: 93 core/backend/PDF checks passed (one existing Windows skip), all 57 Chromium regressions passed, and production build passed. Five targeted comment/media browser cases were rechecked after adding Exif portrait sizing and suppressing empty client-view toolbars. Tests cover immediate image/video dimensions, oriented JPEGs, visual pointer/keyboard cropping, draft-only edits, undo, byte-identical downloads, desktop/mobile accessibility, direct card/annotation/connection/group comments, ambiguous/cross-board targets, viewer denial, retry IDs and missing-target history. The private preview/API were refreshed and frontend/readiness checks returned 200. Existing JSON and main/production remain unchanged.
+
+
+## Production release: November 16, 2026
+
+Released Boardroom main `0291f8e738cf3f0521611ebe86b869cca62e5f8d` through reviewed release PR #27 after feature PR #26 and all release/main CI gates passed. Workflow 43966205642 successfully tested, published the immutable image and deployed it. The log confirms a database/media backup at 22:09:11 UTC and deployment readiness at 22:09:30 UTC. Public HTTPS health/readiness, the new bundle/icon/CSP and isolated guest duplicate/undo/comment restrictions/phone overflow checks passed. No production team workspace or account was mutated by smoke testing.
+
+Team feedback, UI polish and contextual media tools are now live. Existing workspace JSON, media originals, configured environment and persistent application volumes were preserved by the additive release path. Hub/Studio icon PRs remain separate. See releases/2026-11-16-contextual-media.md for digest, scope and verification. Mobile interaction work and workspace discovery remain queued.

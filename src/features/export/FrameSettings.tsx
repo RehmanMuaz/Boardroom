@@ -1,3 +1,4 @@
+import {useRequestedSection} from '../useRequestedSection';
 import {useEffect,useState} from 'react';
 import {type Workspace,type Board} from '../../model';
 import {type ExportFrame,validFrame} from '../../frame-schema';
@@ -5,14 +6,15 @@ import {addFrame,saveFrame,deleteFrame,moveFrame} from '../../frames';
 import {same} from '../../operations';
 import {type Rect} from './pdf-layout';
 import './frames.css';
-export function FrameSettings({board,current,change,writable,region,hasSelection,onDirty,visible,setVisible}:{board:Board;current:()=>Workspace;change:(next:Workspace)=>void;writable:boolean;region:()=>Rect;hasSelection:boolean;onDirty:(dirty:boolean)=>void;visible:boolean;setVisible:(value:boolean)=>void}){
+export function FrameSettings({board,current,change,writable,region,hasSelection,onDirty,visible,setVisible,openRequest=0}:{openRequest?:number;board:Board;current:()=>Workspace;change:(next:Workspace)=>void;writable:boolean;region:()=>Rect;hasSelection:boolean;onDirty:(dirty:boolean)=>void;visible:boolean;setVisible:(value:boolean)=>void}){
+ const section=useRequestedSection<HTMLDetailsElement>(openRequest);
  const [draft,setDraft]=useState<ExportFrame|null>(null),[baseline,setBaseline]=useState<ExportFrame|null>(null),[error,setError]=useState('');
  const dirty=!!draft&&!same(draft,baseline),live=board.frames?.find(f=>f.id===draft?.id),stale=!!draft&&!same(live,baseline);
  useEffect(()=>{onDirty(dirty);return()=>onDirty(false);},[dirty,onDirty]);
  useEffect(()=>{if(!writable){setDraft(null);setBaseline(null);}},[writable]);
  function edit(frame:ExportFrame){setDraft(structuredClone(frame));setBaseline(structuredClone(frame));setError('');}
  function run(action:()=>void){try{action();setError('');}catch(e){setError((e as Error).message);}}
- return <section className="dialog-section frame-settings"><details><summary>Export frames ({board.frames?.length??0})</summary><p>Named canvas regions become PDF pages. Reorder frames to set page order. Frames do not move or change the objects inside them.</p>
+ return <section className="dialog-section frame-settings"><details ref={section}><summary>Export frames ({board.frames?.length??0})</summary><p>Named canvas regions become PDF pages. Reorder frames to set page order. Frames do not move or change the objects inside them.</p>
  <label className="frame-toggle"><input type="checkbox" checked={visible} onChange={e=>setVisible(e.target.checked)}/>Show frame outlines on canvas</label>
  <button disabled={!writable||!!draft||(board.frames?.length??0)>=50} onClick={()=>run(()=>change(addFrame(current(),board.id,region())))}>{hasSelection?'Add frame around selection':'Add frame in view'}</button>
  {!board.frames?.length&&<p>No frames yet. Whole-board PDF export remains available.</p>}

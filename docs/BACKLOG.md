@@ -6,7 +6,7 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: named export regions (IDEA-039), following grouping PR #18 into develop after its CI save-timing fix passed. Preserve legacy workspaces, whole-board export and the main creation sidebar. No newer develop features have been deployed.
+Current priority: completing contextual command search (IDEA-040) after export-frame PR #19 passed CI and merged into develop. The centered search bar and main creation sidebar remain unchanged. Media inspection/editing (IDEA-006), comments (IDEA-007) and workspace discovery (IDEA-008) remain queued. Nothing newly deployed.
 
 ### IDEA-045: Grouping and mixed-element selection
 
@@ -114,9 +114,13 @@ Current priority: named export regions (IDEA-039), following grouping PR #18 int
 
 - Type: Feature / Usability
 - Priority: Soon
-- Status: In progress; keyboard/search foundation implemented, future PDF/style commands await those features
+- Status: Implemented locally on feature/contextual-commands; not deployed
 - What I want: Search actions such as Export PDF, Reset style, Duplicate and Share, with optional keyboard access.
 - Expected behavior: Context-aware results show useful labels, grouping and shortcuts. Permission-gated actions stay protected; unavailable actions explain why. This supplements discoverable UI controls and preserves the main creation rail.
+
+- Result: Grouped Export, Style, Selection, Create, Sharing, Navigation and View results; normalized multiword/keyword search; stable keyboard selection, result counts and specific disabled explanations. Commands reach PDF/frame/style/help/account/sharing sections, reset selected custom style overrides with undo, start Format Painter and arm existing creation/annotation tools. Owner sharing loads members through the same dialog/API path. Viewer/client/local restrictions remain explicit; disabled actions do not run, including when live context changes while the menu is open.
+- Preserved: Search stays top-center, Account stays right, creation icons/order stay unchanged, placement still waits for a canvas position, and modal focus/draft protections remain. No document schema or backend endpoint changes.
+- Follow-ups: Future features can add their own command definitions; fuzzy typo correction and user-customizable shortcuts remain optional.
 
 ### IDEA-041: Preview workspace-wide style changes
 

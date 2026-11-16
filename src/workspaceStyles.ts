@@ -21,3 +21,9 @@ export function styleImpact(workspace:Workspace,draft?:Workspace['workspaceStyle
 export const legacyCardStyle=(card:Card):StyleValues=>({...defaultTextStyle,fontSize:14,textColor:'auto',cardColor:card.color});
 
 export function cardStyleCss(card:Card):CSSProperties{const v=card.styleBinding?.overrides;if(!validStyleValues(v))return {};return {fontFamily:fontFamilies[v.fontFamily],fontSize:v.fontSize,fontWeight:v.fontWeight,fontStyle:v.italic?'italic':'normal',textDecoration:v.underline?'underline':'none',textAlign:v.align,color:v.textColor==='auto'?automaticTextColor(v.cardColor):v.textColor,border:`${v.borderWidth}px ${v.borderStyle} ${v.borderColor}`};}
+
+export function resetElementOverrides(workspace:Workspace,boardId:string,ids:string[]):Workspace{
+ if(!workspace.workspaceStyle)return workspace;const selected=new Set(ids);
+ function binding(value:StyleBinding){const next={...value};delete next.overrides;return next;}
+ return {...workspace,boards:workspace.boards.map(b=>b.id!==boardId?b:{...b,cards:b.cards.map(c=>selected.has(c.id)&&c.styleBinding?{...c,styleBinding:binding(c.styleBinding)}:c),...(b.annotations?{annotations:b.annotations.map(a=>selected.has(a.id)&&a.kind==='text'&&a.styleBinding?{...a,styleBinding:binding(a.styleBinding)}:a)}:{})})};
+}

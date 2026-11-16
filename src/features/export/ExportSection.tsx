@@ -1,3 +1,4 @@
+import {useRequestedSection} from '../useRequestedSection';
 import {useEffect,useState} from 'react';
 import {type Board} from '../../model';
 import {defaultPdfOptions,planPdf,type PdfOptions} from './pdf-layout';
@@ -6,6 +7,7 @@ import {type PdfAccess} from './render-pdf';
 import './export.css';
 import './frames.css';
 export function ExportSection({board,access,exportJson,onBusy,pdfRequest=0}:{board:Board;access:PdfAccess;exportJson:()=>void;onBusy:(busy:boolean)=>void;pdfRequest?:number}){
+ const section=useRequestedSection<HTMLElement>(pdfRequest);
  const [format,setFormat]=useState('json'),[options,setOptions]=useState(defaultPdfOptions),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
  useEffect(()=>{if(pdfRequest>0){setFormat('pdf');setMessage('');setError('');}},[pdfRequest]);
  useEffect(()=>{setOptions(old=>({...old,scope:'board',frameIds:undefined}));setMessage('');setError('');},[board.id]);
@@ -13,7 +15,7 @@ export function ExportSection({board,access,exportJson,onBusy,pdfRequest=0}:{boa
  function option<K extends keyof PdfOptions>(key:K,value:PdfOptions[K]){setOptions(old=>({...old,[key]:value}));setError('');}
  async function download(){if(format==='json'){exportJson();return;}setBusy(true);onBusy(true);setError('');try{const {renderPdf}=await import('./render-pdf');const bytes=await renderPdf(board,options,access,setMessage);const url=URL.createObjectURL(new Blob([new Uint8Array(bytes).buffer],{type:'application/pdf'}));const link=document.createElement('a');link.href=url;link.download=(board.title.replace(/[^\p{L}\p{N} _-]/gu,'').slice(0,80)||'boardroom')+'.pdf';link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);setMessage('PDF downloaded.');}catch(e){setError(e instanceof Error?e.message:'PDF export failed.');setMessage('');}finally{setBusy(false);onBusy(false);}}
  const frames=options.scope==='frames';
- return <section className="dialog-section export-section"><h3>Export</h3><p>Save a copy to your device.</p><div className="dialog-form-row"><label>Format<select aria-label="Export format" value={format} disabled={busy} onChange={e=>{setFormat(e.target.value);setMessage('');setError('');}}><option value="json">JSON workspace backup</option><option value="pdf">PDF document</option></select></label><button className="dialog-primary" disabled={busy||!!planError} onClick={()=>void download()}>{busy?'Exporting...':'Export'}</button></div>
+ return <section ref={section} className="dialog-section export-section"><h3>Export</h3><p>Save a copy to your device.</p><div className="dialog-form-row"><label>Format<select aria-label="Export format" value={format} disabled={busy} onChange={e=>{setFormat(e.target.value);setMessage('');setError('');}}><option value="json">JSON workspace backup</option><option value="pdf">PDF document</option></select></label><button className="dialog-primary" disabled={busy||!!planError} onClick={()=>void download()}>{busy?'Exporting...':'Export'}</button></div>
  {format==='json'?<small>All boards and media references. Uploaded file bytes are not included.</small>:<>
  <p className="pdf-scope">Current board: <strong>{board.title}</strong>. Nested boards are not included.</p>
  <label>Scope<select aria-label="PDF scope" disabled={busy} value={options.scope??'board'} onChange={e=>{setOptions(old=>({...old,scope:e.target.value as PdfOptions['scope'],scale:'fit',frameIds:e.target.value==='frames'?board.frames?.map(f=>f.id):undefined}));setError('');}}><option value="board">Whole current board</option><option value="frames" disabled={!board.frames?.length}>Named frames</option></select></label>

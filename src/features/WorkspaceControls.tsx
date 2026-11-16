@@ -5,7 +5,7 @@ import {type Workspace} from '../model';
 import {ThemeControl} from '../theme';
 
 type Team={id:string;name:string;role:string};
-export function WorkspaceControls({repository,canLeave,open,exit,onError}:{repository:WorkspaceRepository;canLeave:()=>boolean;open:(repository:WorkspaceRepository,state:Workspace)=>void;exit:()=>void;onError:(message:string)=>void}){
+export function WorkspaceControls({repository,canLeave,open,exit,onError,accountRequest=0}:{accountRequest?:number;repository:WorkspaceRepository;canLeave:()=>boolean;open:(repository:WorkspaceRepository,state:Workspace)=>void;exit:()=>void;onError:(message:string)=>void}){
  const [teams,setTeams]=useState<Team[]>([]),[email,setEmail]=useState(''),[busy,setBusy]=useState(false),[renaming,setRenaming]=useState(false),[rename,setRename]=useState(''),[expectedName,setExpectedName]=useState('');
  const team=repository instanceof TeamRepository?repository:undefined;
  useEffect(()=>{const dismiss=(event:PointerEvent)=>{if(!(event.target instanceof Node))return;for(const details of document.querySelectorAll<HTMLDetailsElement>('header details[open]'))if(!details.contains(event.target))details.open=false;};document.addEventListener('pointerdown',dismiss);return()=>document.removeEventListener('pointerdown',dismiss);},[]);
@@ -21,6 +21,6 @@ export function WorkspaceControls({repository,canLeave,open,exit,onError}:{repos
    <button disabled={busy||!team} onClick={()=>void switchTo(new LocalRepository())}>Browser-local canvas<small>Only on this device</small></button>
    <button onClick={()=>{if(canLeave())exit();}}>All workspaces</button>
   </div></details>
-  <SettingsDialog label="Account"><div className="account-sections"><section className="dialog-section"><h3>Appearance</h3><p>Choose how Boardroom looks on your device.</p><ThemeControl/></section><section className="dialog-section"><h3>Your account</h3>{email?<><p>{email}</p><button disabled={busy} onClick={()=>{if(!canLeave())return;setBusy(true);void api('/logout','POST').then(exit).catch(e=>onError(e.message)).finally(()=>setBusy(false));}}>Sign out</button></>:<button onClick={()=>{if(canLeave())exit();}}>Sign in</button>}</section></div></SettingsDialog>
+  <SettingsDialog label="Account" openRequest={accountRequest}><div className="account-sections"><section className="dialog-section"><h3>Appearance</h3><p>Choose how Boardroom looks on your device.</p><ThemeControl/></section><section className="dialog-section"><h3>Your account</h3>{email?<><p>{email}</p><button disabled={busy} onClick={()=>{if(!canLeave())return;setBusy(true);void api('/logout','POST').then(exit).catch(e=>onError(e.message)).finally(()=>setBusy(false));}}>Sign out</button></>:<button onClick={()=>{if(canLeave())exit();}}>Sign in</button>}</section></div></SettingsDialog>
  </>;
 }

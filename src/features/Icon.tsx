@@ -1,5 +1,9 @@
 import {type ReactNode} from 'react';
 const paths:Record<string,ReactNode>={
+ duplicate:<><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></>,
+ delete:<path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6m4-6v6"/>,
+ comment:<path d="M21 11a8 8 0 0 1-8 8H8l-5 3v-7a8 8 0 0 1 7-12h3a8 8 0 0 1 8 8Z"/>,
+ crop:<path d="M7 3v14h14M3 7h14v14"/>,
  plus:<path d="M5 12h14M12 5v14"/>,
  minus:<path d="M5 12h14"/>,
  chevron:<path d="m6 9 6 6 6-6"/>,

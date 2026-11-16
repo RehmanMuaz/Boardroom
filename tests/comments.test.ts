@@ -6,6 +6,8 @@ import {Pool} from 'pg';
 import {createApp} from '../server/app';
 import {migrate} from '../server/migrate';
 import {mentionedMembers} from '../src/comments';
+import {defaultTextStyle} from '../src/annotations';
+import {validWorkspace,type Workspace} from '../src/model';
 
 test('mentions match exact member emails and never foreign addresses, prefixes or markup',()=>{
  const members=[{id:'a',email:'person+tag@example.com',role:'editor' as const},{id:'b',email:'other@example.com',role:'viewer' as const}];
@@ -58,5 +60,14 @@ test('durable feedback enforces membership, read-only viewers, mentions, idempot
   assert.equal((await agents[2].get(path+'?boardId=home&filter=all&scope=workspace')).body.total,2);assert.equal((await agents[2].get(path+list)).body.total,1);
   // Existing read versions never swallow a reply that arrives later.
   await send(0,'/'+id+'/messages',{id:randomUUID(),body:'New unread reply'}).expect(201);await send(2,'/'+id+'/read',{version:6}).expect(204);assert.equal((await agents[2].get(path+list)).body.unread,2);assert.equal((await agents[2].get(path+list)).body.threads[0].unread,true);
+  const anchored=(await agents[0].get('/api/workspaces/'+workspace)).body.snapshot as Workspace,board=anchored.boards[0],pair=board.cards.slice(0,2).map(c=>c.id);
+  board.annotations=[{id:'text-anchor',kind:'text',text:'Annotation',x:10,y:10,width:200,height:100,color:'#111111',style:defaultTextStyle}];board.connectors=[{id:'line-anchor',from:pair[0],to:pair[1],color:'#111111'}];board.groups=[{id:'group-anchor',members:pair}];anchored.boards[1].annotations=[{...board.annotations[0],id:'foreign-anchor'}];assert.ok(validWorkspace(anchored));await pool.query('UPDATE team_workspaces SET snapshot=$1 WHERE id=$2',[JSON.stringify(anchored),workspace]);
+  const threads:string[]=[];
+  for(const target of [{annotationId:'text-anchor'},{connectorId:'line-anchor'},{groupId:'group-anchor'}]){
+   const payload={id:randomUUID(),boardId:'home',body:'Feedback directly on element',...target};threads.push(payload.id);await send(0,'',payload).expect(201);await send(0,'',payload).expect(201);await send(2,'',{...payload,id:randomUUID()}).expect(403);await send(3,'',{...payload,id:randomUUID()}).expect(404);
+   const detail=(await agents[2].get(path+'/'+payload.id).expect(200)).body;assert.equal(detail.targetMissing,false);assert.equal(detail.messages.length,1);await send(0,'',{...payload,body:'Changed retry'}).expect(409);
+  }
+  await send(0,'',{id:randomUUID(),boardId:'home',annotationId:'foreign-anchor',body:'Wrong board'}).expect(404);await send(0,'',{id:randomUUID(),boardId:'home',annotationId:'text-anchor',cardId:pair[0],body:'Ambiguous'}).expect(400);
+  board.annotations=[];board.connectors=[];board.groups=[];await pool.query('UPDATE team_workspaces SET snapshot=$1 WHERE id=$2',[JSON.stringify(anchored),workspace]);for(const thread of threads){assert.equal((await agents[2].get(path+'/'+thread)).body.targetMissing,true);await agents[3].get(path+'/'+thread).expect(404);}
  }finally{if(workspace)await pool.query('DELETE FROM team_workspaces WHERE id=$1',[workspace]);const ids=users.map(u=>u.userId);await pool.query("DELETE FROM session WHERE sess->>'userId'=ANY($1::text[])",[ids]);await pool.query('DELETE FROM accounts WHERE id=ANY($1::uuid[])',[ids]);await pool.query('DELETE FROM auth_rate_limits WHERE key LIKE $1',[namespace+':%']);await pool.end();}
 });

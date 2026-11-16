@@ -29,7 +29,7 @@ export function commentsRouter(pool:Pool){
  async function read(db:PoolClient,id:string,user:string,version:number){await db.query('INSERT INTO comment_reads(thread_id,user_id,version) VALUES ($1,$2,$3) ON CONFLICT(thread_id,user_id) DO UPDATE SET version=GREATEST(comment_reads.version,EXCLUDED.version)',[id,user,version]);}
  const unread="t.version>COALESCE(r.version,0)";
  const mentioned="EXISTS(SELECT 1 FROM comment_messages mm JOIN comment_mentions mn ON mn.message_id=mm.id WHERE mm.thread_id=t.id AND mn.user_id=$2 AND mm.version>COALESCE(r.version,0))";
- const columns=`t.id,t.board_id,t.card_id,t.resolved,t.version,t.updated_at,${unread} AS unread,${mentioned} AS mentioned,(SELECT left(body,160) FROM comment_messages WHERE thread_id=t.id ORDER BY version DESC LIMIT 1) AS preview,(SELECT count(*)::int FROM comment_messages WHERE thread_id=t.id) AS count`;
+ const columns=`t.id,t.board_id,t.card_id,t.annotation_id,t.connector_id,t.group_id,t.resolved,t.version,t.updated_at,${unread} AS unread,${mentioned} AS mentioned,(SELECT left(body,160) FROM comment_messages WHERE thread_id=t.id ORDER BY version DESC LIMIT 1) AS preview,(SELECT count(*)::int FROM comment_messages WHERE thread_id=t.id) AS count`;
  router.get('/',async(req,res)=>{
   const q=z.object({boardId:anchor,offset:z.coerce.number().int().min(0).max(100000).default(0),filter:z.enum(['open','resolved','unread','all']).default('open'),scope:z.enum(['board','workspace']).default('board')}).strict().parse(req.query);
   res.json(await transaction(req,false,async(db,id)=>{
@@ -46,16 +46,16 @@ export function commentsRouter(pool:Pool){
   const t=await thread(db,id,req.params.threadId),snapshot=(await db.query('SELECT snapshot FROM team_workspaces WHERE id=$1',[id])).rows[0].snapshot as Workspace,board=snapshot.boards.find(b=>b.id===t.board_id);
   const messages=await db.query('SELECT m.id,m.body,m.version,m.created_at,a.email AS author,ARRAY(SELECT a2.email FROM comment_mentions mn JOIN accounts a2 ON a2.id=mn.user_id JOIN memberships mb ON mb.user_id=mn.user_id AND mb.workspace_id=$2 WHERE mn.message_id=m.id) AS mentions FROM comment_messages m LEFT JOIN accounts a ON a.id=m.author_id WHERE m.thread_id=$1 ORDER BY m.version',[t.id,id]);
   const summary=(await db.query(`SELECT ${columns} FROM comment_threads t LEFT JOIN comment_reads r ON r.thread_id=t.id AND r.user_id=$2 WHERE t.id=$1`,[t.id,req.session.userId])).rows[0];
-  return {thread:summary,messages:messages.rows,targetMissing:!board||!!t.card_id&&!board.cards.some(c=>c.id===t.card_id)};
+  return {thread:summary,messages:messages.rows,targetMissing:!board||!!t.card_id&&!board.cards.some(c=>c.id===t.card_id)||!!t.annotation_id&&!board?.annotations?.some(a=>a.id===t.annotation_id)||!!t.connector_id&&!board?.connectors?.some(c=>c.id===t.connector_id)||!!t.group_id&&!board?.groups?.some(g=>g.id===t.group_id)};
  })));
  router.post('/',async(req,res)=>{
-  const body=message.extend({boardId:anchor,cardId:anchor.optional()}).strict().parse(req.body);
+  const body=message.extend({boardId:anchor,cardId:anchor.optional(),annotationId:anchor.optional(),connectorId:anchor.optional(),groupId:anchor.optional()}).strict().refine(b=>[b.cardId,b.annotationId,b.connectorId,b.groupId].filter(Boolean).length<=1,{message:'Choose one comment target'}).parse(req.body);
   res.status(201).json(await transaction(req,true,async(db,id)=>{
    const prior=(await db.query('SELECT t.*,m.body,m.author_id FROM comment_threads t JOIN comment_messages m ON m.thread_id=t.id AND m.version=1 WHERE t.id=$1',[body.id])).rows[0];
-   if(prior){if(prior.workspace_id!==id||prior.author_id!==req.session.userId||prior.board_id!==body.boardId||prior.card_id!==(body.cardId??null)||prior.body!==body.body)throw new HttpError(409,'Comment ID already used');return {id:prior.id};}
+   if(prior){if(prior.workspace_id!==id||prior.author_id!==req.session.userId||prior.board_id!==body.boardId||prior.card_id!==(body.cardId??null)||prior.annotation_id!==(body.annotationId??null)||prior.connector_id!==(body.connectorId??null)||prior.group_id!==(body.groupId??null)||prior.body!==body.body)throw new HttpError(409,'Comment ID already used');return {id:prior.id};}
    const snapshot=(await db.query('SELECT snapshot FROM team_workspaces WHERE id=$1',[id])).rows[0].snapshot as Workspace,board=snapshot.boards.find(b=>b.id===body.boardId);
-   if(!board||body.cardId&&!board.cards.some(c=>c.id===body.cardId))throw new HttpError(404,'Comment target not found');
-   await db.query('INSERT INTO comment_threads(id,workspace_id,board_id,card_id) VALUES ($1,$2,$3,$4)',[body.id,id,body.boardId,body.cardId??null]);
+   if(!board||body.cardId&&!board.cards.some(c=>c.id===body.cardId)||body.annotationId&&!board?.annotations?.some(a=>a.id===body.annotationId)||body.connectorId&&!board?.connectors?.some(c=>c.id===body.connectorId)||body.groupId&&!board?.groups?.some(g=>g.id===body.groupId))throw new HttpError(404,'Comment target not found');
+   await db.query('INSERT INTO comment_threads(id,workspace_id,board_id,card_id,annotation_id,connector_id,group_id) VALUES ($1,$2,$3,$4,$5,$6,$7)',[body.id,id,body.boardId,body.cardId??null,body.annotationId??null,body.connectorId??null,body.groupId??null]);
    await insert(db,id,{id:body.id,version:1},req.session.userId!,body);return {id:body.id};
   }));
  });

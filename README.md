@@ -50,6 +50,8 @@ Contextual command search (develop feature work, not deployed): press **Ctrl/Cmd
 
 Media inspection (develop feature work, not deployed): double-click an image/video or choose its Inspect control for zoom, fullscreen, navigation and original downloads. Editors can draft image crop/rotation and attached pen/text labels, then Save or Cancel. Reset restores the original appearance; uploaded bytes and existing card geometry remain unchanged. Viewers/client links stay read-only. PDF crops are visual and retain full embedded image data.
 
+Team feedback (develop feature work, not deployed): choose **Comments** beside the board controls or search for **Open team comments**. Owners/editors create board/card threads, reply, mention current teammates with `@email`, and resolve/reopen feedback. Team viewers can read and track unread threads; account-free client links cannot access team discussions. In-app unread/mention counts persist across sessions, with workspace-wide discovery and five-second refresh while open (15 seconds when closed). Comments live separately from canvas history and JSON exports; complete database backups include them.
+
 ## Validation
 
 Start PostgreSQL and configure `.env`, then run:

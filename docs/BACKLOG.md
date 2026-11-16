@@ -6,12 +6,12 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: IDEA-043 vector PDF upgrade, then IDEA-035 shared workspace styles and its related features. Implementation has started on feature/styles-and-usability: modifier navigation, header dialogs and command-search foundations are available for local review. PDF export is implemented locally; shared styles and their dependent features remain queued. IDEA-029 through IDEA-032 are implemented and deployed with compatibility coverage. Preserve existing workspaces and the main creation sidebar layout.
+Current priority: shared workspace styles (IDEA-035), semantic roles (IDEA-037) and impact preview (IDEA-041) are implemented for review on feature/workspace-styles. The vector PDF upgrade passed CI and merged into develop; production retains the previous release. Format painter, expanded mixed-property editing and named export frames remain next. Preserve legacy workspace appearance and the main creation sidebar layout.
 
 ### IDEA-043: Vector PDF export
 
 - Priority: Now - first
-- Status: Implemented on feature/vector-pdf-export; not deployed
+- Status: Implemented; PR #14 merged into develop after CI passed; not deployed
 - What I want: Replace low-resolution page screenshots with PDF text and vector elements.
 - Result: Selectable/searchable text with embedded self-hosted fonts; vector shapes, strokes, borders, labels, checklists and connectors; original PNG/JPEG image bytes/dimensions; same export settings, page clipping and authorization checks. Unsupported glyphs fail clearly. Font substitutions can change wrapping slightly; complex scripts and tagged accessibility remain limitations.
 - Validation: PDF resource/text extraction, visible CJK rendering, original JPEG bytes, browser downloads, private-media/revocation and mobile regression checks. No existing workspace data changes.
@@ -19,7 +19,7 @@ Current priority: IDEA-043 vector PDF upgrade, then IDEA-035 shared workspace st
 ### IDEA-042: Clean modifier panel with progressive disclosure
 
 - Priority: Now - first
-- Status: In progress; navigation/search/groups implemented locally, inheritance indicators depend on IDEA-035
+- Status: In progress; navigation/search/groups and inherited/custom indicators implemented locally; broader mixed-property controls remain IDEA-038
 - What I want: Preserve all features while making controls easy to find. Keep the main creation sidebar unchanged.
 - Expected behavior: Selection header with object actions, stable Style/Arrange tabs, context-specific essentials, expandable detailed groups with clear current values, property search, persistent per-object preferences, mixed/inherited/custom indicators, and accessible Undo/Redo.
 - Done when: Features remain available without a long always-visible panel; search finds hidden properties, keyboard/mobile access works, and the main creation rail remains unchanged.
@@ -52,7 +52,7 @@ Current priority: IDEA-043 vector PDF upgrade, then IDEA-035 shared workspace st
 
 - Type: Feature / Design consistency
 - Priority: Now - third
-- Status: Queued
+- Status: Implemented locally on feature/workspace-styles; not deployed
 - What I want: Set fonts, colors and board appearance once for the whole workspace so boards look thematically consistent, similar to Microsoft Word styles. Individual elements can be customized and reset back to the workspace style.
 - Expected behavior: A workspace style editor defines named roles such as heading, body text and label, plus a palette and default board background/pattern. Define a clear hierarchy: workspace style, optional board override, then element override. Inherited values follow later workspace style changes; explicitly overridden properties stay unchanged. Show whether a value is inherited or overridden and provide both per-property reset and Reset to workspace style.
 - Reset behavior: Clearing an override restores inheritance rather than copying today's default into the element. If a board override exists, property reset returns to the inherited board value; Reset to workspace style explicitly removes the applicable board/element overrides. Preview the effect and make reset scope clear.
@@ -73,7 +73,7 @@ Current priority: IDEA-043 vector PDF upgrade, then IDEA-035 shared workspace st
 
 - Type: Feature / Usability
 - Priority: Soon; part of IDEA-035's style design
-- Status: Queued
+- Status: Implemented locally on feature/workspace-styles; not deployed
 - What I want: Discoverable presets such as Heading, Body, Caption and Client feedback, with previews and clear current-style identification.
 - Constraints: Reuse the shared style system rather than introducing a second formatting model. Preserve individual overrides and existing content unless explicitly changed.
 
@@ -105,7 +105,7 @@ Current priority: IDEA-043 vector PDF upgrade, then IDEA-035 shared workspace st
 
 - Type: Improvement / Usability
 - Priority: Soon; part of IDEA-035
-- Status: Queued
+- Status: Implemented locally on feature/workspace-styles; not deployed
 - What I want: Preview affected boards/elements before applying shared style changes, including which local overrides will be preserved.
 - Expected behavior: Clear scope/impact summary, Apply/Cancel, and opt-in adoption for legacy workspaces. Previews must not save or broadcast partial changes; final application respects authorization, conflicts and the supported undo strategy.
 

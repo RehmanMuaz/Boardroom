@@ -9,6 +9,8 @@ import {createVectorPdf} from '../src/features/export/vector-pdf';
 import {defaultPdfOptions} from '../src/features/export/pdf-layout';
 import {defaultTextStyle} from '../src/annotations';
 import {type Board} from '../src/model';
+import {defaultWorkspaceStyle} from '../src/style-schema';
+import {resolveStyledBoard} from '../src/workspaceStyles';
 const cache=new Map<string,Promise<Uint8Array>>();
 const fonts=(name:string)=>{let bytes=cache.get(name);if(!bytes){bytes=readFile(new URL('../public/fonts/pdf/'+name,import.meta.url));cache.set(name,bytes);}return bytes;};
 test('vector PDF contains extractable Unicode/rich text, embedded fonts and paths rather than page screenshots',async()=>{
@@ -30,4 +32,9 @@ test('vector PDF keeps original JPEG bytes and dimensions instead of resampling 
 test('CJK glyphs are visibly painted, not merely present in the PDF Unicode map',async()=>{
  const board:Board={id:'b',title:'CJK visibility',background:'#ffffff',pattern:'plain',cards:[],annotations:[{id:'jp',kind:'text',x:20,y:20,width:240,height:120,color:'#000000',text:'日本語',style:{...defaultTextStyle,fontSize:48}}]};const bytes=await createVectorPdf(board,defaultPdfOptions,{},fonts,()=>{}),task=getDocument({data:new Uint8Array(bytes),useSystemFonts:false});
  try{const pdf=await task.promise,page=await pdf.getPage(1),viewport=page.getViewport({scale:1}),canvas=createCanvas(Math.ceil(viewport.width),Math.ceil(viewport.height)),context=canvas.getContext('2d');await page.render({canvas:canvas as never,canvasContext:context as never,viewport}).promise;const pixels=context.getImageData(0,0,canvas.width,canvas.height).data;let ink=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]<100&&pixels[i+1]<100&&pixels[i+2]<100)ink++;assert.ok(ink>200,'CJK text must render visible ink');}finally{await task.destroy();}
+});
+
+test('vector PDF uses resolved shared typography rather than legacy card fallbacks',async()=>{
+ const board:Board={id:'b',title:'Styles',pattern:'plain',cards:[{id:'n',kind:'note',x:20,y:20,width:400,height:200,text:'Styled typography',color:'#fff',styleBinding:{role:'body'}}]},style=structuredClone(defaultWorkspaceStyle);style.roles.body.fontSize=32;style.roles.body.fontFamily='serif';const resolved=resolveStyledBoard({version:1,boards:[board],workspaceStyle:style},board),bytes=await createVectorPdf(resolved,defaultPdfOptions,{},fonts,()=>{}),task=getDocument({data:new Uint8Array(bytes),useSystemFonts:false});
+ try{const parsed=await task.promise,content=await (await parsed.getPage(1)).getTextContent(),item=content.items.find(item=>'str' in item&&item.str.includes('Styled'));assert.ok(item&&'height' in item);assert.ok(Math.abs(Number(item.height)-24)<1);}finally{await task.destroy();}
 });

@@ -1,9 +1,9 @@
 import {type Workspace,type Board,type Card,validWorkspace} from './model';
 import {type Annotation} from './annotations';
 
-export type Field='$board'|'$card'|'$annotation'|'$boardOrder'|'$cardOrder'|'$annotationOrder'|'title'|'parent'|'kind'|'x'|'y'|'text'|'color'|'target'|'width'|'height'|'assetId'|'columnId'|'captionVisible'|'richText'|'connectors'|'points'|'thickness'|'style'|'shape'|'fill'|'background'|'pattern'|'labels'|'layer';
+export type Field='$workspaceStyle'|'styleBinding'|'boardStyle'|'styleEnabled'|'$board'|'$card'|'$annotation'|'$boardOrder'|'$cardOrder'|'$annotationOrder'|'title'|'parent'|'kind'|'x'|'y'|'text'|'color'|'target'|'width'|'height'|'assetId'|'columnId'|'captionVisible'|'richText'|'connectors'|'points'|'thickness'|'style'|'shape'|'fill'|'background'|'pattern'|'labels'|'layer';
 export type Change={boardId:string;cardId?:string;annotationId?:string;field:Field;before:unknown;after:unknown};
-const annotationFields=['kind','x','y','width','height','color','text','points','thickness','style','shape','fill','layer'] as const;
+const annotationFields=['kind','x','y','width','height','color','text','points','thickness','style','shape','fill','layer','styleBinding'] as const;
 export type Operation={id:string;baseRevision:number;changes:Change[]};
 export class OperationConflict extends Error {
  constructor(public change:Change){super(`Conflict on ${change.annotationId??change.cardId??change.boardId}.${change.field}. Export your edits before reloading.`);}
@@ -16,17 +16,17 @@ function canonical(value:unknown):string {
 }
 export const same=(a:unknown,b:unknown)=>canonical(a)===canonical(b);
 export function diffWorkspace(before:Workspace,after:Workspace):Change[]{
- const changes:Change[]=[];
+ const changes:Change[]=[];if(!same(before.workspaceStyle,after.workspaceStyle))changes.push({boardId:'*',field:'$workspaceStyle',before:before.workspaceStyle??null,after:after.workspaceStyle??null});
  for(const board of before.boards)if(!after.boards.some(b=>b.id===board.id))changes.push({boardId:board.id,field:'$board',before:board,after:null});
  for(const board of after.boards){
   const old=before.boards.find(b=>b.id===board.id);
   if(!old){changes.push({boardId:board.id,field:'$board',before:null,after:board});continue;}
-  for(const field of ['title','parent','connectors','background','pattern'] as const)if(!same(old[field],board[field]))changes.push({boardId:board.id,field,before:old[field]??null,after:board[field]??null});
+  for(const field of ['title','parent','connectors','background','pattern','boardStyle','styleEnabled'] as const)if(!same(old[field],board[field]))changes.push({boardId:board.id,field,before:old[field]??null,after:board[field]??null});
   for(const card of old.cards)if(!board.cards.some(c=>c.id===card.id))changes.push({boardId:board.id,cardId:card.id,field:'$card',before:card,after:null});
   for(const card of board.cards){
    const previous=old.cards.find(c=>c.id===card.id);
    if(!previous){changes.push({boardId:board.id,cardId:card.id,field:'$card',before:null,after:card});continue;}
-   for(const field of ['kind','x','y','text','color','target','width','height','assetId','columnId','captionVisible','richText','title','labels','layer'] as const)if(!same(previous[field],card[field]))changes.push({boardId:board.id,cardId:card.id,field,before:previous[field]??null,after:card[field]??null});
+   for(const field of ['kind','x','y','text','color','target','width','height','assetId','columnId','captionVisible','richText','title','labels','layer','styleBinding'] as const)if(!same(previous[field],card[field]))changes.push({boardId:board.id,cardId:card.id,field,before:previous[field]??null,after:card[field]??null});
   }
   const natural=old.cards.filter(c=>board.cards.some(next=>next.id===c.id)).map(c=>c.id).concat(board.cards.filter(c=>!old.cards.some(previous=>previous.id===c.id)).map(c=>c.id));
   const order=board.cards.map(c=>c.id);if(!same(natural,order))changes.push({boardId:board.id,field:'$cardOrder',before:natural,after:order});
@@ -43,6 +43,7 @@ export function diffWorkspace(before:Workspace,after:Workspace):Change[]{
 export function applyChanges(original:Workspace,changes:Change[],check=true):Workspace {
  const snapshot=structuredClone(original);
  for(const change of changes){
+  if(change.field==='$workspaceStyle'){if(change.boardId!=='*'||change.cardId!==undefined||change.annotationId!==undefined)throw Error('Invalid workspace style change');if(check&&!same(snapshot.workspaceStyle??null,change.before)&&!same(snapshot.workspaceStyle??null,change.after))throw new OperationConflict(change);if(change.after===null)delete snapshot.workspaceStyle;else snapshot.workspaceStyle=structuredClone(change.after) as Workspace['workspaceStyle'];continue;}
   const board=snapshot.boards.find(b=>b.id===change.boardId);
   if(change.annotationId!==undefined||change.field==='$annotation'){
    if(!board)throw new OperationConflict(change);if(!change.annotationId||change.cardId!==undefined)throw Error('Annotation ID required without a card ID');
@@ -82,7 +83,7 @@ export function applyChanges(original:Workspace,changes:Change[],check=true):Wor
     else {const next=change.after as Card;if(next?.id!==change.cardId)throw Error('Card ID mismatch');if(card)board.cards[board.cards.indexOf(card)]=structuredClone(next);else board.cards.push(structuredClone(next));}
    }else{
     if(['points','thickness','style','shape','fill'].includes(change.field))throw Error('Annotation ID required');
-    const boardField=change.field==='title'&&!change.cardId||change.field==='parent'||change.field==='connectors'||change.field==='background'||change.field==='pattern';
+    const boardField=change.field==='title'&&!change.cardId||change.field==='parent'||change.field==='connectors'||change.field==='background'||change.field==='pattern'||change.field==='boardStyle'||change.field==='styleEnabled';
     if(boardField===Boolean(change.cardId))throw Error('Invalid field for entity');
     const entity=boardField?board:board.cards.find(c=>c.id===change.cardId);
     if(!entity)throw new OperationConflict(change);

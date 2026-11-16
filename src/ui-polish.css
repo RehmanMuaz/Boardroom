@@ -37,3 +37,9 @@ button:disabled{box-shadow:none}button:focus-visible,summary:focus-visible{outli
 @media(max-width:600px){.settings-dialog-body{padding:16px;scrollbar-gutter:auto}.settings-dialog-body :is(.pdf-settings,.frame-dimensions){grid-template-columns:minmax(0,1fr)}.settings-dialog-body .dialog-form-row{align-items:stretch}.header-dialog-trigger>.ui-icon{display:none}.workspace-switcher summary>span:first-child{max-width:none!important}.workspace-switcher summary{width:100%}.workspace-switcher .popover-content{left:auto;right:0;max-width:calc(100vw - 24px);min-width:0;max-height:calc(100dvh - 120px);overflow:auto}.media-viewer-header{flex-wrap:wrap}.media-viewer-buttons{flex-shrink:1;max-width:100%}.team-entry{margin:16px auto;padding:20px}.settings-dialog-body .member-row>span{flex-basis:100%}}
 @media(max-width:360px){.app>header>.brand>span{display:none}.app>header>.brand .app-mark{width:26px;height:26px}.settings-dialog-header{padding:14px}.settings-dialog-header h2{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.workspace-chevron{transition:none!important}}
+
+/* Keep the existing rail usable in short windows without hiding tools behind history. */
+.app>aside>.tools{min-height:0;overflow-y:auto;overflow-x:hidden;flex:1;scrollbar-width:thin;overscroll-behavior:contain}.app>aside>.aside-bottom{flex-shrink:0}
+@media(min-width:801px){.app.contextual-sidebar .board-heading{padding-left:184px}}
+
+.settings-dialog-header>div{min-width:0;overflow-wrap:anywhere}.workspace-switcher .popover-content{max-height:min(480px,calc(100dvh - 100px));overflow-y:auto;overflow-wrap:anywhere}

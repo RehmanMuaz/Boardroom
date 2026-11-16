@@ -6,7 +6,17 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: comments, mentions and team feedback (IDEA-007), following media-inspection PR #21 into develop after CI passed. Work is on feature/team-comments; existing canvas data and the creation sidebar stay intact. Workspace discovery (IDEA-008) is next. Nothing newly deployed.
+Current priority: UI consistency and overflow fixes (IDEA-046), ahead of mobile functionality (IDEA-017), then workspace discovery (IDEA-008). Preserve the overall layout and existing canvas. Comments PR #22 is merged into develop after CI passed. No new deployment.
+
+### IDEA-046: UI consistency, alignment and app identity
+
+- Type: Improvement / Bug fix
+- Priority: Now - first, requested before other features and mobile work
+- Status: Implemented and locally validated on fix/ui-polish; not deployed
+- What I want: Audit small UI problems throughout the app: workspace arrow spacing, misaligned icons/fields/buttons, clipped dialogs and unclear action hierarchy. Give Vertex apps cohesive, identifiable product icons.
+- Implementation: Aligned SVG controls and a centered workspace chevron; proper app/header/favicon/bookmark icons; scoped dialog min-width and control sizing; compact checkboxes/ranges; aligned team forms and wrapping member rows; visible board heading behind modifier panels; scrollable creation tools in short windows; explicit accent primary actions, neutral secondary controls and distinguished destructive actions. Existing sidebar positions/order and canvas data remain unchanged.
+- Validation: Desktop/tablet/phone audit at 1440, 1280, 1024, 768, 390 and 320 px, long workspace/member names, light/dark themes, child-overflow and header overlap assertions, focus/accessibility checks and existing editor regressions. See UI_AUDIT.md for findings and scope.
+- Remaining: Real-device mobile gestures/navigation are IDEA-017. Flow has no standalone browser UI here; its matching icon asset is ready for host branding. Canvas has a prepared identity asset, without creating or renaming an application.
 
 ### IDEA-045: Grouping and mixed-element selection
 

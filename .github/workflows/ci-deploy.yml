@@ -45,6 +45,8 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium
+      - name: Verify native Flow edit approval in Chromium
+        run: node scripts/run-isolated-tests.mjs tests/flow-edit-browser.check.ts
       - run: npm run test:browser
       - run: node node_modules/@playwright/test/cli.js test --config flow-browser.config.ts
       - run: docker build --tag boardroom-ci:${{ github.sha }} .

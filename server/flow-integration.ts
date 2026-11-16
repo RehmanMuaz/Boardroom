@@ -6,29 +6,33 @@ import {hashToken} from './security';
 import {validWorkspace,type Workspace} from '../src/model';
 import {HttpError} from './workspace-store';
 import {requestLog,errorCode,type Logger} from './observability';
+import {flowWorkspaceIds,flowWorkspaces} from './flow-workspaces';
+import {flowEditReview} from './flow-edit-review';
 
-export type FlowSettings={tokenHash:string;email:string;origin:string;requireVerification?:boolean};
+export type FlowSettings={tokenHash:string;email:string;origin:string;requireVerification?:boolean;workspaceIds?:string[]};
 export function flowSettings(env:NodeJS.ProcessEnv,origin:string,requireVerification=false):FlowSettings|undefined{
  if(!env.FLOW_IMPORT_TOKEN_SHA256)return undefined;
  if(!/^[a-f0-9]{64}$/.test(env.FLOW_IMPORT_TOKEN_SHA256))throw Error('FLOW_IMPORT_TOKEN_SHA256 requires a SHA256 hex digest');
  const email=z.string().email().parse(env.FLOW_IMPORT_EMAIL??'muazrehman@vertexfilms.ca').toLowerCase();
- return {tokenHash:env.FLOW_IMPORT_TOKEN_SHA256,email,origin,requireVerification};
+ return {tokenHash:env.FLOW_IMPORT_TOKEN_SHA256,email,origin,requireVerification,workspaceIds:flowWorkspaceIds(env.FLOW_WORKSPACE_IDS)};
 }
 const escape=(value:string)=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function withFlow(base:Express,pool:Pool,settings?:FlowSettings):Express{
  if(!settings)return base;
  const app=express();app.disable('x-powered-by');app.locals=base.locals;app.set('trust proxy',base.get('trust proxy'));
- if(base.locals.logger){app.use(['/api/flow','/flow-review'],requestLog(base.locals.logger as Logger));}
+ if(base.locals.logger){app.use(['/api/flow','/flow-review','/flow-edit-review'],requestLog(base.locals.logger as Logger));}
  // Native HTML form submissions need a same-origin Origin header for CSRF checks.
  // no-referrer makes Chromium send Origin: null for these form posts.
  app.use((_req,res,next)=>{res.set({'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'same-origin','Content-Security-Policy':"default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"});next();});
- app.post('/api/flow/previews',async(req,res,next)=>{
+ const credential:express.RequestHandler=(req,_res,next)=>{
   try{
    const token=req.get('authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
    if(!token||!timingSafeEqual(Buffer.from(hashToken(token),'hex'),Buffer.from(settings.tokenHash,'hex')))throw new HttpError(401,'Invalid integration credential');
    next();
   }catch(e){next(e);}
- },express.json({limit:'1500kb'}),async(req,res)=>{
+ };
+ app.use('/api/flow/workspaces',flowWorkspaces(pool,settings,credential));
+ app.post('/api/flow/previews',credential,express.json({limit:'1500kb'}),async(req,res)=>{
   const body=z.object({requestId:z.string().uuid(),name:z.string().trim().min(1).max(120),snapshot:z.unknown()}).strict().parse(req.body);
   if(!validWorkspace(body.snapshot))throw new HttpError(400,'Invalid workspace');
   if((body.snapshot as Workspace).boards.some(b=>b.cards.some(c=>['image','video','file'].includes(c.kind))))throw new HttpError(400,'Portable imports cannot reference private assets');
@@ -58,6 +62,7 @@ export function withFlow(base:Express,pool:Pool,settings?:FlowSettings):Express{
   if(account.email!==settings!.email||settings!.requireVerification&&!account.email_verified_at)throw new HttpError(403,'This import belongs to the configured verified account');
   return req.session.userId;
  }
+ flowEditReview(app,pool,settings,actor);
  app.get('/flow-review/:id',async(req,res)=>{
   const userId=await actor(req),id=z.string().uuid().parse(req.params.id);
   const item=(await pool.query('SELECT * FROM flow_imports WHERE id=$1 AND user_id=$2',[id,userId])).rows[0];

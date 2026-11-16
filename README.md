@@ -38,6 +38,8 @@ Choose **Continue as guest** at the top of the entry screen for the original loc
 - Browser-local saves remain debounced. Undo uses inverse operations and preserves unrelated remote edits.
 - Workspace-scoped board/card CRUD and a transactionally tracked MVP migration.
 
+Format Painter (develop feature work, not deployed): select a compatible source, choose **Copy formatting**, select a target, preview and **Apply formatting**. Choose fixed appearance or a linked named role; Escape cancels. Legacy cards copy background only. Content, rich-text marks, position and media stay unchanged.
+
 ## Validation
 
 Start PostgreSQL and configure `.env`, then run:

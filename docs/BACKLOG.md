@@ -6,7 +6,27 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: media inspection and reversible editing (IDEA-006), following command-search PR #20 into develop after CI passed. Preserve original uploads, private-media permissions, existing workspaces and the creation sidebar. Comments/feedback (IDEA-007) and workspace discovery (IDEA-008) remain queued. Nothing newly deployed.
+Current priority: contextual element actions, immediate media sizing and visual cropping (IDEA-047). UI polish (IDEA-046) is merged into develop after PR #25 passed CI. Mobile interaction work (IDEA-017) and workspace discovery (IDEA-008) follow. No new deployment.
+
+### IDEA-047: Contextual element actions and visual media cropping
+
+- Type: Improvement / Bug fix
+- Priority: Now - first (latest user feedback)
+- Status: Implemented and locally validated on feature/contextual-media-tools; not deployed
+- What I want: Images/videos should fit their frames immediately on import. Selected elements should offer small nearby duplicate/color/crop/comment controls. Crop should be visual, and comments should attach directly to the selected element without manually choosing it.
+- Implementation: Local metadata sizes new uploads before the initial card operation, including proportional column placement. Floating contextual tools preserve existing sidebar tools and duplicate restrictions. Image crop uses draggable edges/corners, moving the selection and keyboard increments, with optional precise percentage fields. Saving crop/rotation fits the frame in one undoable operation; original asset bytes remain untouched. Direct comment composition focuses the input and attaches cards, text/drawing/shape annotations, connections and groups. Migration 012 adds nullable relational anchors; no workspace JSON migration.
+- Constraints preserved: Existing saved geometry is not resized on load; permission/revocation checks remain mandatory. Team viewers cannot post/edit; account-free client links do not expose team discussions. Missing anchors preserve historical feedback. Original creation/sidebar layout is unchanged.
+- Remaining: Optional crop aspect-ratio presets and freehand selection are future polish. Video trimming/cropping and a commenter role are separate features; whole nested-board duplication remains IDEA-009.
+
+### IDEA-046: UI consistency, alignment and app identity
+
+- Type: Improvement / Bug fix
+- Priority: Now - first, requested before other features and mobile work
+- Status: Implemented and locally validated on fix/ui-polish; not deployed
+- What I want: Audit small UI problems throughout the app: workspace arrow spacing, misaligned icons/fields/buttons, clipped dialogs and unclear action hierarchy. Give Vertex apps cohesive, identifiable product icons.
+- Implementation: Aligned SVG controls and a centered workspace chevron; proper app/header/favicon/bookmark icons; scoped dialog min-width and control sizing; compact checkboxes/ranges; aligned team forms and wrapping member rows; visible board heading behind modifier panels; scrollable creation tools in short windows; explicit accent primary actions, neutral secondary controls and distinguished destructive actions. Existing sidebar positions/order and canvas data remain unchanged.
+- Validation: Desktop/tablet/phone audit at 1440, 1280, 1024, 768, 390 and 320 px, long workspace/member names, light/dark themes, child-overflow and header overlap assertions, focus/accessibility checks and existing editor regressions. See UI_AUDIT.md for findings and scope.
+- Remaining: Real-device mobile gestures/navigation are IDEA-017. Flow has no standalone browser UI here; its matching icon asset is ready for host branding. Canvas has a prepared identity asset, without creating or renaming an application.
 
 ### IDEA-045: Grouping and mixed-element selection
 
@@ -399,13 +419,15 @@ Current priority: media inspection and reversible editing (IDEA-006), following 
 
 - Type: Feature
 - Priority: Soon
-- Status: Idea
+- Status: Implemented and locally validated on feature/team-comments; not deployed
 - What I want: Board/card comment threads, replies, @mentions, unread notifications and resolved feedback.
 - Why it matters: Teams can discuss work in context instead of using an external chat to explain which item they mean.
 - Delivery stages: Persisted threads and replies first; mentions and in-app notifications next; optional email notifications and reactions later.
 - Constraints or things to preserve: Check access for comments and notification recipients; revoked users must lose access. Existing viewers remain read-only unless an explicit commenter permission is introduced in IDEA-012.
 - Reference links or screenshot paths: https://help.milanote.com/en/articles/425042-collaborating-in-real-time
 - Done when: Authorized teammates can discuss and resolve feedback, receive mentions and find unread threads after reload.
+
+- Implementation: Private board/card threads, replies, resolve/reopen with version conflicts, exact member @mentions, durable unread/mention counts, all-boards discovery, mobile dialog and draft guards. Owners/editors write; team viewers read and mark seen; client links cannot access discussions. Five-second open / 15-second closed polling. Canvas JSON/revision/history remain unchanged; full database backups include comments. Email, reactions, message editing/deletion, canvas pins and commenter permissions remain follow-ups.
 
 ### IDEA-008: Workspace search and board discovery
 

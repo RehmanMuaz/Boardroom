@@ -1,0 +1,51 @@
+/* Shared control geometry; canvas content and the creation rail retain their layout. */
+:root{--on-accent:#fff;--danger:#a33131;--danger-soft:#fff0ee}
+:root[data-theme=dark]{--on-accent:#17271c;--danger:#ffb4ac;--danger-soft:#422c2b}
+.ui-icon,.app-mark{display:block;flex-shrink:0;vertical-align:middle;pointer-events:none}
+button .ui-icon{margin:0}.app>header .brand{gap:9px;align-items:center;white-space:nowrap}.entry-brand{display:flex;align-items:center;gap:12px}
+.workspace-switcher summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;min-height:36px;line-height:20px;list-style:none}
+.workspace-switcher summary::-webkit-details-marker{display:none}.workspace-switcher summary>span:first-child{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.workspace-switcher .workspace-chevron{width:16px;height:16px;flex:none;display:grid;place-items:center;color:var(--muted);transition:transform .15s ease}
+.workspace-switcher[open] .workspace-chevron{transform:rotate(180deg)}
+.header-dialog-trigger{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;line-height:20px}
+.header-command-search>.ui-icon{color:var(--muted)}
+.tools button>span[aria-hidden]{display:grid;place-items:center;width:28px;height:28px;line-height:1}
+.aside-bottom button>.ui-icon{margin:0 auto 7px}.back-tools{display:flex;align-items:center;gap:8px}
+.settings-dialog{max-width:calc(100vw - 20px);overflow:hidden}
+.settings-dialog-header{min-width:0;gap:12px}.settings-dialog-header h2{min-width:0;overflow-wrap:anywhere;line-height:1.3}.settings-dialog-header>button{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;white-space:nowrap}
+.settings-dialog-body,.settings-dialog-body>*,.action-sections,.account-sections,.dialog-section,.pdf-settings,.pdf-preview,.workspace-style-preview{min-width:0;max-width:100%}
+.settings-dialog-body{scrollbar-gutter:stable;overflow-x:hidden}
+.settings-dialog-body :is(input,select,textarea):not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]){min-height:38px;max-width:100%;line-height:1.4}
+.settings-dialog-body :is(input[type=checkbox],input[type=radio]){width:16px;min-width:16px;height:16px;min-height:16px;padding:0;flex:none;margin:0;accent-color:var(--accent)}
+.settings-dialog-body label:has(>input[type=checkbox]),.settings-dialog-body label:has(>input[type=radio]){display:flex;align-items:center;gap:9px;line-height:1.5}
+.settings-dialog-body input[type=range]{accent-color:var(--accent);padding:0;min-height:28px}
+.settings-dialog-body button{min-height:36px;line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+.settings-dialog-body .dialog-form-row{align-items:end}.settings-dialog-body .dialog-form-row>button{flex-shrink:0;min-height:38px}
+.settings-dialog-body .team-members :is(input,select){margin:0}.settings-dialog-body .member-row>span{min-width:0;flex-basis:180px}.settings-dialog-body .member-row select{flex:0 1 110px}.settings-dialog-body .member-row button{flex-shrink:0}
+.settings-dialog-body :is(.pdf-settings,.frame-dimensions){grid-template-columns:repeat(2,minmax(0,1fr))}
+.pdf-preview{justify-content:safe center}.pdf-frame-previews{min-width:0}.pdf-frame-preview{min-width:0;max-width:100%;margin-inline:0}.pdf-frame-crop{max-width:100%;overflow:hidden}
+.settings-dialog-body .workspace-style-preview{justify-content:safe center}
+.team-entry :is(input,select,button){max-width:100%;min-width:0}.team-entry{overflow-wrap:anywhere}.team-entry form button{margin-inline:0}
+/* Only explicit commit/proceed actions use the accent; cancel and navigation remain neutral. */
+body .button-primary,body .dialog-primary{background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);font-weight:600;text-align:center;box-shadow:0 1px 2px var(--shadow)}
+body .button-primary:hover:not(:disabled),body .dialog-primary:hover:not(:disabled){background:color-mix(in srgb,var(--accent) 88%,var(--ink));border-color:transparent;color:var(--on-accent)}
+body .button-danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--border))}body .button-danger:hover:not(:disabled){background:var(--danger-soft)}
+button:disabled{box-shadow:none}button:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.media-viewer-header>div{min-width:0}.media-viewer h2{overflow-wrap:anywhere}.media-viewer-buttons{flex-shrink:0}.media-viewer-toolbar{line-height:1.5}
+.settings-dialog [role=alert],.settings-dialog [role=status]{overflow-wrap:anywhere}
+@media(max-width:800px){.app>header>.brand .app-mark{display:block;width:22px;height:22px}.header-dialog-trigger{gap:4px}.header-dialog-trigger>.ui-icon{width:14px;height:14px}.workspace-switcher summary{gap:8px}}
+@media(max-width:600px){.settings-dialog-body{padding:16px;scrollbar-gutter:auto}.settings-dialog-body :is(.pdf-settings,.frame-dimensions){grid-template-columns:minmax(0,1fr)}.settings-dialog-body .dialog-form-row{align-items:stretch}.header-dialog-trigger>.ui-icon{display:none}.workspace-switcher summary>span:first-child{max-width:none!important}.workspace-switcher summary{width:100%}.workspace-switcher .popover-content{left:auto;right:0;max-width:calc(100vw - 24px);min-width:0;max-height:calc(100dvh - 120px);overflow:auto}.media-viewer-header{flex-wrap:wrap}.media-viewer-buttons{flex-shrink:1;max-width:100%}.team-entry{margin:16px auto;padding:20px}.settings-dialog-body .member-row>span{flex-basis:100%}}
+@media(max-width:360px){.app>header>.brand>span{display:none}.app>header>.brand .app-mark{width:26px;height:26px}.settings-dialog-header{padding:14px}.settings-dialog-header h2{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.workspace-chevron{transition:none!important}}
+
+/* Keep the existing rail usable in short windows without hiding tools behind history. */
+.app>aside>.tools{min-height:0;overflow-y:auto;overflow-x:hidden;flex:1;scrollbar-width:thin;overscroll-behavior:contain}.app>aside>.aside-bottom{flex-shrink:0}
+@media(min-width:801px){.app.contextual-sidebar .board-heading{padding-left:184px}}
+
+.settings-dialog-header>div{min-width:0;overflow-wrap:anywhere}.workspace-switcher .popover-content{max-height:min(480px,calc(100dvh - 100px));overflow-y:auto;overflow-wrap:anywhere}
+
+/* Section toggles must win over generic property buttons and heading margins. */
+.object-sidebar .modifier-panel .modifier-section>.modifier-section-toggle{display:grid;grid-template-columns:minmax(0,1fr) 16px;align-items:center;gap:8px;width:100%;min-height:32px;margin:0 0 10px;padding:0;border:0;border-radius:0;background:transparent;text-align:left}
+.object-sidebar .modifier-panel .modifier-section-toggle>h3{min-width:0;margin:0;padding:0;line-height:16px;text-align:left;overflow-wrap:anywhere}
+.object-sidebar .modifier-panel .modifier-section-toggle>.modifier-section-indicator{display:grid;place-items:center;width:16px;height:16px;margin:0;padding:0;line-height:1;color:var(--muted)}
+.object-sidebar .modifier-panel .modifier-section>.modifier-section-toggle:hover{background:var(--hover)}

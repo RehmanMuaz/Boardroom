@@ -48,7 +48,13 @@ Named PDF regions (develop feature work, not deployed): open **Actions > Export 
 
 Contextual command search (develop feature work, not deployed): press **Ctrl/Cmd+K** or use the centered search bar. Search labels or keywords such as `page crop`, `font defaults`, `client link` or `add note`. Results are grouped, show unavailable-action reasons and support arrow/Enter/Escape navigation. Creation commands still wait for a canvas position; style resets remain undoable.
 
-Media inspection (develop feature work, not deployed): double-click an image/video or choose its Inspect control for zoom, fullscreen, navigation and original downloads. Editors can draft image crop/rotation and attached pen/text labels, then Save or Cancel. Reset restores the original appearance; uploaded bytes and existing card geometry remain unchanged. Viewers/client links stay read-only. PDF crops are visual and retain full embedded image data.
+Media inspection (develop feature work, not deployed): double-click an image/video or choose its Inspect control for zoom, fullscreen, navigation and original downloads. Editors can draft image crop/rotation and attached pen/text labels, then Save or Cancel. Original uploaded bytes stay unchanged. Saving crop/rotation fits the image frame to its visible aspect in the same undoable change; opening existing boards never resizes their content. Viewers/client links stay read-only. PDF crops are visual and retain full embedded image data.
+
+Team feedback (develop feature work, not deployed): choose **Comments** beside the board controls or search for **Open team comments**. Owners/editors create board/card threads, reply, mention current teammates with `@email`, and resolve/reopen feedback. Team viewers can read and track unread threads; account-free client links cannot access team discussions. In-app unread/mention counts persist across sessions, with workspace-wide discovery and five-second refresh while open (15 seconds when closed). Comments live separately from canvas history and JSON exports; complete database backups include them.
+
+UI consistency (development work, not deployed): aligned SVG controls, a centered workspace chevron, responsive dialog fields, clearer accent primary actions and a coherent Vertex app-icon family. Existing canvas data and sidebar layout are preserved. See [UI audit](docs/UI_AUDIT.md) and [app icons](docs/APP_ICONS.md).
+
+Contextual media tools (development work, not deployed): new image/video uploads read local metadata before placement, so their frames fit immediately. Select an element for compact duplicate/delete controls, a note color picker, image crop and direct comments. The crop editor offers draggable edges/corners, moving the crop area and keyboard adjustment alongside precise percentages. Direct comments preselect cards, annotations, connections or groups; existing viewer/client permissions remain.
 
 ## Validation
 

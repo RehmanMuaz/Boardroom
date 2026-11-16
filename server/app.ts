@@ -1,3 +1,4 @@
+import {commentsRouter} from './comments';
 import {publicViewerRouter,viewerLinkRouter} from './viewer-links';
 import express, {type Request, type Response, type NextFunction} from 'express';
 import session from 'express-session';
@@ -30,7 +31,7 @@ export function createApp(pool:Pool, options:{secret:string; origin:string; secu
  const sessionMiddleware=session({store:new Store({pool,pruneSessionInterval:false}),secret:options.secret,resave:false,saveUninitialized:false,cookie:{httpOnly:true,sameSite:'lax',secure:options.secure??false,maxAge:7*86400000}});
  app.locals.sessionMiddleware=sessionMiddleware;app.use(sessionMiddleware);
  app.use((_req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY',
-  'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"});next();});
+  'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"});next();});
  const live=()=>app.locals.realtime as RealtimeHooks|undefined;
  app.use((req,res,next)=>{res.set('Cache-Control','no-store'); if(!['GET','HEAD','OPTIONS'].includes(req.method) && (req.get('origin')!==options.origin || !req.session.csrf || req.get('x-csrf-token')!==req.session.csrf))return res.status(403).json({error:'Invalid origin or CSRF token'});next();});
  app.get('/api/session',async(req,res)=>{req.session.csrf??=randomBytes(32).toString('hex');const account=req.session.userId?(await pool.query('SELECT email,email_verified_at,session_version,theme FROM accounts WHERE id=$1',[req.session.userId])).rows[0]:null;const valid=account&&account.session_version===(req.session.authVersion??0);res.json({userId:valid?req.session.userId:null,csrf:req.session.csrf,email:valid?account.email:null,theme:valid?account.theme:null,emailVerified:Boolean(valid&&account.email_verified_at),requireVerification:options.requireVerification??false,recoveryAvailable:Boolean(options.mailer)});});
@@ -43,6 +44,7 @@ export function createApp(pool:Pool, options:{secret:string; origin:string; secu
  app.patch('/api/account/preferences',async(req,res)=>{const {theme}=z.object({theme:z.enum(['light','dark','system'])}).strict().parse(req.body);await pool.query('UPDATE accounts SET theme=$1 WHERE id=$2',[theme,req.session.userId]);res.json({theme});});
  app.use('/api',(_req,res,next)=>{if(options.requireVerification&&!res.locals.emailVerified)return res.status(403).json({error:'Verify your email before using team workspaces'});next();});
  app.use('/api/workspaces/:id/viewer-links',viewerLinkRouter(pool,{origin:options.origin,mailer:options.mailer}));
+ app.use('/api/workspaces/:id/comments',commentsRouter(pool));
  app.use('/api/workspaces/:id/assets',assetRouter(pool,{root:options.assetRoot,maxBytes:options.maxAssetBytes}));
  async function membership(db:Pool|PoolClient,req:Request,id:string,write=false,owner=false){uuid.parse(id);const result=await db.query('SELECT role FROM memberships WHERE workspace_id=$1 AND user_id=$2'+(db===pool?'':' FOR SHARE'),[id,req.session.userId]);const role=result.rows[0]?.role;if(!role)throw new HttpError(404,'Workspace not found');if((write&&role==='viewer')||(owner&&role!=='owner'))throw new HttpError(403,'Permission denied');return role as 'owner'|'editor'|'viewer';}
  app.get('/api/workspaces',async(req,res)=>{const result=await pool.query('SELECT w.id,w.name,m.role FROM team_workspaces w JOIN memberships m ON m.workspace_id=w.id WHERE m.user_id=$1 ORDER BY w.name',[req.session.userId]);res.json(result.rows);});

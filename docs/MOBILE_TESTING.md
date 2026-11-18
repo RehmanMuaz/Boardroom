@@ -6,7 +6,7 @@ This development slice adapts the existing web app; no separate mobile app or wo
 - Pinch with two fingers to zoom and pan. Adding a second finger cancels a current item drag or unfinished drawing.
 - Choose **Move items**, then drag selected items. Choose **Pan** to return to navigation.
 - Enable **Multi-select**, tap items, then use the group icon beside the selection. Tap it again to ungroup.
-- Tap a creation tool in the bottom strip, then tap its canvas position. A pinch cancels placement.
+- Swipe anywhere across the bottom creation strip, including over icons and button edges, to scroll it. Tap a creation tool, then tap its canvas position. A pinch cancels placement.
 - Tap **Properties** to expand selected-object settings; **Hide properties** collapses them and **Tools** restores creation tools.
 
 Mouse/keyboard workflows and the desktop sidebar keep their existing layout. Saved workspace JSON, SQL, original uploads and permission boundaries are unchanged. Touch modes and panel expansion are temporary device UI state.

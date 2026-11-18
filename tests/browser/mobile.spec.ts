@@ -36,3 +36,13 @@ test('touch multi-selection groups items; pinch cancels movement and armed place
  await page.getByRole('button',{name:'Note',exact:true}).tap();await page.touchscreen.tap(100,view.y+200);await expect(page.locator('.card')).toHaveCount(3);
  await context.close();
 });
+for(const edge of ['top','middle','bottom'] as const){
+ test(`phone creation strip scrolls from button ${edge} without arming or placing a tool`,async({browser})=>{
+  const context=await browser.newContext({baseURL:'http://localhost:5174',viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();
+  await page.goto('/');await page.getByRole('button',{name:'Continue as guest'}).tap();const strip=page.locator('aside>.tools'),box=(await strip.boundingBox())!,count=await page.locator('.card').count(),y=box.y+(edge==='top'?2:edge==='bottom'?box.height-2:box.height/2),x=box.x+225;
+  expect(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('button'),{x,y})).toBe(true);
+  const cdp=await context.newCDPSession(page);await touch(cdp,'touchStart',[{id:1,x,y}]);for(let step=1;step<=8;step++)await touch(cdp,'touchMove',[{id:1,x:x-step*20,y}]);await touch(cdp,'touchEnd',[]);
+  await expect.poll(()=>strip.evaluate(el=>el.scrollLeft)).toBeGreaterThan(60);await expect(page.locator('.card')).toHaveCount(count);await expect(page.locator('.creation-preview,.creation-placement')).toHaveCount(0);
+  await context.close();
+ });
+}

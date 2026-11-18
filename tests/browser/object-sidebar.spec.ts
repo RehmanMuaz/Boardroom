@@ -16,7 +16,7 @@ test('content surfaces drag, double-click edits, and the contextual rail central
  await tools.getByRole('button',{name:'Format note'}).click();await expect(tools.getByRole('button',{name:'bold',exact:true})).toBeVisible();await expect(card.locator('button')).toHaveCount(0);
  const rich=card.getByRole('textbox',{name:'Rich note content'});await rich.focus();await page.keyboard.press('Control+a');await tools.getByRole('button',{name:'bold',exact:true}).click();await expect(rich.locator('strong,b')).toHaveText('Editable content only');
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations.map(v=>v.id)).toEqual([]);
- await tools.getByRole('button',{name:'Back to tools'}).click();await expect(tools).toHaveCount(0);await expect(page.getByRole('button',{name:'Note',exact:true})).toBeVisible();await expect(card).not.toHaveClass(/selected/);
+ await tools.getByRole('button',{name:/^(Back to tools|Tools)$/}).click();await expect(tools).toHaveCount(0);await expect(page.getByRole('button',{name:'Note',exact:true})).toBeVisible();await expect(card).not.toHaveClass(/selected/);
  await page.screenshot({path:'test-results/object-sidebar-main.png'});await card.click({position:{x:8,y:8}});await page.screenshot({path:'test-results/object-sidebar-note.png'});
- await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);await expect(page.getByRole('button',{name:'Back to tools'})).toBeVisible();
+ await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);await expect(page.getByRole('button',{name:/^(Back to tools|Tools)$/})).toBeVisible();
 });

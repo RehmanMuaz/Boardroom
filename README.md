@@ -21,6 +21,8 @@ Create an account, then create a workspace. Registration grants no access to exi
 
 Choose **Continue as guest** at the top of the entry screen for the original local workspace. Local data is separate from team data. To transfer local data, export it, open a team workspace as owner/editor and import the backup. Import replaces the team's canvas with permission and revision checks.
 
+Mobile development preview: see [touch controls and phone testing](docs/MOBILE_TESTING.md). This slice is under review and is not deployed.
+
 ## Implemented
 
 - Notes with optional structured formatting, links, checklists, nested boards, columns, connectors, multi-selection, resize, titles, search, colors and undo/redo.

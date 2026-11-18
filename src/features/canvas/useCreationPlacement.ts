@@ -10,7 +10,10 @@ export function useCreationPlacement({viewport,point,enabled,place,onArm}:{viewp
  function show(kind:CreationTool,x:number,y:number){setPreview(inside(x,y)?{tool:kind,...position(x,y)}:null);}
  function cancel(){if(gesture.current)gesture.current.cancelled=true;setTool(null);setPreview(null);}
  function arm(kind:CreationTool){if(suppressClick.current){suppressClick.current=false;return;}if(!latest.current.enabled)return;latest.current.onArm();setTool(kind);setPreview(null);viewport.current?.focus();}
- function start(e:ReactPointerEvent<HTMLButtonElement>,kind:CreationTool){if(!latest.current.enabled||e.button!==0)return;gesture.current={tool:kind,id:e.pointerId,x:e.clientX,y:e.clientY,moved:false};e.currentTarget.setPointerCapture(e.pointerId);}
+ function start(e:ReactPointerEvent<HTMLButtonElement>,kind:CreationTool){if(!latest.current.enabled||e.button!==0)return;
+  // The phone strip reserves finger swipes for native scrolling; taps still arm placement.
+  if(e.pointerType==='touch'&&getComputedStyle(e.currentTarget).touchAction==='pan-x')return;
+  gesture.current={tool:kind,id:e.pointerId,x:e.clientX,y:e.clientY,moved:false};e.currentTarget.setPointerCapture(e.pointerId);}
  function move(x:number,y:number){if(tool)show(tool,x,y);}
  function commit(x:number,y:number){if(!tool||!latest.current.enabled||!inside(x,y))return;const kind=tool;cancel();latest.current.place(kind,position(x,y));}
  useEffect(()=>{

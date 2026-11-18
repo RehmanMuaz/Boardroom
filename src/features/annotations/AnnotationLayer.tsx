@@ -9,6 +9,7 @@ export function AnnotationLayer({annotations,canvasBackground,shape,tool,writabl
  const input=useRef<HTMLTextAreaElement>(null);
  const getPoint=(e:ReactPointerEvent)=>clampPoint(point(e.clientX,e.clientY));
  function cancel(){draftRef.current=null;gestureRef.current=null;setDraft(null);setGesture(null);}
+ useEffect(()=>{window.addEventListener('boardroom:cancel-touch-gesture',cancel);return()=>window.removeEventListener('boardroom:cancel-touch-gesture',cancel);},[]);
  useEffect(()=>{cancel();if(!writable)setEditing(null);},[tool,writable]);
  useEffect(()=>{if(focusId&&annotations.some(a=>a.id===focusId)){setEditing(focusId);focused();}},[focusId,annotations,focused]);
  useEffect(()=>{if(editing&&input.current){input.current.focus();input.current.setSelectionRange(input.current.value.length,input.current.value.length);}},[editing]);

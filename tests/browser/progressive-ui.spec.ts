@@ -8,7 +8,7 @@ test('property search reveals advanced controls and remembers per-type arrangeme
  const note=page.locator('[data-card-id=welcome]');await note.click({position:{x:200,y:8}});
  const panel=page.getByRole('region',{name:'Object tools'});
  for(const size of [{width:1440,height:1000},{width:390,height:844}]){
-  await page.setViewportSize(size);const row=panel.getByRole('group',{name:'Quick actions',exact:true}),buttons=row.getByRole('button');await expect(buttons).toHaveCount(4);await expect(row.locator('svg')).toHaveCount(4);expect(await buttons.allTextContents()).toEqual(['','','','']);
+  await page.setViewportSize(size);if(size.width<=600)await page.getByRole('button',{name:'Properties',exact:true}).click();const row=panel.getByRole('group',{name:'Quick actions',exact:true}),buttons=row.getByRole('button');await expect(buttons).toHaveCount(4);await expect(row.locator('svg')).toHaveCount(4);expect(await buttons.allTextContents()).toEqual(['','','','']);
   const rail=await page.locator('aside').boundingBox(),bounds=await buttons.evaluateAll(nodes=>nodes.map(el=>{const b=el.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom,height:b.height};}));if(!rail)throw Error('Missing sidebar');
   for(const [index,b] of bounds.entries()){expect(b.x).toBeGreaterThanOrEqual(rail.x);expect(b.right).toBeLessThanOrEqual(rail.x+rail.width);expect(b.bottom).toBeLessThanOrEqual(size.height);expect(b.height).toBeGreaterThanOrEqual(44);expect(b.y).toBe(bounds[0].y);if(index)expect(b.x).toBeGreaterThanOrEqual(bounds[index-1].right);}
   await page.screenshot({path:`test-results/quick-actions-${size.width}.png`});
@@ -18,7 +18,7 @@ test('property search reveals advanced controls and remembers per-type arrangeme
  await panel.getByLabel('Find a property').fill('width');await expect(panel.getByLabel('Item width')).toBeVisible();
  await panel.getByLabel('Find a property').press('Escape');await expect(panel.getByLabel('Item width')).not.toBeVisible();
  await panel.getByRole('tab',{name:'Arrange',exact:true}).click();await expect(panel.getByRole('button',{name:'Duplicate',exact:true})).toBeVisible();await expect(panel.getByRole('button',{name:'Delete card',exact:true})).toBeVisible();await expect(panel.getByLabel('Item width')).toBeVisible();
- await page.getByRole('button',{name:'Back to tools'}).click();await note.click({position:{x:200,y:8}});
+ await page.getByRole('button',{name:/^(Back to tools|Tools)$/}).click();await note.click({position:{x:200,y:8}});
  await expect(panel.getByRole('tab',{name:'Arrange',exact:true})).toHaveAttribute('aria-selected','true');
  await panel.getByRole('button',{name:'Duplicate',exact:true}).click();await expect(page.locator('.card.note')).toHaveCount(3);
  await page.getByRole('button',{name:'Undo',exact:true}).click();await expect(page.locator('.card.note')).toHaveCount(2);

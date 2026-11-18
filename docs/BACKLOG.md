@@ -6,7 +6,19 @@ These are proposed ideas. [README](../README.md) describes implemented behavior,
 
 ## Requests
 
-Current priority: review the released contextual media/UI improvements, then mobile interaction work (IDEA-017), followed by workspace discovery (IDEA-008). IDEA-047, IDEA-046 and team comments (IDEA-007) are live in release 0291f8e. See the verified release record in docs/releases/2026-11-16-contextual-media.md.
+Current priority: mobile interaction work (IDEA-017) is in progress, followed by workspace discovery (IDEA-008). IDEA-047, IDEA-046 and team comments (IDEA-007) are live in release 0291f8e. See the verified release record in docs/releases/2026-11-16-contextual-media.md.
+
+### IDEA-017: Touch, stylus and broader content options
+
+- Type: Feature / Improvement
+- Priority: Now
+- Status: In progress - local touch/navigation slice
+- What I want: Intentional touch/stylus interactions and responsive controls; eventually audio cards, document/PDF previews, tables or maps where team workflows justify them.
+- Delivery stages: Validate existing workflows on touch devices and multiple browsers before expanding content types. Treat each new content type as a separately scoped slice.
+- Constraints or things to preserve: Accessible controls, private asset access, safe document rendering and clear gesture distinctions between drawing, dragging and panning. These are exploratory additions, not claims of current feature parity.
+- Done when: Delivered device workflows pass manual acceptance and each added content type has defined persistence, permissions and editing behavior.
+- Current slice: One-finger pan, tap selection, explicit Move items mode, touch multi-selection and two-finger canvas zoom. Phone creation tools move to a bottom strip and properties open in a collapsible bottom panel; desktop rail is preserved. Visual viewport sizing accommodates keyboard changes. No canvas JSON, API or database migration.
+- Remaining acceptance: Actual phone/Safari keyboard, media controls, stylus and extended tablet/landscape checks. Broader content types remain separate proposals. Not deployed.
 
 ### IDEA-047: Contextual element actions and visual media cropping
 
@@ -527,16 +539,6 @@ Current priority: review the released contextual media/UI improvements, then mob
 - Delivery stages: Editing indicators/cursors first; design text collaboration separately; persist offline operations with safe replay and explicit recovery states.
 - Constraints or things to preserve: Recheck access on replay, isolate queued data by account/workspace, handle logout/revocation, retain idempotent operation IDs and never silently overwrite remote edits. Browser-local storage is not team sync.
 - Done when: Each delivered capability is tested for competing edits, disconnect/reload, stale queues and revoked access; remaining conflict limits stay documented.
-
-### IDEA-017: Touch, stylus and broader content options
-
-- Type: Feature / Improvement
-- Priority: Later
-- Status: Idea
-- What I want: Intentional touch/stylus interactions and responsive controls; eventually audio cards, document/PDF previews, tables or maps where team workflows justify them.
-- Delivery stages: Validate existing workflows on touch devices and multiple browsers before expanding content types. Treat each new content type as a separately scoped slice.
-- Constraints or things to preserve: Accessible controls, private asset access, safe document rendering and clear gesture distinctions between drawing, dragging and panning. These are exploratory additions, not claims of current feature parity.
-- Done when: Delivered device workflows pass manual acceptance and each added content type has defined persistence, permissions and editing behavior.
 
 ## Suggested delivery slices
 

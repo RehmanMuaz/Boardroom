@@ -59,10 +59,10 @@ test('live sharing, viewer permissions, reconnect retries, conflicts and revocat
   await viewer.getByText('Board appearance',{exact:true}).click();await expect(viewer.getByLabel('Board background color')).toBeDisabled();await expect(viewer.getByLabel('Board canvas pattern')).toBeDisabled();await viewer.getByText('Board appearance',{exact:true}).click();
   await expect(viewer.getByRole('button',{name:'Text annotation tool'})).toBeDisabled();
   await expect(viewer.getByRole('button',{name:'Shape annotation tool'})).toBeDisabled();
-  if(await owner.getByRole('button',{name:'Back to tools'}).count())await owner.getByRole('button',{name:'Back to tools'}).click();await owner.getByRole('button',{name:'Shape annotation tool'}).click();const shapeCanvas=await owner.locator('.viewport').boundingBox();if(!shapeCanvas)throw Error('Missing canvas');
+  if(await owner.getByRole('button',{name:/^(Back to tools|Tools)$/}).count())await owner.getByRole('button',{name:/^(Back to tools|Tools)$/}).click();await owner.getByRole('button',{name:'Shape annotation tool'}).click();const shapeCanvas=await owner.locator('.viewport').boundingBox();if(!shapeCanvas)throw Error('Missing canvas');
   await owner.mouse.move(shapeCanvas.x+800,shapeCanvas.y+100);await owner.mouse.down();await owner.mouse.move(shapeCanvas.x+900,shapeCanvas.y+150,{steps:5});await owner.mouse.up();
   await expect(viewer.getByRole('button',{name:'arrow annotation',exact:true})).toHaveCount(1);
-  if(await owner.getByRole('button',{name:'Back to tools'}).count())await owner.getByRole('button',{name:'Back to tools'}).click();await owner.getByRole('button',{name:'Text annotation tool'}).click();
+  if(await owner.getByRole('button',{name:/^(Back to tools|Tools)$/}).count())await owner.getByRole('button',{name:/^(Back to tools|Tools)$/}).click();await owner.getByRole('button',{name:'Text annotation tool'}).click();
   const canvasBounds=await owner.locator('.viewport').boundingBox();if(!canvasBounds)throw Error('Missing canvas');
   await owner.mouse.click(canvasBounds.x+400,canvasBounds.y+300);
   await owner.getByLabel('Annotation text',{exact:true}).fill('Shared annotation');await owner.getByLabel('Annotation text',{exact:true}).press('Escape');
